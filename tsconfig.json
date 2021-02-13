@@ -1,0 +1,7 @@
+{
+    "include": ["./src"],
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2019" 
+    }
+}
