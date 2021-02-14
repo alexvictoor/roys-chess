@@ -66,7 +66,7 @@ export class BitBoard implements Board {
 
   get enPassantFile(): i8 {
     const it = this.extraBits.iterator();
-    for (let index = 0; index < 8; index++) {
+    for (let index: i8 = 0; index < 8; index++) {
       if (it.next()) {
         return index;
       }
