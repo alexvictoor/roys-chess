@@ -197,7 +197,7 @@ export class BitBoard implements Board {
     const pawnIt = this.pawnBits.and(playerBits).iterator();
 
     const pieces: PieceOnBoard[] = [];
-    for (let index = 0; index < 64; index++) {
+    for (let index: i8 = 0; index < 64; index++) {
       if (kingIt.next()) {
         pieces.push({
           color: player,

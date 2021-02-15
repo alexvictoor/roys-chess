@@ -2,6 +2,7 @@ import { bishopPseudoLegalMoves } from "./bishop";
 //import { castlingMoves } from "./castling";
 import {
   BISHOP,
+  BLACK,
   Board,
   KING,
   KNIGHT,
@@ -38,49 +39,35 @@ const pseudoLegalMoves = (
       throw new Error("Unknown Piece " + pieceOnBoard.piece.toString());
   }
 };
-
-/*export const isInCheck = (player: Player, board: Board): boolean => {
-  const king = board.getKing(player);
-  const opponentPlayer = opponent(player);
-  const opponentPieces = board.getPlayerPieces(opponentPlayer);
-  for (let index = 0; index < opponentPieces.length; index++) {
-    const piece = opponentPieces[index];
-    const checkFound = pseudoLegalMoves(board, piece).some((pos) =>
-      equalPositions(pos, king.position)
-    );
-    if (checkFound) {
-      return true;
-    }
-  }
-
-  return false;
-};*/
-
-/*
-export type Move = {
+export class Move {
   pieceOnBoard: PieceOnBoard;
   to: MoveOutcome;
   board: Board;
-};
+}
 
 export const legalMoves = (player: i8, currentBoard: Board): Move[] => {
   const pieces = currentBoard.getPlayerPieces(player);
-  const pseudo = pieces.flatMap((p) =>
-    pseudoLegalMoves(currentBoard, p).map((to) => ({
-      to,
-      pieceOnBoard: p,
-      board: currentBoard.move(p, to),
-    }))
-  );
-  return pseudo
-    .filter(({ board }) => {
-      const c = isInCheck(player, board);
-      return !c;
-    })
-    .concat(castlingMoves(player, currentBoard));
-};*/
+  const result: Move[] = [];
+  for (let index = 0; index < pieces.length; index++) {
+    const p = unchecked(pieces[index]);
+    const outcomes = pseudoLegalMoves(currentBoard, p);
+    for (let j = 0; j < outcomes.length; j++) {
+      const to = unchecked(outcomes[j]);
+      const board = currentBoard.move(p, to);
+      if (!isInCheck(player, board)) {
+        result.push({
+          to,
+          pieceOnBoard: p,
+          board,
+        });
+      }
+    }
+  }
 
-export const isInCheck = (player: i8, board: Board): boolean => {
+  return result.concat(castlingMoves(player, currentBoard));
+};
+
+export function isInCheck(player: i8, board: Board): boolean {
   const king = board.getKing(player);
 
   const checkedByRookOrQueen = rookPseudoLegalMoves(board, king).some(
@@ -121,4 +108,133 @@ export const isInCheck = (player: i8, board: Board): boolean => {
   }
 
   return false;
-};
+}
+
+export function kingSideCastlingMoves(player: i8, currentBoard: Board): Move[] {
+  if (!currentBoard.kingSideCastlingRight(player)) {
+    return [];
+  }
+
+  const y = player === BLACK ? <i8>0 : <i8>7;
+  const king = currentBoard.getKing(player);
+  const kingSideRook = currentBoard.getAt({ x: 7, y });
+
+  if (
+    !kingSideRook ||
+    currentBoard.getAt({ x: 5, y }) ||
+    currentBoard.getAt({ x: 6, y })
+  ) {
+    return [];
+  }
+
+  const intermediateBoard = currentBoard.move(king, {
+    x: 5,
+    y,
+    capturedPiece: -1,
+    captureEnPassant: null,
+    promoteTo: -1,
+  });
+
+  if (isInCheck(player, intermediateBoard)) {
+    return [];
+  }
+
+  const kingSideCastling = currentBoard
+    .move(king, {
+      x: 6,
+      y,
+      capturedPiece: -1,
+      captureEnPassant: null,
+      promoteTo: -1,
+    })
+    .move(kingSideRook, {
+      x: 5,
+      y,
+      capturedPiece: -1,
+      captureEnPassant: null,
+      promoteTo: -1,
+    });
+
+  if (isInCheck(player, kingSideCastling)) {
+    return [];
+  }
+
+  return [
+    {
+      pieceOnBoard: king,
+      to: { x: 6, y, capturedPiece: -1, captureEnPassant: null, promoteTo: -1 },
+      board: kingSideCastling,
+    },
+  ];
+}
+
+export function queenSideCastlingMoves(
+  player: i8,
+  currentBoard: Board
+): Move[] {
+  if (!currentBoard.queenSideCastlingRight(player)) {
+    return [];
+  }
+  const y = player === BLACK ? <i8>0 : <i8>7;
+  const king = currentBoard.getKing(player);
+  const queenSideRook = currentBoard.getAt({ x: 0, y });
+
+  if (
+    !queenSideRook ||
+    currentBoard.getAt({ x: <i8>1, y }) ||
+    currentBoard.getAt({ x: <i8>2, y }) ||
+    currentBoard.getAt({ x: <i8>3, y })
+  ) {
+    return [];
+  }
+
+  const intermediateBoard = currentBoard.move(king, {
+    x: 3,
+    y,
+    capturedPiece: -1,
+    captureEnPassant: null,
+    promoteTo: -1,
+  });
+  if (isInCheck(player, intermediateBoard)) {
+    return [];
+  }
+
+  const queenSideCastling = currentBoard
+    .move(king, {
+      x: 2,
+      y,
+      capturedPiece: -1,
+      captureEnPassant: null,
+      promoteTo: -1,
+    })
+    .move(queenSideRook, {
+      x: 3,
+      y,
+      capturedPiece: -1,
+      captureEnPassant: null,
+      promoteTo: -1,
+    });
+
+  if (isInCheck(player, queenSideCastling)) {
+    return [];
+  }
+  return [
+    {
+      pieceOnBoard: king,
+      to: { x: 2, y, capturedPiece: -1, captureEnPassant: null, promoteTo: -1 },
+      board: queenSideCastling,
+    },
+  ];
+}
+
+export function castlingMoves(player: i8, currentBoard: Board): Move[] {
+  if (isInCheck(player, currentBoard)) {
+    return [];
+  }
+
+  const moves = kingSideCastlingMoves(player, currentBoard).concat(
+    queenSideCastlingMoves(player, currentBoard)
+  );
+
+  return moves;
+}
