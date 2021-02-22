@@ -72,6 +72,10 @@ const { board: pieceBoard } = parseFEN(
   (pieces, clock, rights) => new PieceListBoard(pieces, clock, rights)
 );
 
+const startInitial = Date.now();
+console.log("perft 3 initial", perft(3));
+console.log("-----", Date.now() - startInitial);
+
 console.log("perft 2", perft(2, bitboard));
 console.log("perft 3", perft(3, bitboard));
 console.log("perft 4", perft(4, bitboard));

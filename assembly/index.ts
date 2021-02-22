@@ -11,5 +11,5 @@ export const even = (): i32[] => {
 };
 
 export function perf(): i32 {
-  return perft(4);
+  return perft(3);
 }

@@ -47,7 +47,7 @@ export class Bits {
   }
 
   get(index: i8): bool {
-    return !!((this.data >> index) & 1);
+    return ((this.data >> index) & 1) === 1;
   }
 
   and(bits: Bits): Bits {
@@ -63,12 +63,7 @@ export class Bits {
   }
 
   getFirstBitIndex(): i8 {
-    for (let index: i8 = 0; index < 64; index++) {
-      if (this.get(index)) {
-        return index;
-      }
-    }
-    throw new Error("No bit found");
+    return <i8>ctz(this.data);
   }
 
   getPositions(): Position[] {
