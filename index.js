@@ -7,7 +7,8 @@ const wasm = loader.instantiateSync(
     /* imports */
   }
 );
-console.log(wasm.exports.perf());
+//console.log(wasm.exports.perf());
 const start = Date.now();
-console.log(wasm.exports.perf());
+//console.log(wasm.exports.perf());
+console.log(wasm.exports.__getString(wasm.exports.findMagicNumbers()));
 console.log(Date.now() - start, "ms");

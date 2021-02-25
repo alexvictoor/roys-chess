@@ -1,6 +1,7 @@
 // The entry file of your WebAssembly module.
 
 import { perft } from "./perft";
+import { findAllRookMagicNumbers } from "./magic";
 
 export function add(a: i32, b: i32): i32 {
   return a + b;
@@ -12,4 +13,10 @@ export const even = (): i32[] => {
 
 export function perf(): i32 {
   return perft(3);
+}
+export function findMagicNumbers(): string {
+  return findAllRookMagicNumbers()
+    .slice(0)
+    .map<string>((m) => "'" + m.toString(16) + "'")
+    .join(",");
 }
