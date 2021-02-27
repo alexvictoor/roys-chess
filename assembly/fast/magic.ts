@@ -28,6 +28,26 @@ export function rookMaskAt(squareIndex: i8): u64 {
   return mask;
 }
 
+export function bishopMaskAt(squareIndex: i8): u64 {
+  let mask: u64 = 0;
+  const y: i8 = squareIndex / 8;
+  const x: i8 = squareIndex % 8;
+  for (let r: i8 = y + 1, c: i8 = x + 1; r <= 6 && c <= 6; r++, c++) {
+    mask |= (<u64>1) << (c + r * 8);
+  }
+  for (let r: i8 = y - 1, c: i8 = x + 1; r >= 1 && c <= 6; r--, c++) {
+    mask |= (<u64>1) << (c + r * 8);
+  }
+  for (let r: i8 = y - 1, c: i8 = x - 1; r >= 1 && c >= 1; r--, c--) {
+    mask |= (<u64>1) << (c + r * 8);
+  }
+  for (let r: i8 = y + 1, c: i8 = x - 1; r <= 6 && c >= 1; r++, c--) {
+    mask |= (<u64>1) << (c + r * 8);
+  }
+
+  return mask;
+}
+
 export function rookAttacks(squareIndex: i8, blockerMask: u64): u64 {
   let attacks: u64 = 0;
   const y: i8 = squareIndex / 8;
@@ -59,7 +79,39 @@ export function rookAttacks(squareIndex: i8, blockerMask: u64): u64 {
   return attacks;
 }
 
-export function rookBlockerMask(mask: u64, index: u64): u64 {
+export function bishopAttacks(squareIndex: i8, blockerMask: u64): u64 {
+  let attacks: u64 = 0;
+  const y: i8 = squareIndex / 8;
+  const x: i8 = squareIndex % 8;
+  for (let r: i8 = y + 1, c: i8 = x + 1; r <= 7 && c <= 7; r++, c++) {
+    attacks |= (<u64>1) << (c + r * 8);
+    if (((<u64>1) << (c + r * 8)) & blockerMask) {
+      break;
+    }
+  }
+  for (let r: i8 = y - 1, c: i8 = x + 1; r >= 0 && c <= 7; r--, c++) {
+    attacks |= (<u64>1) << (c + r * 8);
+    if (((<u64>1) << (c + r * 8)) & blockerMask) {
+      break;
+    }
+  }
+  for (let r: i8 = y - 1, c: i8 = x - 1; r >= 0 && c >= 0; r--, c--) {
+    attacks |= (<u64>1) << (c + r * 8);
+    if (((<u64>1) << (c + r * 8)) & blockerMask) {
+      break;
+    }
+  }
+  for (let r: i8 = y + 1, c: i8 = x - 1; r <= 7 && c >= 0; r++, c--) {
+    attacks |= (<u64>1) << (c + r * 8);
+    if (((<u64>1) << (c + r * 8)) & blockerMask) {
+      break;
+    }
+  }
+  return attacks;
+}
+// code adapted from
+// https://stackoverflow.com/questions/30680559/how-to-find-magic-bitboards
+export function generateBlockerMask(mask: u64, index: u64): u64 {
   let blockerMask: u64 = mask;
   let bitIndex: u64 = 0;
   for (let i: i8 = 0; i < 64; i++) {
@@ -91,7 +143,7 @@ export function randomIntegerWithManyBits(): u64 {
   return randomInteger() | randomInteger() | randomInteger();
 }
 
-function transformBlock2Index(
+export function transformBlock2Index(
   blockerMask: u64,
   magic: u64,
   numberOfBits: i8
@@ -100,7 +152,7 @@ function transformBlock2Index(
 }
 
 // prettier-ignore
-const bitsBySquareForRook = StaticArray.fromArray<i8>([
+export const bitsBySquareForRook = StaticArray.fromArray<i8>([
     12, 11, 11, 11, 11, 11, 11, 12,
     11, 10, 10, 10, 10, 10, 10, 11,
     11, 10, 10, 10, 10, 10, 10, 11,
@@ -111,10 +163,22 @@ const bitsBySquareForRook = StaticArray.fromArray<i8>([
     12, 11, 11, 11, 11, 11, 11, 12
 ]);
 
-const NUMBER_OF_POSSIBLE_MASKS = 1 << 12;
+// prettier-ignore
+export const bitsBySquareForBishop = StaticArray.fromArray<i8>([
+  6, 5, 5, 5, 5, 5, 5, 6,
+  5, 5, 5, 5, 5, 5, 5, 5,
+  5, 5, 7, 7, 7, 7, 5, 5,
+  5, 5, 7, 9, 9, 7, 5, 5,
+  5, 5, 7, 9, 9, 7, 5, 5,
+  5, 5, 7, 7, 7, 7, 5, 5,
+  5, 5, 5, 5, 5, 5, 5, 5,
+  6, 5, 5, 5, 5, 5, 5, 6
+]);
 
-export function findMagicForRookAt(squareIndex: i8): u64 {
-  const mask = rookMaskAt(squareIndex);
+export const NUMBER_OF_POSSIBLE_MASKS = 1 << 12;
+
+export function findMagicForPieceAt(squareIndex: i8, forBishop: boolean): u64 {
+  const mask = forBishop ? bishopMaskAt(squareIndex) : rookMaskAt(squareIndex);
   const numberOfBitsInMask: i32 = <i32>popcnt(mask);
 
   const blockerMasks = new StaticArray<u64>(NUMBER_OF_POSSIBLE_MASKS);
@@ -123,16 +187,19 @@ export function findMagicForRookAt(squareIndex: i8): u64 {
 
   const numberOfMasks: i32 = 1 << numberOfBitsInMask;
   for (let i: i32 = 0; i < numberOfMasks; i++) {
-    blockerMasks[i] = rookBlockerMask(mask, i);
-    attackMasks[i] = rookAttacks(squareIndex, blockerMasks[i]);
+    blockerMasks[i] = generateBlockerMask(mask, i);
+    attackMasks[i] = forBishop
+      ? bishopAttacks(squareIndex, blockerMasks[i])
+      : rookAttacks(squareIndex, blockerMasks[i]);
   }
 
-  const numberOfBitsForIndex: i8 = bitsBySquareForRook[squareIndex];
+  const numberOfBitsForIndex: i8 = forBishop
+    ? bitsBySquareForBishop[squareIndex]
+    : bitsBySquareForRook[squareIndex];
 
   // brute force loop
-  //for (let k: u64 = 0; k < 100000000; k++) {
   for (let k: u64 = 0; k < 100000000; k++) {
-    const magicCandidate = randomIntegerWithFewBits(); // 0x0080001020400080; // randomIntegerWithFewBits();
+    const magicCandidate = randomIntegerWithFewBits();
     if (popcnt((mask * magicCandidate) & 0xff00000000000000) < 6) {
       continue;
     }
@@ -164,7 +231,14 @@ export function findMagicForRookAt(squareIndex: i8): u64 {
 export function findAllRookMagicNumbers(): StaticArray<u64> {
   const magicNumbers = new StaticArray<u64>(64);
   for (let i: i8 = 0; i < 64; i++) {
-    magicNumbers[i] = findMagicForRookAt(i);
+    magicNumbers[i] = findMagicForPieceAt(i, false);
+  }
+  return magicNumbers;
+}
+export function findAllBishopMagicNumbers(): StaticArray<u64> {
+  const magicNumbers = new StaticArray<u64>(64);
+  for (let i: i8 = 0; i < 64; i++) {
+    magicNumbers[i] = findMagicForPieceAt(i, true);
   }
   return magicNumbers;
 }
