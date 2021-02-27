@@ -1,13 +1,9 @@
-import {
-  bishopAttacks,
-  bishopMaskAt,
-  maskString,
-  rookAttacks,
-} from "../../fast/magic";
+import { maskString } from "../../fast/bitboard";
+import { bishopAttacks, bishopMaskAt, rookAttacks } from "../../fast/magic";
 import {
   rookPseudoLegalMoves,
   bishopPseudoLegalMoves,
-} from "../../fast/magic-move-generation";
+} from "../../fast/sliding-pieces-move-generation";
 
 describe(`Rook magic move generation`, () => {
   it("should get rook moves", () => {

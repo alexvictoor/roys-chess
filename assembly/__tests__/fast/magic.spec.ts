@@ -1,9 +1,9 @@
+import { maskString } from "../../fast/bitboard";
 import {
   bishopAttacks,
   bishopMaskAt,
   findAllRookMagicNumbers,
   findMagicForPieceAt,
-  maskString,
   rookAttacks,
   generateBlockerMask,
   rookMaskAt,

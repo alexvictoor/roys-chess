@@ -1,14 +1,3 @@
-export function maskString(mask: u64): string {
-  let result: string = "\n";
-  for (let i: i8 = 7; i >= 0; i--) {
-    for (let j: i8 = 0; j < 8; j++) {
-      result += mask & (1 << (i * 8 + j)) ? "1" : ".";
-    }
-    result += "\n";
-  }
-  return result;
-}
-
 export function rookMaskAt(squareIndex: i8): u64 {
   let mask: u64 = 0;
   const y: i8 = squareIndex / 8;
