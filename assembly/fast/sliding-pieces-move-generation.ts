@@ -56,7 +56,7 @@ function initBishopMoveCache(): void {
 }
 initBishopMoveCache();
 
-export function rookPseudoLegalMoves(board: u64, rookPosition: i8): u64 {
+export function rookMoves(board: u64, rookPosition: i8): u64 {
   const blockerMask = board & noBorderMask & ~(1 << rookPosition);
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
@@ -66,7 +66,7 @@ export function rookPseudoLegalMoves(board: u64, rookPosition: i8): u64 {
   return rookMoveCache[rookPosition][magicIndex];
 }
 
-export function bishopPseudoLegalMoves(board: u64, bishopPosition: i8): u64 {
+export function bishopMoves(board: u64, bishopPosition: i8): u64 {
   const blockerMask = board & noBorderMask & ~(1 << bishopPosition);
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
@@ -76,9 +76,6 @@ export function bishopPseudoLegalMoves(board: u64, bishopPosition: i8): u64 {
   return bishopMoveCache[bishopPosition][magicIndex];
 }
 
-export function queenPseudoLegalMoves(board: u64, queenPosition: i8): u64 {
-  return (
-    bishopPseudoLegalMoves(board, queenPosition) |
-    rookPseudoLegalMoves(board, queenPosition)
-  );
+export function queenMoves(board: u64, queenPosition: i8): u64 {
+  return bishopMoves(board, queenPosition) | rookMoves(board, queenPosition);
 }

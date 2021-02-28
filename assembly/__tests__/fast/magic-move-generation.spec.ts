@@ -1,8 +1,7 @@
-import { maskString } from "../../fast/bitboard";
-import { bishopAttacks, bishopMaskAt, rookAttacks } from "../../fast/magic";
+import { bishopAttacks, rookAttacks } from "../../fast/magic";
 import {
-  rookPseudoLegalMoves,
-  bishopPseudoLegalMoves,
+  bishopMoves,
+  rookMoves,
 } from "../../fast/sliding-pieces-move-generation";
 
 describe(`Rook magic move generation`, () => {
@@ -11,11 +10,9 @@ describe(`Rook magic move generation`, () => {
     const board: u64 = (1 << 2) + (1 << 9);
     const position: i8 = 10;
     // when
-    const moves = rookPseudoLegalMoves(board, position);
+    const moves = rookMoves(board, position);
     // then
-    expect(rookPseudoLegalMoves(board, position)).toBe(
-      rookAttacks(position, board)
-    );
+    expect(rookMoves(board, position)).toBe(rookAttacks(position, board));
   });
 });
 
@@ -25,12 +22,8 @@ describe(`Bishop magic move generation`, () => {
     const position: i8 = 19;
     const board: u64 = (1 << 26) + (1 << 28);
     // when
-    const moves = bishopPseudoLegalMoves(board, position);
+    const moves = bishopMoves(board, position);
     // then
-    log(maskString(bishopMaskAt(position)));
-    log(maskString(board));
-    log(maskString(moves));
-    log(maskString(bishopAttacks(position, board)));
     expect(moves).toBe(
       bishopAttacks(position, board)
       //(1 << 1) + (1 << 5) + (1 << 10) + (1 << 12) + (1 << 26) + (1 << 28)
