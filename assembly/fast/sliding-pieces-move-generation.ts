@@ -1,9 +1,9 @@
 import {
   BISHOP,
   BitBoard,
+  encodeCapture,
   encodeMove,
   getPositionsFromMask,
-  maskString,
   noBorderMask,
   opponent,
 } from "./bitboard";
@@ -96,10 +96,23 @@ export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
   const result: u64[] = [];
   for (let i = 0; i < positions.length; i++) {
     const from = positions[i];
-    const mask = bishopMoves(allPiecesMask, from) & ~friendlyPiecesMask;
-    const toPositions = getPositionsFromMask(mask);
+    const mask = bishopMoves(allPiecesMask, from);
+    const moveMask = mask & ~allPiecesMask;
+    const toPositions = getPositionsFromMask(moveMask);
     for (let j = 0; j < toPositions.length; j++) {
       result.push(encodeMove(BISHOP + player, from, toPositions[j]));
+    }
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const capturePositions = getPositionsFromMask(captureMask);
+    for (let j = 0; j < capturePositions.length; j++) {
+      result.push(
+        encodeCapture(
+          BISHOP + player,
+          from,
+          capturePositions[j],
+          board.getPieceAt(capturePositions[j])
+        )
+      );
     }
   }
   return result;

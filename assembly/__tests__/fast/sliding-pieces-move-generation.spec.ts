@@ -1,4 +1,11 @@
-import { BISHOP, BitBoard, KING, maskString, WHITE } from "../../fast/bitboard";
+import {
+  BISHOP,
+  BitBoard,
+  BLACK,
+  KING,
+  KNIGHT,
+  WHITE,
+} from "../../fast/bitboard";
 import { bishopAttacks, rookAttacks } from "../../fast/magic";
 import {
   bishopMoves,
@@ -49,5 +56,18 @@ describe(`Bishop magic move generation`, () => {
     const moves = bishopPseudoLegalMoves(board, WHITE);
     // then
     expect(moves).toHaveLength(0);
+  });
+  it("should get bishop pseudo legal moves when there is a capture", () => {
+    // given
+    const board = new BitBoard();
+    const blackKnightPosition: i8 = 9;
+    board.putPiece(KNIGHT, BLACK, blackKnightPosition);
+    const whiteBishopPosition: i8 = 0;
+    board.putPiece(BISHOP, WHITE, whiteBishopPosition);
+    // when
+    const moves = bishopPseudoLegalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(1);
+    expect(board.execute(moves[0]).getKnightMask(BLACK)).toBe(0);
   });
 });

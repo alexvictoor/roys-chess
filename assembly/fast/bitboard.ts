@@ -55,6 +55,16 @@ export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 export class BitBoard {
   constructor(private bits: StaticArray<u64> = new StaticArray<u64>(16)) {}
 
+  getPieceAt(position: i8): i8 {
+    const mask: u64 = 1 << position;
+    for (let i: i8 = 0; i < 9; i++) {
+      if (this.bits[i] & mask) {
+        return i;
+      }
+    }
+    throw new Error("Piece not found on board");
+  }
+
   putPiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = 1 << position;
     this.bits[piece + player] |= mask;
@@ -149,7 +159,28 @@ export function encodeMove(
   fromPosition: i8,
   toPosition: i8
 ): u64 {
-  return 0;
+  return (
+    (<u64>srcPiece) |
+    (fromPosition << 4) |
+    ((<u64>srcPiece) << 10) |
+    (toPosition << 14)
+  );
+}
+
+export function encodeCapture(
+  srcPiece: i8,
+  fromPosition: i8,
+  toPosition: i8,
+  capturedPiece: i8
+): u64 {
+  return (
+    (<u64>srcPiece) |
+    (fromPosition << 4) |
+    ((<u64>srcPiece) << 10) |
+    (toPosition << 14) |
+    ((<u64>capturedPiece) << 20) |
+    (toPosition << 24)
+  );
 }
 
 export function encodePromotion(
