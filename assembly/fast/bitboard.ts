@@ -62,9 +62,25 @@ export class BitBoard {
     this.bits[ALL_PIECES] |= mask;
   }
 
+  private put(piece: i8, position: i8): void {
+    const mask: u64 = 1 << position;
+    const player: i8 = piece & 1;
+    this.bits[piece] |= mask;
+    this.bits[PLAYER_PIECES + player] |= mask;
+    this.bits[ALL_PIECES] |= mask;
+  }
+
   removePiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
     this.bits[piece + player] &= mask;
+    this.bits[PLAYER_PIECES + player] &= mask;
+    this.bits[ALL_PIECES] &= mask;
+  }
+
+  private remove(piece: i8, position: i8): void {
+    const mask: u64 = ~(1 << position);
+    const player: i8 = piece & 1;
+    this.bits[piece] &= mask;
     this.bits[PLAYER_PIECES + player] &= mask;
     this.bits[ALL_PIECES] &= mask;
   }
@@ -93,4 +109,56 @@ export class BitBoard {
   getPawnMask(player: i8): u64 {
     return this.bits[PAWN + player];
   }
+
+  execute(action: u64): BitBoard {
+    const srcPiece: i8 = <i8>(action & ((1 << 4) - 1));
+    const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
+    const destPiece: i8 = <i8>((action >> 10) & ((1 << 4) - 1));
+    const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
+
+    const bits = StaticArray.slice(this.bits);
+    const updatedBoard = new BitBoard(bits);
+    updatedBoard.remove(srcPiece, fromPosition);
+    updatedBoard.put(destPiece, toPosition);
+
+    const capturedPiece: i8 = <i8>((action >> 20) & ((1 << 4) - 1));
+    const capturePosition: i8 = <i8>((action >> 24) & ((1 << 6) - 1));
+    if (capturePosition || capturedPiece) {
+      updatedBoard.remove(capturedPiece, capturePosition);
+    }
+
+    return updatedBoard;
+  }
 }
+
+export function getPositionsFromMask(mask: u64): i8[] {
+  const result: i8[] = [];
+  let currentMask: u64 = mask;
+  let currentPosition: i8 = 0;
+  while (currentMask) {
+    currentPosition += <i8>ctz(currentMask);
+    result.push(currentPosition);
+    currentMask = currentMask >> (<u64>(ctz(currentMask) + 1));
+    currentPosition++;
+  }
+  return result;
+}
+
+export function encodeMove(
+  srcPiece: i8,
+  fromPosition: i8,
+  toPosition: i8
+): u64 {
+  return 0;
+}
+
+export function encodePromotion(
+  srcPiece: i8,
+  fromPosition: i8,
+  toPosition: i8
+): u64 {
+  return 0;
+}
+// 1000000 6
+
+// 10000 4

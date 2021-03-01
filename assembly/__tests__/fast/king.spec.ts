@@ -28,7 +28,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe(2 + (1 << 8) + (1 << 9));
   });
   it("should get king moves from top left corner", () => {
@@ -38,7 +37,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe((1 << 57) + (1 << 49) + (1 << 48));
   });
   it("should get king moves from top right", () => {
@@ -48,7 +46,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe(
       (1 << 63) + (1 << 62) + (1 << 54) + (1 << 46) + (1 << 47)
     );
@@ -60,8 +57,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
-    log(maskString((1 << 6) + (1 << 14) + (1 << 15)));
     expect(moves).toBe((1 << 6) + (1 << 14) + (1 << 15));
   });
   it("should get king moves from left border", () => {
@@ -71,7 +66,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe((1 << 8) + (1 << 24) + (1 << 25) + (1 << 17) + (1 << 9));
   });
   it("should get king moves from right border", () => {
@@ -81,7 +75,6 @@ describe(`King move generation`, () => {
     // when
     const moves = getKingMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe(
       (1 << 15) + (1 << 31) + (1 << 30) + (1 << 22) + (1 << 14)
     );

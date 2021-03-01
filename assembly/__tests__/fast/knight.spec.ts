@@ -63,7 +63,6 @@ describe(`Knight move generation`, () => {
     // when
     const moves = getKnightMoves(position);
     // then
-    log(maskString(moves));
     expect(moves).toBe((1 << 1) + (1 << 10) + (1 << 26) + (1 << 33));
   });
 });

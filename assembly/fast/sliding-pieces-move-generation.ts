@@ -1,4 +1,12 @@
-import { noBorderMask } from "./bitboard";
+import {
+  BISHOP,
+  BitBoard,
+  encodeMove,
+  getPositionsFromMask,
+  maskString,
+  noBorderMask,
+  opponent,
+} from "./bitboard";
 import { bishopMagicNumbers } from "./generated-bishop-magic";
 import { rookMagicNumbers } from "./generated-rook-magic";
 import {
@@ -66,8 +74,8 @@ export function rookMoves(board: u64, rookPosition: i8): u64 {
   return rookMoveCache[rookPosition][magicIndex];
 }
 
-export function bishopMoves(board: u64, bishopPosition: i8): u64 {
-  const blockerMask = board & noBorderMask & ~(1 << bishopPosition);
+export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
+  const blockerMask = mask & noBorderMask & ~(1 << bishopPosition);
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
     bishopMagicNumbers[bishopPosition],
@@ -78,4 +86,26 @@ export function bishopMoves(board: u64, bishopPosition: i8): u64 {
 
 export function queenMoves(board: u64, queenPosition: i8): u64 {
   return bishopMoves(board, queenPosition) | rookMoves(board, queenPosition);
+}
+
+export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
+  const allPiecesMask = board.getAllPiecesMask();
+  const friendlyPiecesMask = board.getPlayerPiecesMask(player);
+  const bishopMask = board.getBishopMask(player);
+  const positions = getPositionsFromMask(bishopMask);
+  const result: u64[] = [];
+  for (let i = 0; i < positions.length; i++) {
+    const from = positions[i];
+    const mask = bishopMoves(allPiecesMask, from) & ~friendlyPiecesMask;
+    const toPositions = getPositionsFromMask(mask);
+    for (let j = 0; j < toPositions.length; j++) {
+      result.push(encodeMove(BISHOP + player, from, toPositions[j]));
+    }
+  }
+  return result;
+}
+
+export function bishopLegalMoves(board: BitBoard, player: i8): u64[] {
+  // move BitBoard + u64
+  throw "not implemented";
 }

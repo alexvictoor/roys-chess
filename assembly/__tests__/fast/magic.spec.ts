@@ -92,7 +92,6 @@ describe(`Rook magic finder`, () => {
     // when
     const magic = findMagicForPieceAt(squareIndex, false);
     // then
-    log(maskString(magic));
     expect(magic).not.toBe(0);
   });
   xit("should find all magic numbers", () => {
@@ -111,7 +110,6 @@ describe(`Bishop magic finder`, () => {
     // when
     const magic = findMagicForPieceAt(squareIndex, true);
     // then
-    log(maskString(magic));
     expect(magic).not.toBe(0);
   });
   xit("should find all magic numbers", () => {

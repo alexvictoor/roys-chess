@@ -1,4 +1,4 @@
-import { BitBoard, opponent } from "./bitboard";
+import { BitBoard, getPositionsFromMask, opponent } from "./bitboard";
 import { kingMoves } from "./king-move-generation";
 import { knightMoves } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
@@ -13,14 +13,12 @@ function isInCheckByRook(
   opponentPlayer: i8,
   board: BitBoard
 ): boolean {
-  let rookMask = board.getRookMask(opponentPlayer);
-  let rookPosition = <i8>ctz(rookMask);
-  while (rookMask) {
-    if (!!(kingMask & rookMoves(board.getAllPiecesMask(), rookPosition))) {
+  const rookMask: u64 = board.getRookMask(opponentPlayer);
+  const rookPositions: i8[] = getPositionsFromMask(rookMask);
+  for (let i = 0; i < rookPositions.length; i++) {
+    if (!!(kingMask & rookMoves(board.getAllPiecesMask(), rookPositions[i]))) {
       return true;
     }
-    rookMask = rookMask >> (rookPosition + 1);
-    rookPosition += <i8>ctz(rookMask) + 1;
   }
   return false;
 }

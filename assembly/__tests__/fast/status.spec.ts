@@ -32,7 +32,7 @@ describe(`Status`, () => {
     // when
     const blackRookPosition0: i8 = 13;
     board.putPiece(ROOK, BLACK, blackRookPosition0);
-    const blackRookPosition1: i8 = 21;
+    const blackRookPosition1: i8 = 19;
     board.putPiece(ROOK, BLACK, blackRookPosition1);
     const blackRookPosition2: i8 = 20;
     board.putPiece(ROOK, BLACK, blackRookPosition2);
