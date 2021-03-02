@@ -56,6 +56,21 @@ describe(`Rook magic move generation`, () => {
     // then
     expect(moves).toHaveLength(7);
   });
+  it("should get rook pseudo legal moves when there is a capture", () => {
+    // given
+    const board = new BitBoard();
+    const blackKnightPosition: i8 = 8;
+    board.putPiece(KNIGHT, BLACK, blackKnightPosition);
+    const whiteRookPosition: i8 = 0;
+    board.putPiece(ROOK, WHITE, whiteRookPosition);
+    const whiteKnightPosition: i8 = 1;
+    board.putPiece(KNIGHT, WHITE, whiteKnightPosition);
+    // when
+    const moves = rookPseudoLegalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(1);
+    expect(board.execute(moves[0]).getKnightMask(BLACK)).toBe(0);
+  });
 });
 
 describe(`Bishop magic move generation`, () => {
