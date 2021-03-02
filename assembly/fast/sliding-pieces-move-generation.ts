@@ -4,8 +4,8 @@ import {
   encodeCapture,
   encodeMove,
   getPositionsFromMask,
-  noBorderMask,
   opponent,
+  ROOK,
 } from "./bitboard";
 import { bishopMagicNumbers } from "./generated-bishop-magic";
 import { rookMagicNumbers } from "./generated-rook-magic";
@@ -20,12 +20,14 @@ import {
   transformBlock2Index,
 } from "./magic";
 
+const rookMaskCache: StaticArray<u64> = new StaticArray<u64>(64);
 const rookMoveCache: StaticArray<u64>[] = [];
 function initRookMoveCache(): void {
   for (let squareIndex: i8 = 0; squareIndex < 64; squareIndex++) {
     const numberOfBitsForIndex: i8 = bitsBySquareForRook[squareIndex];
     const attackMasks = new StaticArray<u64>(1 << numberOfBitsForIndex);
     const mask = rookMaskAt(squareIndex);
+    rookMaskCache[squareIndex] = mask;
     const numberOfBitsInMask: i32 = <i32>popcnt(mask);
     const numberOfMasks: i32 = 1 << numberOfBitsInMask;
     for (let i: i32 = 0; i < numberOfMasks; i++) {
@@ -42,12 +44,14 @@ function initRookMoveCache(): void {
 }
 initRookMoveCache();
 
+const bishopMaskCache: StaticArray<u64> = new StaticArray<u64>(64);
 const bishopMoveCache: StaticArray<u64>[] = [];
 function initBishopMoveCache(): void {
   for (let squareIndex: i8 = 0; squareIndex < 64; squareIndex++) {
     const numberOfBitsForIndex: i8 = bitsBySquareForBishop[squareIndex];
     const attackMasks = new StaticArray<u64>(1 << numberOfBitsForIndex);
     const mask = bishopMaskAt(squareIndex);
+    bishopMaskCache[squareIndex] = mask;
     const numberOfBitsInMask: i32 = <i32>popcnt(mask);
     const numberOfMasks: i32 = 1 << numberOfBitsInMask;
     for (let i: i32 = 0; i < numberOfMasks; i++) {
@@ -65,7 +69,7 @@ function initBishopMoveCache(): void {
 initBishopMoveCache();
 
 export function rookMoves(board: u64, rookPosition: i8): u64 {
-  const blockerMask = board & noBorderMask & ~(1 << rookPosition);
+  const blockerMask = board & rookMaskCache[rookPosition];
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
     rookMagicNumbers[rookPosition],
@@ -74,8 +78,37 @@ export function rookMoves(board: u64, rookPosition: i8): u64 {
   return rookMoveCache[rookPosition][magicIndex];
 }
 
+export function rookPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
+  const allPiecesMask = board.getAllPiecesMask();
+  const rookMask = board.getRookMask(player);
+  const positions = getPositionsFromMask(rookMask);
+  const result: u64[] = [];
+  for (let i = 0; i < positions.length; i++) {
+    const from = positions[i];
+    const mask = rookMoves(allPiecesMask, from);
+    const moveMask = mask & ~allPiecesMask;
+    const toPositions = getPositionsFromMask(moveMask);
+    for (let j = 0; j < toPositions.length; j++) {
+      result.push(encodeMove(ROOK + player, from, toPositions[j]));
+    }
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const capturePositions = getPositionsFromMask(captureMask);
+    for (let j = 0; j < capturePositions.length; j++) {
+      result.push(
+        encodeCapture(
+          ROOK + player,
+          from,
+          capturePositions[j],
+          board.getPieceAt(capturePositions[j])
+        )
+      );
+    }
+  }
+  return result;
+}
+
 export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
-  const blockerMask = mask & noBorderMask & ~(1 << bishopPosition);
+  const blockerMask = mask & bishopMaskCache[bishopPosition];
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
     bishopMagicNumbers[bishopPosition],
@@ -90,7 +123,6 @@ export function queenMoves(board: u64, queenPosition: i8): u64 {
 
 export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
   const allPiecesMask = board.getAllPiecesMask();
-  const friendlyPiecesMask = board.getPlayerPiecesMask(player);
   const bishopMask = board.getBishopMask(player);
   const positions = getPositionsFromMask(bishopMask);
   const result: u64[] = [];

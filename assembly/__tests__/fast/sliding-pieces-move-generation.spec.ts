@@ -4,12 +4,14 @@ import {
   BLACK,
   KING,
   KNIGHT,
+  ROOK,
   WHITE,
 } from "../../fast/bitboard";
 import { bishopAttacks, rookAttacks } from "../../fast/magic";
 import {
   bishopMoves,
   bishopPseudoLegalMoves,
+  rookPseudoLegalMoves,
   rookMoves,
 } from "../../fast/sliding-pieces-move-generation";
 
@@ -22,6 +24,37 @@ describe(`Rook magic move generation`, () => {
     const moves = rookMoves(board, position);
     // then
     expect(rookMoves(board, position)).toBe(rookAttacks(position, board));
+  });
+  it("should get rook moves on border", () => {
+    // given
+    const board: u64 = 1 + (1 << 8);
+    const position: i8 = 0;
+    // when
+    const moves = rookMoves(board, position);
+    // then
+    expect(rookMoves(board, position)).toBe(rookAttacks(position, board));
+  });
+  it("should get rook pseudo legal moves", () => {
+    // given
+    const board = new BitBoard();
+    const whiteRookPosition: i8 = 0;
+    board.putPiece(ROOK, WHITE, whiteRookPosition);
+    // when
+    const moves = rookPseudoLegalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(14);
+  });
+  it("should get rook pseudo legal moves when there is a piece in the way", () => {
+    // given
+    const board = new BitBoard();
+    const whiteKingPosition: i8 = 8;
+    board.putPiece(KING, WHITE, whiteKingPosition);
+    const whiteRookPosition: i8 = 0;
+    board.putPiece(ROOK, WHITE, whiteRookPosition);
+    // when
+    const moves = rookPseudoLegalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(7);
   });
 });
 
