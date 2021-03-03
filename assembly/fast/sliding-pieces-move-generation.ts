@@ -4,6 +4,7 @@ import {
   encodeCapture,
   encodeMove,
   getPositionsFromMask,
+  maskString,
   opponent,
   ROOK,
 } from "./bitboard";
@@ -19,6 +20,7 @@ import {
   rookMaskAt,
   transformBlock2Index,
 } from "./magic";
+import { isInCheck } from "./status";
 
 const rookMaskCache: StaticArray<u64> = new StaticArray<u64>(64);
 const rookMoveCache: StaticArray<u64>[] = [];
@@ -89,7 +91,9 @@ export function rookPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
     const moveMask = mask & ~allPiecesMask;
     const toPositions = getPositionsFromMask(moveMask);
     for (let j = 0; j < toPositions.length; j++) {
-      result.push(encodeMove(ROOK + player, from, toPositions[j]));
+      result.push(
+        encodeMove(ROOK + player, from, ROOK + player, toPositions[j])
+      );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
     const capturePositions = getPositionsFromMask(captureMask);
@@ -98,6 +102,7 @@ export function rookPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
         encodeCapture(
           ROOK + player,
           from,
+          ROOK + player,
           capturePositions[j],
           board.getPieceAt(capturePositions[j])
         )
@@ -132,7 +137,9 @@ export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
     const moveMask = mask & ~allPiecesMask;
     const toPositions = getPositionsFromMask(moveMask);
     for (let j = 0; j < toPositions.length; j++) {
-      result.push(encodeMove(BISHOP + player, from, toPositions[j]));
+      result.push(
+        encodeMove(BISHOP + player, from, BISHOP + player, toPositions[j])
+      );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
     const capturePositions = getPositionsFromMask(captureMask);
@@ -141,6 +148,7 @@ export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
         encodeCapture(
           BISHOP + player,
           from,
+          BISHOP + player,
           capturePositions[j],
           board.getPieceAt(capturePositions[j])
         )
@@ -150,7 +158,15 @@ export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
   return result;
 }
 
-export function bishopLegalMoves(board: BitBoard, player: i8): u64[] {
-  // move BitBoard + u64
-  throw "not implemented";
+export function bishopLegalMoves(board: BitBoard, player: i8): BitBoard[] {
+  const result: BitBoard[] = [];
+  const moves = bishopPseudoLegalMoves(board, player);
+  for (let i = 0; i < moves.length; i++) {
+    const move = moves[i];
+    const nextBoard = board.execute(move);
+    if (!isInCheck(player, nextBoard)) {
+      result.push(nextBoard);
+    }
+  }
+  return result;
 }

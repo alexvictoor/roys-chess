@@ -46,6 +46,7 @@ export const PLAYER_PIECES: i8 = 12;
 
 export const ALL_PIECES: i8 = 14;
 export const EXTRA: i8 = 15;
+export const PREVIOUS_ACTION: i8 = 16;
 
 export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
@@ -53,7 +54,7 @@ export const BLACK: i8 = 1;
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 
 export class BitBoard {
-  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(16)) {}
+  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(17)) {}
 
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
@@ -119,6 +120,9 @@ export class BitBoard {
   getPawnMask(player: i8): u64 {
     return this.bits[PAWN + player];
   }
+  getPreviousMove(): u64 {
+    return this.bits[PREVIOUS_ACTION];
+  }
 
   execute(action: u64): BitBoard {
     const srcPiece: i8 = <i8>(action & ((1 << 4) - 1));
@@ -127,6 +131,7 @@ export class BitBoard {
     const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
 
     const bits = StaticArray.slice(this.bits);
+    bits[PREVIOUS_ACTION] = action;
     const updatedBoard = new BitBoard(bits);
     updatedBoard.remove(srcPiece, fromPosition);
     updatedBoard.put(destPiece, toPosition);
@@ -157,39 +162,28 @@ export function getPositionsFromMask(mask: u64): i8[] {
 export function encodeMove(
   srcPiece: i8,
   fromPosition: i8,
+  dstPiece: i8,
   toPosition: i8
 ): u64 {
   return (
-    (<u64>srcPiece) |
-    (fromPosition << 4) |
-    ((<u64>srcPiece) << 10) |
-    (toPosition << 14)
+    (<u64>(srcPiece & ((1 << 4) - 1))) |
+    ((<u64>(fromPosition & ((1 << 6) - 1))) << 4) |
+    ((<u64>(dstPiece & ((1 << 4) - 1))) << 10) |
+    ((<u64>(toPosition & ((1 << 6) - 1))) << 14)
   );
 }
 
 export function encodeCapture(
   srcPiece: i8,
   fromPosition: i8,
+  dstPiece: i8,
   toPosition: i8,
-  capturedPiece: i8
+  capturedPiece: i8,
+  capturedPosition: i8 = toPosition
 ): u64 {
   return (
-    (<u64>srcPiece) |
-    (fromPosition << 4) |
-    ((<u64>srcPiece) << 10) |
-    (toPosition << 14) |
-    ((<u64>capturedPiece) << 20) |
-    (toPosition << 24)
+    encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
+    ((<u64>(capturedPiece & ((1 << 4) - 1))) << 20) |
+    ((<u64>(capturedPosition & ((1 << 6) - 1))) << 24)
   );
 }
-
-export function encodePromotion(
-  srcPiece: i8,
-  fromPosition: i8,
-  toPosition: i8
-): u64 {
-  return 0;
-}
-// 1000000 6
-
-// 10000 4

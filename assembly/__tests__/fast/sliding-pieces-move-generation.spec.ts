@@ -4,6 +4,7 @@ import {
   BLACK,
   KING,
   KNIGHT,
+  maskString,
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
@@ -13,7 +14,9 @@ import {
   bishopPseudoLegalMoves,
   rookPseudoLegalMoves,
   rookMoves,
+  bishopLegalMoves,
 } from "../../fast/sliding-pieces-move-generation";
+import { isInCheck } from "../../fast/status";
 
 describe(`Rook magic move generation`, () => {
   it("should get rook moves", () => {
@@ -117,5 +120,39 @@ describe(`Bishop magic move generation`, () => {
     // then
     expect(moves).toHaveLength(1);
     expect(board.execute(moves[0]).getKnightMask(BLACK)).toBe(0);
+  });
+
+  it("should get bishop legal moves", () => {
+    // given
+    const board = new BitBoard();
+    const whiteKingPosition: i8 = 1;
+    board.putPiece(KING, WHITE, whiteKingPosition);
+    const whiteBishopPosition: i8 = 9;
+    board.putPiece(BISHOP, WHITE, whiteBishopPosition);
+    const blackKingPosition: i8 = 58;
+    board.putPiece(KING, BLACK, blackKingPosition);
+    const blackRookPosition: i8 = 41;
+    board.putPiece(ROOK, BLACK, blackRookPosition);
+    // when
+    log(maskString(board.getAllPiecesMask()));
+    const moves = bishopLegalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(0);
+  });
+  it("should get bishop legal moves WWW", () => {
+    // given
+    const board = new BitBoard();
+    const whiteKingPosition: i8 = 1;
+    board.putPiece(KING, WHITE, whiteKingPosition);
+    const whiteBishopPosition: i8 = 10;
+    board.putPiece(BISHOP, WHITE, whiteBishopPosition);
+    const blackKingPosition: i8 = 58;
+    board.putPiece(KING, BLACK, blackKingPosition);
+    const blackRookPosition: i8 = 41;
+    board.putPiece(ROOK, BLACK, blackRookPosition);
+    // when
+    log(maskString(board.getAllPiecesMask()));
+    // then
+    expect(isInCheck(WHITE, board)).toBe(true);
   });
 });

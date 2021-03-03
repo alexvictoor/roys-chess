@@ -1,8 +1,8 @@
 import {
   BitBoard,
   BLACK,
+  encodeCapture,
   getPositionsFromMask,
-  maskString,
   PAWN,
   WHITE,
 } from "../../fast/bitboard";
@@ -41,14 +41,14 @@ describe(`Bit Board`, () => {
     board.putPiece(PAWN, WHITE, 24);
     board.putPiece(PAWN, BLACK, 25);
     // when
-    const action: u64 =
-      (<u64>(PAWN + BLACK)) |
-      (25 << 4) |
-      ((<u64>(PAWN + BLACK)) << 10) |
-      (16 << 14) |
-      ((<u64>(PAWN + WHITE)) << 20) |
-      (24 << 24);
-
+    const action = encodeCapture(
+      PAWN + BLACK,
+      25,
+      PAWN + BLACK,
+      16,
+      PAWN + WHITE,
+      24
+    );
     const updatedBoard = board.execute(action);
     // then
     expect(updatedBoard.getAllPiecesMask()).toBe(1 << 16);
