@@ -6,6 +6,7 @@ import {
   getPositionsFromMask,
   maskString,
   opponent,
+  QUEEN,
   ROOK,
 } from "./bitboard";
 import { bishopMagicNumbers } from "./generated-bishop-magic";
@@ -20,7 +21,6 @@ import {
   rookMaskAt,
   transformBlock2Index,
 } from "./magic";
-import { isInCheck } from "./status";
 
 const rookMaskCache: StaticArray<u64> = new StaticArray<u64>(64);
 const rookMoveCache: StaticArray<u64>[] = [];
@@ -80,25 +80,28 @@ export function rookMoves(board: u64, rookPosition: i8): u64 {
   return rookMoveCache[rookPosition][magicIndex];
 }
 
-export function rookPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
+export function addRookPseudoLegalMoves(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
   const allPiecesMask = board.getAllPiecesMask();
   const rookMask = board.getRookMask(player);
   const positions = getPositionsFromMask(rookMask);
-  const result: u64[] = [];
   for (let i = 0; i < positions.length; i++) {
     const from = positions[i];
     const mask = rookMoves(allPiecesMask, from);
     const moveMask = mask & ~allPiecesMask;
     const toPositions = getPositionsFromMask(moveMask);
     for (let j = 0; j < toPositions.length; j++) {
-      result.push(
+      moves.push(
         encodeMove(ROOK + player, from, ROOK + player, toPositions[j])
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
     const capturePositions = getPositionsFromMask(captureMask);
     for (let j = 0; j < capturePositions.length; j++) {
-      result.push(
+      moves.push(
         encodeCapture(
           ROOK + player,
           from,
@@ -109,7 +112,6 @@ export function rookPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
       );
     }
   }
-  return result;
 }
 
 export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
@@ -126,25 +128,28 @@ export function queenMoves(board: u64, queenPosition: i8): u64 {
   return bishopMoves(board, queenPosition) | rookMoves(board, queenPosition);
 }
 
-export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
+export function addBishopPseudoLegalMoves(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
   const allPiecesMask = board.getAllPiecesMask();
   const bishopMask = board.getBishopMask(player);
   const positions = getPositionsFromMask(bishopMask);
-  const result: u64[] = [];
   for (let i = 0; i < positions.length; i++) {
     const from = positions[i];
     const mask = bishopMoves(allPiecesMask, from);
     const moveMask = mask & ~allPiecesMask;
     const toPositions = getPositionsFromMask(moveMask);
     for (let j = 0; j < toPositions.length; j++) {
-      result.push(
+      moves.push(
         encodeMove(BISHOP + player, from, BISHOP + player, toPositions[j])
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
     const capturePositions = getPositionsFromMask(captureMask);
     for (let j = 0; j < capturePositions.length; j++) {
-      result.push(
+      moves.push(
         encodeCapture(
           BISHOP + player,
           from,
@@ -155,18 +160,37 @@ export function bishopPseudoLegalMoves(board: BitBoard, player: i8): u64[] {
       );
     }
   }
-  return result;
 }
-
-export function bishopLegalMoves(board: BitBoard, player: i8): BitBoard[] {
-  const result: BitBoard[] = [];
-  const moves = bishopPseudoLegalMoves(board, player);
-  for (let i = 0; i < moves.length; i++) {
-    const move = moves[i];
-    const nextBoard = board.execute(move);
-    if (!isInCheck(player, nextBoard)) {
-      result.push(nextBoard);
+export function addQueenPseudoLegalMoves(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const allPiecesMask = board.getAllPiecesMask();
+  const queenMask = board.getQueenMask(player);
+  const positions = getPositionsFromMask(queenMask);
+  for (let i = 0; i < positions.length; i++) {
+    const from = positions[i];
+    const mask = queenMoves(allPiecesMask, from);
+    const moveMask = mask & ~allPiecesMask;
+    const toPositions = getPositionsFromMask(moveMask);
+    for (let j = 0; j < toPositions.length; j++) {
+      moves.push(
+        encodeMove(QUEEN + player, from, QUEEN + player, toPositions[j])
+      );
+    }
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const capturePositions = getPositionsFromMask(captureMask);
+    for (let j = 0; j < capturePositions.length; j++) {
+      moves.push(
+        encodeCapture(
+          QUEEN + player,
+          from,
+          QUEEN + player,
+          capturePositions[j],
+          board.getPieceAt(capturePositions[j])
+        )
+      );
     }
   }
-  return result;
 }

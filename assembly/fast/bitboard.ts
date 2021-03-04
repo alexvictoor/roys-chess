@@ -63,7 +63,7 @@ export class BitBoard {
         return i;
       }
     }
-    throw new Error("Piece not found on board");
+    throw new Error("Piece not found on board: " + position.toString());
   }
 
   putPiece(piece: i8, player: i8, position: i8): void {
@@ -148,15 +148,19 @@ export class BitBoard {
 
 export function getPositionsFromMask(mask: u64): i8[] {
   const result: i8[] = [];
+  addPositionsFromMask(result, mask);
+  return result;
+}
+
+export function addPositionsFromMask(positions: i8[], mask: u64): void {
   let currentMask: u64 = mask;
   let currentPosition: i8 = 0;
   while (currentMask) {
     currentPosition += <i8>ctz(currentMask);
-    result.push(currentPosition);
+    positions.push(currentPosition);
     currentMask = currentMask >> (<u64>(ctz(currentMask) + 1));
     currentPosition++;
   }
-  return result;
 }
 
 export function encodeMove(

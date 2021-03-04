@@ -1,6 +1,6 @@
 import { BitBoard, getPositionsFromMask, opponent } from "./bitboard";
 import { kingMoves } from "./king-move-generation";
-import { knightMoves } from "./knight-move-generation";
+import { knightMovesFromCache } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
 import {
   bishopMoves,
@@ -62,7 +62,7 @@ function isInCheckByKnight(
   let knightMask = board.getKnightMask(opponentPlayer);
   let knightPosition = <i8>ctz(knightMask);
   while (knightMask) {
-    if (!!(kingMask & knightMoves(board.getAllPiecesMask(), knightPosition))) {
+    if (!!(kingMask & knightMovesFromCache(knightPosition))) {
       return true;
     }
     knightMask = knightMask >> (knightPosition + 1);
@@ -78,9 +78,7 @@ function isInCheckByKing(
   const opponentKingMask = board.getKingMask(opponentPlayer);
   const opponentKingPosition = <i8>ctz(opponentKingMask);
   if (opponentKingMask) {
-    if (
-      !!(kingMask & kingMoves(board.getAllPiecesMask(), opponentKingPosition))
-    ) {
+    if (!!(kingMask & kingMoves(opponentKingPosition))) {
       return true;
     }
   }
