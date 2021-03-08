@@ -96,6 +96,13 @@ export class BitBoard {
     this.bits[ALL_PIECES] &= mask;
   }
 
+  getEnPassantFile(): i8 {
+    if (this.bits[EXTRA] & 1) {
+      return (<i8>(this.bits[EXTRA] >> 1)) & ((1 << 3) - 1);
+    }
+    return -1;
+  }
+
   getAllPiecesMask(): u64 {
     return this.bits[ALL_PIECES];
   }
@@ -141,6 +148,9 @@ export class BitBoard {
     if (capturePosition || capturedPiece) {
       updatedBoard.remove(capturedPiece, capturePosition);
     }
+
+    // en passant file
+    bits[EXTRA] = (action >> 30) & ((1 << 4) - 1);
 
     return updatedBoard;
   }
