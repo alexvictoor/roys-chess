@@ -54,7 +54,6 @@ describe("FEN parser", () => {
     const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
     // when
     const { board } = parseFEN(fen);
-    console.log(board + "");
     // then
     expect(board.getAt({ x: 4, y: 4 })).toEqual(
       expect.objectContaining({

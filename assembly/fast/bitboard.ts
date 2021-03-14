@@ -58,7 +58,7 @@ export class BitBoard {
 
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
-    for (let i: i8 = 0; i < 9; i++) {
+    for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
       if (this.bits[i] & mask) {
         return i;
       }
@@ -131,6 +131,13 @@ export class BitBoard {
     return this.bits[PREVIOUS_ACTION];
   }
 
+  kingSideCastlingRight(player: i8): boolean {
+    return !!((this.bits[EXTRA] >> (4 + player)) & 1);
+  }
+  queenSideCastlingRight(player: i8): boolean {
+    return !!((this.bits[EXTRA] >> (6 + player)) & 1);
+  }
+
   execute(action: u64): BitBoard {
     const srcPiece: i8 = <i8>(action & ((1 << 4) - 1));
     const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
@@ -153,6 +160,43 @@ export class BitBoard {
     bits[EXTRA] = (action >> 30) & ((1 << 4) - 1);
 
     return updatedBoard;
+  }
+
+  toString(): string {
+    const pieceLetters = [
+      "P",
+      "p",
+      "N",
+      "n",
+      "B",
+      "b",
+      "R",
+      "r",
+      "Q",
+      "q",
+      "K",
+      "k",
+    ];
+
+    let result = "\n";
+    for (let y: i8 = 7; y > -1; y--) {
+      result += (y + 1).toString() + " ";
+      for (let x: i8 = 0; x < 8; x++) {
+        result += " ";
+        const position = y * 8 + x;
+        const pieceAtPosition =
+          (<u64>(1 << position)) & this.getAllPiecesMask();
+        if (pieceAtPosition) {
+          const piece = this.getPieceAt(position);
+          result += pieceLetters[piece];
+        } else {
+          result += ".";
+        }
+      }
+      result += "\n\n";
+    }
+    result += "   A B C D E F G H ";
+    return result;
   }
 }
 
