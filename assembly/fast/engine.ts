@@ -1,3 +1,4 @@
+import { addCastlingMoves } from "../__tests__/fast/castling.spec";
 import { BitBoard } from "./bitboard";
 import { addKingPseudoLegalMoves } from "./king-move-generation";
 import { addKnightPseudoLegalMoves } from "./knight-move-generation";
@@ -15,6 +16,7 @@ export function legalMoves(board: BitBoard, player: i8): BitBoard[] {
   addKnightPseudoLegalMoves(moves, board, player);
   addQueenPseudoLegalMoves(moves, board, player);
   addKingPseudoLegalMoves(moves, board, player);
+  addCastlingMoves(moves, board, player);
   const result: BitBoard[] = [];
   for (let i = 0; i < moves.length; i++) {
     const move = moves[i];

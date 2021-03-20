@@ -132,10 +132,16 @@ export class BitBoard {
   }
 
   kingSideCastlingRight(player: i8): boolean {
-    return !!((this.bits[EXTRA] >> (4 + player)) & 1);
+    return !((this.bits[EXTRA] >> (4 + player)) & 1);
+  }
+  removeKingSideCastlingRight(player: i8): void {
+    this.bits[EXTRA] |= 1 << (4 + player);
   }
   queenSideCastlingRight(player: i8): boolean {
-    return !!((this.bits[EXTRA] >> (6 + player)) & 1);
+    return !((this.bits[EXTRA] >> (6 + player)) & 1);
+  }
+  removeQueenSideCastlingRight(player: i8): void {
+    this.bits[EXTRA] |= 1 << (6 + player);
   }
 
   execute(action: u64): BitBoard {
@@ -143,6 +149,8 @@ export class BitBoard {
     const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
     const destPiece: i8 = <i8>((action >> 10) & ((1 << 4) - 1));
     const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
+
+    const player = srcPiece % 2;
 
     const bits = StaticArray.slice(this.bits);
     bits[PREVIOUS_ACTION] = action;
@@ -156,8 +164,31 @@ export class BitBoard {
       updatedBoard.remove(capturedPiece, capturePosition);
     }
 
+    if (srcPiece == KING + player) {
+      updatedBoard.removeKingSideCastlingRight(player);
+      updatedBoard.removeQueenSideCastlingRight(player);
+    }
+
+    const castlingRookPiece: i8 = <i8>((action >> 30) & ((1 << 4) - 1));
+    const castlingRookPosition: i8 = <i8>((action >> 34) & ((1 << 6) - 1));
+    const castlingRookDestination: i8 = <i8>((action >> 40) & ((1 << 6) - 1));
+    if (castlingRookPiece) {
+      updatedBoard.remove(castlingRookPiece, castlingRookPosition);
+      updatedBoard.put(castlingRookPiece, castlingRookDestination);
+    }
+
+    const kingSideRookPosition = player === WHITE ? 7 : 63;
+    if (!(bits[ROOK + player] & (1 << kingSideRookPosition))) {
+      updatedBoard.removeKingSideCastlingRight(player);
+    }
+    const queenSideRookPosition = player === WHITE ? 0 : 54;
+    if (!(bits[ROOK + player] & (1 << queenSideRookPosition))) {
+      updatedBoard.removeQueenSideCastlingRight(player);
+    }
+
     // en passant file
-    bits[EXTRA] = (action >> 30) & ((1 << 4) - 1);
+    bits[EXTRA] =
+      (bits[EXTRA] & ~((1 << 4) - 1)) | ((action >> 30) & ((1 << 4) - 1));
 
     return updatedBoard;
   }
@@ -243,5 +274,21 @@ export function encodeCapture(
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
     ((<u64>(capturedPiece & ((1 << 4) - 1))) << 20) |
     ((<u64>(capturedPosition & ((1 << 6) - 1))) << 24)
+  );
+}
+
+export function encodeCastling(
+  kingPiece: i8,
+  kingPosition: i8,
+  kingDestination: i8,
+  rookPiece: i8,
+  rookPosition: i8,
+  rookDestination: i8
+): u64 {
+  return (
+    encodeCapture(kingPiece, kingPosition, kingPiece, kingDestination, 0, 0) |
+    ((<u64>(rookPiece & ((1 << 4) - 1))) << 30) |
+    ((<u64>(rookPosition & ((1 << 6) - 1))) << 34) |
+    ((<u64>(rookDestination & ((1 << 6) - 1))) << 40)
   );
 }

@@ -44,12 +44,12 @@ export function parseFEN(fen: string): BitBoard {
   }
 
   const castlingFragment = fenFragments[2];
-  const whiteKingSide = castlingFragment.indexOf("K") > -1 ? 1 : 0;
-  const blackKingSide = castlingFragment.indexOf("k") > -1 ? 1 : 0;
+  const whiteKingSide = castlingFragment.indexOf("K") > -1 ? 0 : 1;
+  const blackKingSide = castlingFragment.indexOf("k") > -1 ? 0 : 1;
   bits[EXTRA] = bits[EXTRA] | (whiteKingSide << 4);
   bits[EXTRA] = bits[EXTRA] | (blackKingSide << 5);
-  const whiteQueenSide = castlingFragment.indexOf("Q") > -1 ? 1 : 0;
-  const blackQueenSide = castlingFragment.indexOf("q") > -1 ? 1 : 0;
+  const whiteQueenSide = castlingFragment.indexOf("Q") > -1 ? 0 : 1;
+  const blackQueenSide = castlingFragment.indexOf("q") > -1 ? 0 : 1;
   bits[EXTRA] = bits[EXTRA] | (whiteQueenSide << 6);
   bits[EXTRA] = bits[EXTRA] | (blackQueenSide << 7);
 

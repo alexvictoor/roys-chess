@@ -82,4 +82,36 @@ describe(`Engine move generation`, () => {
     // then
     expect(moves).toHaveLength(3);
   });
+
+  it("should get castling moves", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 4);
+    board.putPiece(ROOK, WHITE, 0);
+    board.putPiece(ROOK, BLACK, 56);
+    board.putPiece(ROOK, BLACK, 63);
+    board.putPiece(KING, BLACK, 60);
+    log(board.toString());
+    // when
+    const moves = legalMoves(board, BLACK);
+
+    // then
+    expect(moves).toHaveLength(26);
+  });
+
+  it("should not allow castling when king goes into check", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 4);
+    board.putPiece(ROOK, WHITE, 0);
+    board.putPiece(ROOK, BLACK, 56);
+    board.putPiece(ROOK, BLACK, 63);
+    board.putPiece(KING, BLACK, 60);
+    board.putPiece(BISHOP, WHITE, 46);
+    // when
+    const moves = legalMoves(board, BLACK);
+
+    // then
+    expect(moves).toHaveLength(4);
+  });
 });
