@@ -116,6 +116,10 @@ export class PieceListBoard implements Board {
     );
   }
 
+  toFEN() {
+    return "";
+  }
+
   toString() {
     let result = "\n   A B C D E F G H \n\n";
     for (let y = 0; y < 8; y++) {

@@ -52,7 +52,6 @@ export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
 
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
-
 export class BitBoard {
   constructor(private bits: StaticArray<u64> = new StaticArray<u64>(17)) {}
 
@@ -63,7 +62,12 @@ export class BitBoard {
         return i;
       }
     }
-    throw new Error("Piece not found on board: " + position.toString());
+    throw new Error(
+      "Piece not found at position " +
+        position.toString() +
+        " on board " +
+        this.toString()
+    );
   }
 
   putPiece(piece: i8, player: i8, position: i8): void {
@@ -156,13 +160,14 @@ export class BitBoard {
     bits[PREVIOUS_ACTION] = action;
     const updatedBoard = new BitBoard(bits);
     updatedBoard.remove(srcPiece, fromPosition);
-    updatedBoard.put(destPiece, toPosition);
 
     const capturedPiece: i8 = <i8>((action >> 20) & ((1 << 4) - 1));
     const capturePosition: i8 = <i8>((action >> 24) & ((1 << 6) - 1));
     if (capturePosition || capturedPiece) {
       updatedBoard.remove(capturedPiece, capturePosition);
     }
+
+    updatedBoard.put(destPiece, toPosition);
 
     if (srcPiece == KING + player) {
       updatedBoard.removeKingSideCastlingRight(player);
@@ -181,16 +186,125 @@ export class BitBoard {
     if (!(bits[ROOK + player] & (1 << kingSideRookPosition))) {
       updatedBoard.removeKingSideCastlingRight(player);
     }
-    const queenSideRookPosition = player === WHITE ? 0 : 54;
+    const queenSideRookPosition = player === WHITE ? 0 : 56;
     if (!(bits[ROOK + player] & (1 << queenSideRookPosition))) {
       updatedBoard.removeQueenSideCastlingRight(player);
     }
 
     // en passant file
     bits[EXTRA] =
-      (bits[EXTRA] & ~((1 << 4) - 1)) | ((action >> 30) & ((1 << 4) - 1));
+      (bits[EXTRA] & ~((1 << 4) - 1)) | ((action >> 46) & ((1 << 4) - 1));
 
+    // validate bits
+    /*
+    let whitePieces: u64 = 0;
+    let blackPieces: u64 = 0;
+    let allPieces: u64 = 0;
+    let allPieces2: u64 = 0;
+    for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
+      if (i % 2 === 0) {
+        whitePieces ^= bits[i];
+      } else {
+        blackPieces ^= bits[i];
+      }
+      allPieces ^= bits[i];
+      allPieces2 |= bits[i];
+    }
+    if (
+      updatedBoard.getAllPiecesMask() != allPieces ||
+      updatedBoard.getAllPiecesMask() != allPieces2 ||
+      updatedBoard.getPlayerPiecesMask(WHITE) != whitePieces ||
+      updatedBoard.getPlayerPiecesMask(BLACK) != blackPieces
+    ) {
+      log(this.toString());
+      log(
+        "srcPiece " +
+          srcPiece.toString() +
+          " fromPosition " +
+          fromPosition.toString() +
+          " toPosition " +
+          toPosition.toString()
+      );
+      log(
+        "capturedPiece " +
+          capturedPiece.toString() +
+          " capturePosition " +
+          capturePosition.toString()
+      );
+      log(maskString(action));
+      log(maskString(this.bits[PREVIOUS_ACTION]));
+      log(maskString(this.bits[EXTRA]));
+
+      throw "pas bobn pas bon";
+    }*/
     return updatedBoard;
+  }
+
+  checkBitsValidity(): void {
+    let whitePieces: u64 = 0;
+    let blackPieces: u64 = 0;
+    let allPieces: u64 = 0;
+    let allPieces2: u64 = 0;
+    for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
+      if (i % 2 === 0) {
+        whitePieces ^= this.bits[i];
+      } else {
+        blackPieces ^= this.bits[i];
+      }
+      allPieces ^= this.bits[i];
+      allPieces2 |= this.bits[i];
+    }
+    if (
+      this.getAllPiecesMask() != allPieces ||
+      this.getAllPiecesMask() != allPieces2 ||
+      this.getPlayerPiecesMask(WHITE) != whitePieces ||
+      this.getPlayerPiecesMask(BLACK) != blackPieces
+    ) {
+      throw "board not valid";
+    }
+  }
+
+  toFEN(): string {
+    const pieceLetters = [
+      "P",
+      "p",
+      "N",
+      "n",
+      "B",
+      "b",
+      "R",
+      "r",
+      "Q",
+      "q",
+      "K",
+      "k",
+    ];
+    let result: string = "";
+    for (let y: i8 = 7; y > -1; y--) {
+      let emptySquares: i8 = 0;
+      for (let x: i8 = 0; x < 8; x++) {
+        const position = y * 8 + x;
+        const pieceAtPosition =
+          (<u64>(1 << position)) & this.getAllPiecesMask();
+        if (pieceAtPosition) {
+          if (emptySquares) {
+            result += emptySquares.toString();
+            emptySquares = 0;
+          }
+          const piece = this.getPieceAt(position);
+          result += pieceLetters[piece];
+        } else {
+          emptySquares++;
+        }
+      }
+      if (emptySquares) {
+        result += emptySquares.toString();
+      }
+      if (y > 0) {
+        result += "/";
+      }
+    }
+    return result;
   }
 
   toString(): string {
@@ -243,7 +357,7 @@ export function addPositionsFromMask(positions: i8[], mask: u64): void {
   while (currentMask) {
     currentPosition += <i8>ctz(currentMask);
     positions.push(currentPosition);
-    currentMask = currentMask >> (<u64>(ctz(currentMask) + 1));
+    currentMask = (currentMask >> (<u64>ctz(currentMask))) >> 1;
     currentPosition++;
   }
 }
@@ -260,6 +374,16 @@ export function encodeMove(
     ((<u64>(dstPiece & ((1 << 4) - 1))) << 10) |
     ((<u64>(toPosition & ((1 << 6) - 1))) << 14)
   );
+}
+
+export function encodePawnDoubleMove(
+  player: i8,
+  fromPosition: i8,
+  toPosition: i8
+): u64 {
+  let move = encodeMove(PAWN + player, fromPosition, PAWN + player, toPosition);
+  move |= ((<u64>toPosition % 8 << 1) + 1) << 46;
+  return move;
 }
 
 export function encodeCapture(
@@ -290,5 +414,24 @@ export function encodeCastling(
     ((<u64>(rookPiece & ((1 << 4) - 1))) << 30) |
     ((<u64>(rookPosition & ((1 << 6) - 1))) << 34) |
     ((<u64>(rookDestination & ((1 << 6) - 1))) << 40)
+  );
+}
+
+const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
+function getCodeFromPosition(position: i8): string {
+  const y = (position >> 3) + 1;
+  const x = position & ((1 << 3) - 1);
+  return cols[x] + y.toString();
+}
+
+export function toNotation(action: u64): string {
+  const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
+  const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
+  const castlingRookDestination: i8 = <i8>((action >> 40) & ((1 << 6) - 1));
+  if (castlingRookDestination) {
+    return castlingRookDestination > fromPosition ? "O-O" : "O-O-O";
+  }
+  return (
+    getCodeFromPosition(fromPosition) + "-" + getCodeFromPosition(toPosition)
   );
 }

@@ -324,6 +324,37 @@ export class BitBoard implements Board {
     return boardUpdated;
   }
 
+  toFEN() {
+    let result = "";
+    for (let y = 0; y < 8; y++) {
+      let emptySquares = 0;
+      for (let x = 0; x < 8; x++) {
+        const p = this.getAt({ x, y });
+        if (p) {
+          if (emptySquares) {
+            result += emptySquares;
+            emptySquares = 0;
+          }
+          const letter = p.piece === "Knight" ? "N" : p.piece[0];
+          if (p.color === "White") {
+            result += letter.toLocaleUpperCase();
+          } else {
+            result += letter.toLocaleLowerCase();
+          }
+        } else {
+          emptySquares++;
+        }
+      }
+      if (emptySquares) {
+        result += emptySquares;
+      }
+      if (y < 7) {
+        result += "/";
+      }
+    }
+    return result;
+  }
+
   toString() {
     let result = "\n   A B C D E F G H \n\n";
     for (let y = 0; y < 8; y++) {

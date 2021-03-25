@@ -77,6 +77,7 @@ export interface Board {
 
   queenSideCastlingRight(player: Player): boolean;
   kingSideCastlingRight(player: Player): boolean;
+  toFEN(): string;
 }
 
 export type BoardFactory = (

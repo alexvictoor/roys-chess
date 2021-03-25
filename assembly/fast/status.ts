@@ -27,14 +27,12 @@ function isInCheckByBishop(
   opponentPlayer: i8,
   board: BitBoard
 ): boolean {
-  let bishopMask = board.getBishopMask(opponentPlayer);
-  let bishopPosition = <i8>ctz(bishopMask);
-  while (bishopMask) {
-    if (!!(kingMask & bishopMoves(board.getAllPiecesMask(), bishopPosition))) {
+  const bishopMask = board.getBishopMask(opponentPlayer);
+  const bishopPositions: i8[] = getPositionsFromMask(bishopMask);
+  for (let i = 0; i < bishopPositions.length; i++) {
+    if (kingMask & bishopMoves(board.getAllPiecesMask(), bishopPositions[i])) {
       return true;
     }
-    bishopMask = bishopMask >> (bishopPosition + 1);
-    bishopPosition += <i8>ctz(bishopMask) + 1;
   }
   return false;
 }
@@ -43,14 +41,12 @@ function isInCheckByQueen(
   opponentPlayer: i8,
   board: BitBoard
 ): boolean {
-  let queenMask = board.getQueenMask(opponentPlayer);
-  let queenPosition = <i8>ctz(queenMask);
-  while (queenMask) {
-    if (!!(kingMask & queenMoves(board.getAllPiecesMask(), queenPosition))) {
+  const queenMask = board.getQueenMask(opponentPlayer);
+  const queenPositions: i8[] = getPositionsFromMask(queenMask);
+  for (let i = 0; i < queenPositions.length; i++) {
+    if (kingMask & queenMoves(board.getAllPiecesMask(), queenPositions[i])) {
       return true;
     }
-    queenMask = queenMask >> (queenPosition + 1);
-    queenPosition += <i8>ctz(queenMask) + 1;
   }
   return false;
 }
@@ -59,17 +55,17 @@ function isInCheckByKnight(
   opponentPlayer: i8,
   board: BitBoard
 ): boolean {
-  let knightMask = board.getKnightMask(opponentPlayer);
-  let knightPosition = <i8>ctz(knightMask);
-  while (knightMask) {
-    if (!!(kingMask & knightMovesFromCache(knightPosition))) {
+  const knightMask = board.getKnightMask(opponentPlayer);
+  const knightPositions: i8[] = getPositionsFromMask(knightMask);
+
+  for (let i = 0; i < knightPositions.length; i++) {
+    if (kingMask & knightMovesFromCache(knightPositions[i])) {
       return true;
     }
-    knightMask = knightMask >> (knightPosition + 1);
-    knightPosition += <i8>ctz(knightMask) + 1;
   }
   return false;
 }
+
 function isInCheckByKing(
   kingMask: u64,
   opponentPlayer: i8,
@@ -96,11 +92,11 @@ export function isInCheck(player: i8, board: BitBoard): boolean {
   const kingMask = board.getKingMask(player);
   const opponentPlayer = opponent(player);
   return (
-    isInCheckByPawn(kingMask, opponentPlayer, board) ||
-    isInCheckByKnight(kingMask, opponentPlayer, board) ||
+    isInCheckByQueen(kingMask, opponentPlayer, board) ||
     isInCheckByRook(kingMask, opponentPlayer, board) ||
     isInCheckByBishop(kingMask, opponentPlayer, board) ||
-    isInCheckByQueen(kingMask, opponentPlayer, board) ||
+    isInCheckByPawn(kingMask, opponentPlayer, board) ||
+    isInCheckByKnight(kingMask, opponentPlayer, board) ||
     isInCheckByKing(kingMask, opponentPlayer, board)
   );
 }

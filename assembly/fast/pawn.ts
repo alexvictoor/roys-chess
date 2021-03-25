@@ -4,6 +4,7 @@ import {
   BLACK,
   encodeCapture,
   encodeMove,
+  encodePawnDoubleMove,
   getPositionsFromMask,
   KNIGHT,
   leftBorderMask,
@@ -106,7 +107,7 @@ export function addPawnPseudoLegalMoves(
     pawnAttacksOnLeft(player, pawnMask) &
     board.getPlayerPiecesMask(opponent(player));
   const pawnCapturingMaskOnLeft =
-    pawnAttacks(opponent(player), captureMaskOnLeft) &
+    pawnAttacksOnLeft(opponent(player), captureMaskOnLeft) &
     board.getPlayerPiecesMask(player);
   const pawnCapturinLeftPositions = getPositionsFromMask(
     pawnCapturingMaskOnLeft
@@ -141,7 +142,7 @@ export function addPawnPseudoLegalMoves(
     pawnAttacksOnRight(player, pawnMask) &
     board.getPlayerPiecesMask(opponent(player));
   const pawnCapturingMaskOnRight =
-    pawnAttacks(opponent(player), captureMaskOnRight) &
+    pawnAttacksOnRight(opponent(player), captureMaskOnRight) &
     board.getPlayerPiecesMask(player);
   const pawnCapturinRightPositions = getPositionsFromMask(
     pawnCapturingMaskOnRight
@@ -185,26 +186,18 @@ export function addPawnPseudoLegalMoves(
   for (let i = 0; i < pawnsMovingTwicePositions.length; i++) {
     const targetPosition = pawnsMovingTwicePositions[i];
     const currentPosition = targetPosition - direction * 16;
-    let move = encodeMove(
-      PAWN + player,
-      currentPosition,
-      PAWN + player,
-      targetPosition
-    );
-    move |= ((targetPosition % 8 << 1) + 1) << 30;
-    moves.push(move);
+    moves.push(encodePawnDoubleMove(player, currentPosition, targetPosition));
   }
 
   const enPassantFile = board.getEnPassantFile();
 
   if (enPassantFile >= 0) {
-    const enPassantMask =
+    const enPassantMask: u64 =
       player === BLACK ? 1 << (16 + enPassantFile) : 1 << (40 + enPassantFile);
-
     const captureEnPassantMaskOnLeft =
       pawnAttacksOnLeft(player, pawnMask) & enPassantMask;
     const pawnCapturingEnPassantMaskOnLeft =
-      pawnAttacks(opponent(player), captureEnPassantMaskOnLeft) &
+      pawnAttacksOnLeft(opponent(player), captureEnPassantMaskOnLeft) &
       board.getPlayerPiecesMask(player);
     const pawnCapturinEnPassantLeftPositions: i8[] = getPositionsFromMask(
       pawnCapturingEnPassantMaskOnLeft
@@ -225,7 +218,7 @@ export function addPawnPseudoLegalMoves(
     const captureEnPassantMaskOnRight =
       pawnAttacksOnRight(player, pawnMask) & enPassantMask;
     const pawnCapturingEnPassantMaskOnRight =
-      pawnAttacks(opponent(player), captureEnPassantMaskOnRight) &
+      pawnAttacksOnRight(opponent(player), captureEnPassantMaskOnRight) &
       board.getPlayerPiecesMask(player);
     const pawnCapturinEnPassantRightPositions: i8[] = getPositionsFromMask(
       pawnCapturingEnPassantMaskOnRight
@@ -238,7 +231,7 @@ export function addPawnPseudoLegalMoves(
           PAWN + player,
           pawnCapturinEnPassantRightPositions[i] + direction * 9,
           PAWN + opponent(player),
-          pawnCapturinEnPassantRightPositions[i] - direction
+          pawnCapturinEnPassantRightPositions[i] + direction
         )
       );
     }

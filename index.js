@@ -9,8 +9,5 @@ const wasm = loader.instantiateSync(
 );
 //console.log(wasm.exports.perf());
 const start = Date.now();
-console.log(wasm.exports.__getString(wasm.exports.findRookMagicNumbers()));
+console.log(wasm.exports.benchPerft());
 console.log(Date.now() - start, "ms");
-const start2 = Date.now();
-console.log(wasm.exports.__getString(wasm.exports.findBishopMagicNumbers()));
-console.log(Date.now() - start2, "ms");

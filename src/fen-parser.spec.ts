@@ -89,3 +89,13 @@ describe("FEN parser", () => {
     expect(board.halfMoveClock).toBe(7);
   });
 });
+describe("FEN genrator", () => {
+  it("should generate a FEN string equal to FEN string used to instantiate board", () => {
+    // given
+    const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b Kk e3 7 1";
+    // when
+    const { board } = parseFEN(fen);
+    // then
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR");
+  });
+});

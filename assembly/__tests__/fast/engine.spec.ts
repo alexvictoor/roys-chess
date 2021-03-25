@@ -4,12 +4,12 @@ import {
   BLACK,
   KING,
   KNIGHT,
-  maskString,
   QUEEN,
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
 import { legalMoves } from "../../fast/engine";
+import { parseFEN } from "../../fast/fen-parser";
 
 describe(`Engine move generation`, () => {
   it("should get bishop legal moves", () => {
@@ -59,7 +59,6 @@ describe(`Engine move generation`, () => {
     board.putPiece(KNIGHT, BLACK, blackKnightPosition);
     // when
     const moves = legalMoves(board, WHITE);
-    log(maskString(board.getAllPiecesMask()));
     // then
     expect(moves).toHaveLength(5);
   });
@@ -83,6 +82,17 @@ describe(`Engine move generation`, () => {
     expect(moves).toHaveLength(3);
   });
 
+  it("should get pawns legal moves", () => {
+    // given
+    const initialFEN =
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    const board = parseFEN(initialFEN);
+    // when
+    const moves = legalMoves(board, WHITE);
+    // then
+    expect(moves).toHaveLength(20);
+  });
+
   it("should get castling moves", () => {
     // given
     const board = new BitBoard();
@@ -91,7 +101,6 @@ describe(`Engine move generation`, () => {
     board.putPiece(ROOK, BLACK, 56);
     board.putPiece(ROOK, BLACK, 63);
     board.putPiece(KING, BLACK, 60);
-    log(board.toString());
     // when
     const moves = legalMoves(board, BLACK);
 

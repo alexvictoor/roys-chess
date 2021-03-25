@@ -55,11 +55,12 @@ describe(`Status`, () => {
   it("should be checked when attacked by opponent bishop", () => {
     // given
     const board = new BitBoard();
-    const whiteKingPosition: i8 = 4;
+    const whiteKingPosition: i8 = 45;
     board.putPiece(KING, WHITE, whiteKingPosition);
     // when
-    const blackBishopPosition: i8 = 18;
-    board.putPiece(BISHOP, BLACK, blackBishopPosition);
+    board.putPiece(BISHOP, BLACK, 61);
+    board.putPiece(BISHOP, BLACK, 62);
+    board.putPiece(BISHOP, BLACK, 63);
     // then
     expect(isInCheck(WHITE, board)).toBe(true);
   });
@@ -70,8 +71,9 @@ describe(`Status`, () => {
     const whiteKingPosition: i8 = 4;
     board.putPiece(KING, WHITE, whiteKingPosition);
     // when
-    const blackQueenPosition: i8 = 18;
-    board.putPiece(QUEEN, BLACK, blackQueenPosition);
+    board.putPiece(QUEEN, BLACK, 34);
+    board.putPiece(QUEEN, BLACK, 26);
+    board.putPiece(QUEEN, BLACK, 36);
     // then
     expect(isInCheck(WHITE, board)).toBe(true);
   });
@@ -94,8 +96,9 @@ describe(`Status`, () => {
     const whiteKingPosition: i8 = 4;
     board.putPiece(KING, WHITE, whiteKingPosition);
     // when
-    const blackKnightPosition: i8 = 14;
-    board.putPiece(KNIGHT, BLACK, blackKnightPosition);
+    board.putPiece(KNIGHT, BLACK, 0);
+    board.putPiece(KNIGHT, BLACK, 1);
+    board.putPiece(KNIGHT, BLACK, 14);
     // then
     expect(isInCheck(WHITE, board)).toBe(true);
   });

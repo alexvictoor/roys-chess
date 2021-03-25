@@ -64,31 +64,20 @@ const debugBit = (depth: number, b: Board = initialBoard) =>
   perftDebug(depth, b).map((m) => [m.board, legalMoves("White", m.board)]);
 
 const { board: bitboard } = parseFEN(
-  "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+  "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -",
   BitBoard.buildFromPieces
 );
 const { board: pieceBoard } = parseFEN(
-  "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+  "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -",
   (pieces, clock, rights) => new PieceListBoard(pieces, clock, rights)
 );
 
-const startInitial = Date.now();
-console.log("perft 3 initial", perft(3));
-console.log("-----", Date.now() - startInitial);
-
-console.log("perft 2", perft(2, bitboard));
-console.log("perft 3", perft(3, bitboard));
-console.log("perft 4", perft(4, bitboard));
-console.log("perft 5", perft(5, bitboard));
-console.log("perft 6", perft(6, bitboard));
-
-console.log("bitboard   perft 4", perft(4, bitboard));
-console.log("pieceBoard perft 4", perft(4, pieceBoard));
+console.log(bitboard.toFEN());
 const start = Date.now();
-console.log("bitboard   perft 4", perft(4, bitboard));
+console.log("xx bitboard   perft 4", perft(4, bitboard, "Black"));
 console.log("-----", Date.now() - start);
 const start2 = Date.now();
-console.log("pieceBoard perft 4", perft(4, pieceBoard));
+console.log("xx pieceBoard perft 4", perft(4, pieceBoard, "Black"));
 console.log("-----", Date.now() - start2);
 
 /*

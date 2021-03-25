@@ -25,26 +25,9 @@ const pseudoLegalMoves = (
     case "King":
       return kingPseudoLegalMoves(board, pieceOnBoard);
     default:
-      throw new Error("Unknown Piece " + pieceOnBoard.piece);
+      return [];
   }
 };
-
-/*export const isInCheck = (player: Player, board: Board): boolean => {
-  const king = board.getKing(player);
-  const opponentPlayer = opponent(player);
-  const opponentPieces = board.getPlayerPieces(opponentPlayer);
-  for (let index = 0; index < opponentPieces.length; index++) {
-    const piece = opponentPieces[index];
-    const checkFound = pseudoLegalMoves(board, piece).some((pos) =>
-      equalPositions(pos, king.position)
-    );
-    if (checkFound) {
-      return true;
-    }
-  }
-
-  return false;
-};*/
 
 export type Move = {
   pieceOnBoard: PieceOnBoard;
