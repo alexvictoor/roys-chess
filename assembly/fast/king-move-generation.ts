@@ -17,7 +17,7 @@ function initKingMoveCache(): void {
 initKingMoveCache();
 
 export function kingMoves(pos: i8): u64 {
-  return kingMoveCache[pos];
+  return unchecked(kingMoveCache[pos]);
 }
 
 export function addKingPseudoLegalMoves(

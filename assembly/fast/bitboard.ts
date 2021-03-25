@@ -58,7 +58,7 @@ export class BitBoard {
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
     for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
-      if (this.bits[i] & mask) {
+      if (unchecked(this.bits[i]) & mask) {
         return i;
       }
     }
@@ -72,80 +72,80 @@ export class BitBoard {
 
   putPiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = 1 << position;
-    this.bits[piece + player] |= mask;
-    this.bits[PLAYER_PIECES + player] |= mask;
-    this.bits[ALL_PIECES] |= mask;
+    unchecked((this.bits[piece + player] |= mask));
+    unchecked((this.bits[PLAYER_PIECES + player] |= mask));
+    unchecked((this.bits[ALL_PIECES] |= mask));
   }
 
   private put(piece: i8, position: i8): void {
     const mask: u64 = 1 << position;
     const player: i8 = piece & 1;
-    this.bits[piece] |= mask;
-    this.bits[PLAYER_PIECES + player] |= mask;
-    this.bits[ALL_PIECES] |= mask;
+    unchecked((this.bits[piece] |= mask));
+    unchecked((this.bits[PLAYER_PIECES + player] |= mask));
+    unchecked((this.bits[ALL_PIECES] |= mask));
   }
 
   removePiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
-    this.bits[piece + player] &= mask;
-    this.bits[PLAYER_PIECES + player] &= mask;
-    this.bits[ALL_PIECES] &= mask;
+    unchecked((this.bits[piece + player] &= mask));
+    unchecked((this.bits[PLAYER_PIECES + player] &= mask));
+    unchecked((this.bits[ALL_PIECES] &= mask));
   }
 
   private remove(piece: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
     const player: i8 = piece & 1;
-    this.bits[piece] &= mask;
-    this.bits[PLAYER_PIECES + player] &= mask;
-    this.bits[ALL_PIECES] &= mask;
+    unchecked((this.bits[piece] &= mask));
+    unchecked((this.bits[PLAYER_PIECES + player] &= mask));
+    unchecked((this.bits[ALL_PIECES] &= mask));
   }
 
   getEnPassantFile(): i8 {
-    if (this.bits[EXTRA] & 1) {
-      return (<i8>(this.bits[EXTRA] >> 1)) & ((1 << 3) - 1);
+    if (unchecked(this.bits[EXTRA]) & 1) {
+      return (<i8>(unchecked(this.bits[EXTRA]) >> 1)) & ((1 << 3) - 1);
     }
     return -1;
   }
 
   getAllPiecesMask(): u64 {
-    return this.bits[ALL_PIECES];
+    return unchecked(this.bits[ALL_PIECES]);
   }
   getPlayerPiecesMask(player: i8): u64 {
-    return this.bits[PLAYER_PIECES + player];
+    return unchecked(this.bits[PLAYER_PIECES + player]);
   }
   getKingMask(player: i8): u64 {
-    return this.bits[KING + player];
+    return unchecked(this.bits[KING + player]);
   }
   getQueenMask(player: i8): u64 {
-    return this.bits[QUEEN + player];
+    return unchecked(this.bits[QUEEN + player]);
   }
   getRookMask(player: i8): u64 {
-    return this.bits[ROOK + player];
+    return unchecked(this.bits[ROOK + player]);
   }
   getBishopMask(player: i8): u64 {
-    return this.bits[BISHOP + player];
+    return unchecked(this.bits[BISHOP + player]);
   }
   getKnightMask(player: i8): u64 {
-    return this.bits[KNIGHT + player];
+    return unchecked(this.bits[KNIGHT + player]);
   }
   getPawnMask(player: i8): u64 {
-    return this.bits[PAWN + player];
+    return unchecked(this.bits[PAWN + player]);
   }
   getPreviousMove(): u64 {
-    return this.bits[PREVIOUS_ACTION];
+    return unchecked(this.bits[PREVIOUS_ACTION]);
   }
 
   kingSideCastlingRight(player: i8): boolean {
-    return !((this.bits[EXTRA] >> (4 + player)) & 1);
+    return !((unchecked(this.bits[EXTRA]) >> (4 + player)) & 1);
   }
   removeKingSideCastlingRight(player: i8): void {
-    this.bits[EXTRA] |= 1 << (4 + player);
+    unchecked((this.bits[EXTRA] |= 1 << (4 + player)));
   }
   queenSideCastlingRight(player: i8): boolean {
-    return !((this.bits[EXTRA] >> (6 + player)) & 1);
+    return !((unchecked(this.bits[EXTRA]) >> (6 + player)) & 1);
   }
   removeQueenSideCastlingRight(player: i8): void {
-    this.bits[EXTRA] |= 1 << (6 + player);
+    unchecked((this.bits[EXTRA] |= 1 << (6 + player)));
   }
 
   execute(action: u64): BitBoard {
@@ -157,7 +157,7 @@ export class BitBoard {
     const player = srcPiece % 2;
 
     const bits = StaticArray.slice(this.bits);
-    bits[PREVIOUS_ACTION] = action;
+    unchecked((bits[PREVIOUS_ACTION] = action));
     const updatedBoard = new BitBoard(bits);
     updatedBoard.remove(srcPiece, fromPosition);
 

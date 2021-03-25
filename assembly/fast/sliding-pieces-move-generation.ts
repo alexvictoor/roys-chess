@@ -74,10 +74,10 @@ export function rookMoves(board: u64, rookPosition: i8): u64 {
   const blockerMask = board & rookMaskCache[rookPosition];
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
-    rookMagicNumbers[rookPosition],
-    bitsBySquareForRook[rookPosition]
+    unchecked(rookMagicNumbers[rookPosition]),
+    unchecked(bitsBySquareForRook[rookPosition])
   );
-  return rookMoveCache[rookPosition][magicIndex];
+  return unchecked(rookMoveCache[rookPosition][magicIndex]);
 }
 
 export function addRookPseudoLegalMoves(
@@ -118,10 +118,10 @@ export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
   const blockerMask = mask & bishopMaskCache[bishopPosition];
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
-    bishopMagicNumbers[bishopPosition],
-    bitsBySquareForBishop[bishopPosition]
+    unchecked(bishopMagicNumbers[bishopPosition]),
+    unchecked(bitsBySquareForBishop[bishopPosition])
   );
-  return bishopMoveCache[bishopPosition][magicIndex];
+  return unchecked(bishopMoveCache[bishopPosition][magicIndex]);
 }
 
 export function queenMoves(board: u64, queenPosition: i8): u64 {

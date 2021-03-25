@@ -17,7 +17,7 @@ function initKnightMoveCache(): void {
 initKnightMoveCache();
 
 export function knightMovesFromCache(pos: i8): u64 {
-  return knightMoveCache[pos];
+  return unchecked(knightMoveCache[pos]);
 }
 
 export function addKnightPseudoLegalMoves(
