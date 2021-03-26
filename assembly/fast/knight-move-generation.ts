@@ -2,8 +2,8 @@ import {
   BitBoard,
   encodeCapture,
   encodeMove,
-  getPositionsFromMask,
   KNIGHT,
+  MaskIterator,
   opponent,
 } from "./bitboard";
 import { getKnightMoves } from "./knight";
@@ -20,6 +20,10 @@ export function knightMovesFromCache(pos: i8): u64 {
   return unchecked(knightMoveCache[pos]);
 }
 
+const positions = new MaskIterator();
+const toPositions = new MaskIterator();
+const capturePositions = new MaskIterator();
+
 export function addKnightPseudoLegalMoves(
   moves: u64[],
   board: BitBoard,
@@ -27,27 +31,28 @@ export function addKnightPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const knightMask = board.getKnightMask(player);
-  const positions = getPositionsFromMask(knightMask);
-  for (let i = 0; i < positions.length; i++) {
-    const from = positions[i];
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
     const mask = knightMovesFromCache(from);
     const moveMask = mask & ~allPiecesMask;
-    const toPositions = getPositionsFromMask(moveMask);
-    for (let j = 0; j < toPositions.length; j++) {
+    toPositions.reset(moveMask);
+    while (toPositions.hasNext()) {
       moves.push(
-        encodeMove(KNIGHT + player, from, KNIGHT + player, toPositions[j])
+        encodeMove(KNIGHT + player, from, KNIGHT + player, toPositions.next())
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
-    const capturePositions = getPositionsFromMask(captureMask);
-    for (let j = 0; j < capturePositions.length; j++) {
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const capturePosition = capturePositions.next();
       moves.push(
         encodeCapture(
           KNIGHT + player,
           from,
           KNIGHT + player,
-          capturePositions[j],
-          board.getPieceAt(capturePositions[j])
+          capturePosition,
+          board.getPieceAt(capturePosition)
         )
       );
     }

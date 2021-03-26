@@ -6,6 +6,7 @@ import {
   encodeMove,
   getPositionsFromMask,
   KING,
+  MaskIterator,
   PAWN,
   ROOK,
   toNotation,
@@ -93,6 +94,48 @@ describe(`Postions from masks`, () => {
     //then
     expect(positions).toHaveLength(1);
     expect(positions).toContain(63);
+  });
+});
+describe(`Mask iterator`, () => {
+  it("should iterate through positions", () => {
+    // given
+    const mask: u64 =
+      (1 << 9) +
+      (1 << 18) +
+      (1 << 27) +
+      (1 << 36) +
+      (1 << 45) +
+      (1 << 54) +
+      (1 << 63);
+    const it = new MaskIterator();
+    // when
+    it.reset(mask);
+    //then
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(9);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(18);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(27);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(36);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(45);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(54);
+    expect(it.hasNext()).toBe(true);
+    expect(it.next()).toBe(63);
+    expect(it.hasNext()).toBe(false);
+  });
+  it("should iterate to last position", () => {
+    // given
+    const mask: u64 = 1 << 63;
+    const it = new MaskIterator();
+    // when
+    it.reset(mask);
+    //then
+    expect(it.next()).toBe(63);
+    expect(it.hasNext()).toBe(false);
   });
 });
 

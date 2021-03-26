@@ -15,7 +15,9 @@ export function addCastlingMoves(
   board: BitBoard,
   player: i8
 ): void {
-  if (isInCheck(player, board)) {
+  const allowedOnKingSide = board.kingSideCastlingRight(player);
+  const allowedOnQueenSide = board.queenSideCastlingRight(player);
+  if ((!allowedOnKingSide && !allowedOnQueenSide) || isInCheck(player, board)) {
     return;
   }
   const rookMask = board.getRookMask(player);
@@ -25,11 +27,7 @@ export function addCastlingMoves(
   const kingSideRook = rookMask & (1 << (lane + 7));
   const isKingSidePathClear = !((allPiecesMask >> (lane + 5)) & 3);
   const isQueenSidePathClear = !((allPiecesMask >> (lane + 1)) & 7);
-  if (
-    board.kingSideCastlingRight(player) &&
-    kingSideRook &&
-    isKingSidePathClear
-  ) {
+  if (allowedOnKingSide && kingSideRook && isKingSidePathClear) {
     const intermediateBoard = board.execute(
       encodeMove(KING + player, 4 + lane, KING + player, 5 + lane)
     );
@@ -46,11 +44,7 @@ export function addCastlingMoves(
       );
     }
   }
-  if (
-    board.queenSideCastlingRight(player) &&
-    queenSideRook &&
-    isQueenSidePathClear
-  ) {
+  if (allowedOnQueenSide && queenSideRook && isQueenSidePathClear) {
     const intermediateBoard = board.execute(
       encodeMove(KING + player, 4 + lane, KING + player, 3 + lane)
     );

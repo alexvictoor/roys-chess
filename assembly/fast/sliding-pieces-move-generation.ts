@@ -3,8 +3,7 @@ import {
   BitBoard,
   encodeCapture,
   encodeMove,
-  getPositionsFromMask,
-  maskString,
+  MaskIterator,
   opponent,
   QUEEN,
   ROOK,
@@ -80,6 +79,10 @@ export function rookMoves(board: u64, rookPosition: i8): u64 {
   return unchecked(rookMoveCache[rookPosition][magicIndex]);
 }
 
+const positions = new MaskIterator();
+const toPositions = new MaskIterator();
+const capturePositions = new MaskIterator();
+
 export function addRookPseudoLegalMoves(
   moves: u64[],
   board: BitBoard,
@@ -87,27 +90,28 @@ export function addRookPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const rookMask = board.getRookMask(player);
-  const positions = getPositionsFromMask(rookMask);
-  for (let i = 0; i < positions.length; i++) {
-    const from = positions[i];
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
     const mask = rookMoves(allPiecesMask, from);
     const moveMask = mask & ~allPiecesMask;
-    const toPositions = getPositionsFromMask(moveMask);
-    for (let j = 0; j < toPositions.length; j++) {
+    toPositions.reset(moveMask);
+    while (toPositions.hasNext()) {
       moves.push(
-        encodeMove(ROOK + player, from, ROOK + player, toPositions[j])
+        encodeMove(ROOK + player, from, ROOK + player, toPositions.next())
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
-    const capturePositions = getPositionsFromMask(captureMask);
-    for (let j = 0; j < capturePositions.length; j++) {
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
       moves.push(
         encodeCapture(
           ROOK + player,
           from,
           ROOK + player,
-          capturePositions[j],
-          board.getPieceAt(capturePositions[j])
+          c,
+          board.getPieceAt(c)
         )
       );
     }
@@ -135,27 +139,28 @@ export function addBishopPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const bishopMask = board.getBishopMask(player);
-  const positions = getPositionsFromMask(bishopMask);
-  for (let i = 0; i < positions.length; i++) {
-    const from = positions[i];
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
     const mask = bishopMoves(allPiecesMask, from);
     const moveMask = mask & ~allPiecesMask;
-    const toPositions = getPositionsFromMask(moveMask);
-    for (let j = 0; j < toPositions.length; j++) {
+    toPositions.reset(moveMask);
+    while (toPositions.hasNext()) {
       moves.push(
-        encodeMove(BISHOP + player, from, BISHOP + player, toPositions[j])
+        encodeMove(BISHOP + player, from, BISHOP + player, toPositions.next())
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
-    const capturePositions = getPositionsFromMask(captureMask);
-    for (let j = 0; j < capturePositions.length; j++) {
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
       moves.push(
         encodeCapture(
           BISHOP + player,
           from,
           BISHOP + player,
-          capturePositions[j],
-          board.getPieceAt(capturePositions[j])
+          c,
+          board.getPieceAt(c)
         )
       );
     }
@@ -168,27 +173,28 @@ export function addQueenPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const queenMask = board.getQueenMask(player);
-  const positions = getPositionsFromMask(queenMask);
-  for (let i = 0; i < positions.length; i++) {
-    const from = positions[i];
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
     const mask = queenMoves(allPiecesMask, from);
     const moveMask = mask & ~allPiecesMask;
-    const toPositions = getPositionsFromMask(moveMask);
-    for (let j = 0; j < toPositions.length; j++) {
+    toPositions.reset(moveMask);
+    while (toPositions.hasNext()) {
       moves.push(
-        encodeMove(QUEEN + player, from, QUEEN + player, toPositions[j])
+        encodeMove(QUEEN + player, from, QUEEN + player, toPositions.next())
       );
     }
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
-    const capturePositions = getPositionsFromMask(captureMask);
-    for (let j = 0; j < capturePositions.length; j++) {
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
       moves.push(
         encodeCapture(
           QUEEN + player,
           from,
           QUEEN + player,
-          capturePositions[j],
-          board.getPieceAt(capturePositions[j])
+          c,
+          board.getPieceAt(c)
         )
       );
     }

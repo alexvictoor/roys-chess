@@ -5,9 +5,9 @@ import {
   encodeCapture,
   encodeMove,
   encodePawnDoubleMove,
-  getPositionsFromMask,
   KNIGHT,
   leftBorderMask,
+  MaskIterator,
   opponent,
   PAWN,
   QUEEN,
@@ -65,6 +65,13 @@ const oneSquareMoveMask = (player: i8, pawnMask: u64, allMask: u64): u64 =>
 
 const promotionTargets: i8[] = [QUEEN, ROOK, BISHOP, KNIGHT];
 
+const positions = new MaskIterator();
+const pawnCapturinLeftPositions = new MaskIterator();
+const pawnCapturinRightPositions = new MaskIterator();
+const pawnsMovingTwicePositions = new MaskIterator();
+const pawnCapturinEnPassantLeftPositions = new MaskIterator();
+const pawnCapturinEnPassantRightPositions = new MaskIterator();
+
 export function addPawnPseudoLegalMoves(
   moves: u64[],
   board: BitBoard,
@@ -72,21 +79,21 @@ export function addPawnPseudoLegalMoves(
 ): void {
   const pawnMask = board.getPawnMask(player);
 
-  const positions = getPositionsFromMask(
+  positions.reset(
     oneSquareMoveMask(player, pawnMask, board.getAllPiecesMask())
   );
   const direction: i8 = player === WHITE ? 1 : -1;
-  for (let i = 0; i < positions.length; i++) {
-    const targetPosition = positions[i];
+  while (positions.hasNext()) {
+    const targetPosition = positions.next();
     const currentPosition = targetPosition - direction * 8;
 
-    if (isInLastRow(player, positions[i])) {
+    if (isInLastRow(player, targetPosition)) {
       for (let j = 0; j < promotionTargets.length; j++) {
         moves.push(
           encodeMove(
             PAWN + player,
             currentPosition,
-            promotionTargets[j] + player,
+            unchecked(promotionTargets[j]) + player,
             targetPosition
           )
         );
@@ -109,17 +116,16 @@ export function addPawnPseudoLegalMoves(
   const pawnCapturingMaskOnLeft =
     pawnAttacksOnLeft(opponent(player), captureMaskOnLeft) &
     board.getPlayerPiecesMask(player);
-  const pawnCapturinLeftPositions = getPositionsFromMask(
-    pawnCapturingMaskOnLeft
-  );
-  for (let i = 0; i < pawnCapturinLeftPositions.length; i++) {
-    const capturePosition = pawnCapturinLeftPositions[i] + direction * 7;
+  pawnCapturinLeftPositions.reset(pawnCapturingMaskOnLeft);
+  while (pawnCapturinLeftPositions.hasNext()) {
+    const pawnCapturinLeftPosition = pawnCapturinLeftPositions.next();
+    const capturePosition = pawnCapturinLeftPosition + direction * 7;
     if (isInLastRow(player, capturePosition)) {
       for (let j = 0; j < promotionTargets.length; j++) {
         moves.push(
           encodeCapture(
             PAWN + player,
-            pawnCapturinLeftPositions[i],
+            pawnCapturinLeftPosition,
             promotionTargets[j] + player,
             capturePosition,
             board.getPieceAt(capturePosition)
@@ -130,7 +136,7 @@ export function addPawnPseudoLegalMoves(
       moves.push(
         encodeCapture(
           PAWN + player,
-          pawnCapturinLeftPositions[i],
+          pawnCapturinLeftPosition,
           PAWN + player,
           capturePosition,
           board.getPieceAt(capturePosition)
@@ -144,18 +150,17 @@ export function addPawnPseudoLegalMoves(
   const pawnCapturingMaskOnRight =
     pawnAttacksOnRight(opponent(player), captureMaskOnRight) &
     board.getPlayerPiecesMask(player);
-  const pawnCapturinRightPositions = getPositionsFromMask(
-    pawnCapturingMaskOnRight
-  );
-  for (let i = 0; i < pawnCapturinRightPositions.length; i++) {
-    const capturePosition = pawnCapturinRightPositions[i] + direction * 9;
+  pawnCapturinRightPositions.reset(pawnCapturingMaskOnRight);
+  while (pawnCapturinRightPositions.hasNext()) {
+    const pawnCapturinRightPosition = pawnCapturinRightPositions.next();
+    const capturePosition = pawnCapturinRightPosition + direction * 9;
     if (isInLastRow(player, capturePosition)) {
       for (let j = 0; j < promotionTargets.length; j++) {
         moves.push(
           encodeCapture(
             PAWN + player,
-            pawnCapturinRightPositions[i],
-            promotionTargets[j] + player,
+            pawnCapturinRightPosition,
+            unchecked(promotionTargets[j]) + player,
             capturePosition,
             board.getPieceAt(capturePosition)
           )
@@ -165,7 +170,7 @@ export function addPawnPseudoLegalMoves(
       moves.push(
         encodeCapture(
           PAWN + player,
-          pawnCapturinRightPositions[i],
+          pawnCapturinRightPosition,
           PAWN + player,
           capturePosition,
           board.getPieceAt(capturePosition)
@@ -180,11 +185,9 @@ export function addPawnPseudoLegalMoves(
     oneSquareMoveMask(player, pawnsOnInitialRowMask, board.getAllPiecesMask()),
     board.getAllPiecesMask()
   );
-  const pawnsMovingTwicePositions: i8[] = getPositionsFromMask(
-    pawnsMovingTwiceMask
-  );
-  for (let i = 0; i < pawnsMovingTwicePositions.length; i++) {
-    const targetPosition = pawnsMovingTwicePositions[i];
+  pawnsMovingTwicePositions.reset(pawnsMovingTwiceMask);
+  while (pawnsMovingTwicePositions.hasNext()) {
+    const targetPosition = pawnsMovingTwicePositions.next();
     const currentPosition = targetPosition - direction * 16;
     moves.push(encodePawnDoubleMove(player, currentPosition, targetPosition));
   }
@@ -199,18 +202,17 @@ export function addPawnPseudoLegalMoves(
     const pawnCapturingEnPassantMaskOnLeft =
       pawnAttacksOnLeft(opponent(player), captureEnPassantMaskOnLeft) &
       board.getPlayerPiecesMask(player);
-    const pawnCapturinEnPassantLeftPositions: i8[] = getPositionsFromMask(
-      pawnCapturingEnPassantMaskOnLeft
-    );
-    for (let i = 0; i < pawnCapturinEnPassantLeftPositions.length; i++) {
+    pawnCapturinEnPassantLeftPositions.reset(pawnCapturingEnPassantMaskOnLeft);
+    while (pawnCapturinEnPassantLeftPositions.hasNext()) {
+      const pawnCapturinEnPassantLeftPosition = pawnCapturinEnPassantLeftPositions.next();
       moves.push(
         encodeCapture(
           PAWN + player,
-          pawnCapturinEnPassantLeftPositions[i],
+          pawnCapturinEnPassantLeftPosition,
           PAWN + player,
-          pawnCapturinEnPassantLeftPositions[i] + direction * 7,
+          pawnCapturinEnPassantLeftPosition + direction * 7,
           PAWN + opponent(player),
-          pawnCapturinEnPassantLeftPositions[i] - direction
+          pawnCapturinEnPassantLeftPosition - direction
         )
       );
     }
@@ -220,18 +222,19 @@ export function addPawnPseudoLegalMoves(
     const pawnCapturingEnPassantMaskOnRight =
       pawnAttacksOnRight(opponent(player), captureEnPassantMaskOnRight) &
       board.getPlayerPiecesMask(player);
-    const pawnCapturinEnPassantRightPositions: i8[] = getPositionsFromMask(
+    pawnCapturinEnPassantRightPositions.reset(
       pawnCapturingEnPassantMaskOnRight
     );
-    for (let i = 0; i < pawnCapturinEnPassantRightPositions.length; i++) {
+    while (pawnCapturinEnPassantRightPositions.hasNext()) {
+      const pawnCapturinEnPassantRightPosition = pawnCapturinEnPassantRightPositions.next();
       moves.push(
         encodeCapture(
           PAWN + player,
-          pawnCapturinEnPassantRightPositions[i],
+          pawnCapturinEnPassantRightPosition,
           PAWN + player,
-          pawnCapturinEnPassantRightPositions[i] + direction * 9,
+          pawnCapturinEnPassantRightPosition + direction * 9,
           PAWN + opponent(player),
-          pawnCapturinEnPassantRightPositions[i] + direction
+          pawnCapturinEnPassantRightPosition + direction
         )
       );
     }

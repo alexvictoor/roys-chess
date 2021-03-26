@@ -1,4 +1,4 @@
-import { BitBoard, getPositionsFromMask, opponent } from "./bitboard";
+import { BitBoard, MaskIterator, opponent } from "./bitboard";
 import { kingMoves } from "./king-move-generation";
 import { knightMovesFromCache } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
@@ -8,15 +8,17 @@ import {
   rookMoves,
 } from "./sliding-pieces-move-generation";
 
+const positions = new MaskIterator();
+
 function isInCheckByRook(
   kingMask: u64,
   opponentPlayer: i8,
   board: BitBoard
 ): boolean {
   const rookMask: u64 = board.getRookMask(opponentPlayer);
-  const rookPositions: i8[] = getPositionsFromMask(rookMask);
-  for (let i = 0; i < rookPositions.length; i++) {
-    if (!!(kingMask & rookMoves(board.getAllPiecesMask(), rookPositions[i]))) {
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    if (!!(kingMask & rookMoves(board.getAllPiecesMask(), positions.next()))) {
       return true;
     }
   }
@@ -28,9 +30,9 @@ function isInCheckByBishop(
   board: BitBoard
 ): boolean {
   const bishopMask = board.getBishopMask(opponentPlayer);
-  const bishopPositions: i8[] = getPositionsFromMask(bishopMask);
-  for (let i = 0; i < bishopPositions.length; i++) {
-    if (kingMask & bishopMoves(board.getAllPiecesMask(), bishopPositions[i])) {
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    if (kingMask & bishopMoves(board.getAllPiecesMask(), positions.next())) {
       return true;
     }
   }
@@ -42,9 +44,9 @@ function isInCheckByQueen(
   board: BitBoard
 ): boolean {
   const queenMask = board.getQueenMask(opponentPlayer);
-  const queenPositions: i8[] = getPositionsFromMask(queenMask);
-  for (let i = 0; i < queenPositions.length; i++) {
-    if (kingMask & queenMoves(board.getAllPiecesMask(), queenPositions[i])) {
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    if (kingMask & queenMoves(board.getAllPiecesMask(), positions.next())) {
       return true;
     }
   }
@@ -56,10 +58,9 @@ function isInCheckByKnight(
   board: BitBoard
 ): boolean {
   const knightMask = board.getKnightMask(opponentPlayer);
-  const knightPositions: i8[] = getPositionsFromMask(knightMask);
-
-  for (let i = 0; i < knightPositions.length; i++) {
-    if (kingMask & knightMovesFromCache(knightPositions[i])) {
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    if (kingMask & knightMovesFromCache(positions.next())) {
       return true;
     }
   }

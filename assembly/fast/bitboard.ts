@@ -362,6 +362,29 @@ export function addPositionsFromMask(positions: i8[], mask: u64): void {
   }
 }
 
+export class MaskIterator {
+  public currentMask: u64;
+  public currentPosition: i8;
+  @inline
+  public reset(mask: u64): void {
+    this.currentMask = mask;
+    this.currentPosition = 0;
+  }
+  @inline
+  public hasNext(): boolean {
+    return !!this.currentMask;
+  }
+  @inline
+  public next(): i8 {
+    const increment = ctz(this.currentMask);
+    this.currentPosition += <i8>increment;
+    const result = this.currentPosition;
+    this.currentMask = (this.currentMask >> (<u64>increment)) >> 1;
+    this.currentPosition++;
+    return result;
+  }
+}
+
 export function encodeMove(
   srcPiece: i8,
   fromPosition: i8,
