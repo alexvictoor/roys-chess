@@ -126,7 +126,7 @@ export function addPawnPseudoLegalMoves(
           encodeCapture(
             PAWN + player,
             pawnCapturinLeftPosition,
-            promotionTargets[j] + player,
+            unchecked(promotionTargets[j]) + player,
             capturePosition,
             board.getPieceAt(capturePosition)
           )

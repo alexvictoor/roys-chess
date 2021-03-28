@@ -107,7 +107,7 @@ describe(`Perft`, () => {
 
     //expect(perft(4, board, BLACK)).toBe(909807);
   });
-  it("should perft r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -", () => {
+  xit("should perft r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -", () => {
     const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
     log(parseFEN(board).toString());
     expect(perft(1, parseFEN(board), BLACK)).toBe(29);

@@ -4,7 +4,6 @@ import {
   encodeCapture,
   encodeCastling,
   encodeMove,
-  getPositionsFromMask,
   KING,
   MaskIterator,
   PAWN,
@@ -63,39 +62,6 @@ describe(`Bit Board`, () => {
   });
 });
 
-describe(`Postions from masks`, () => {
-  it("should extract positions from mask", () => {
-    // given
-    const mask: u64 =
-      (1 << 9) +
-      (1 << 18) +
-      (1 << 27) +
-      (1 << 36) +
-      (1 << 45) +
-      (1 << 54) +
-      (1 << 63);
-    // when
-    const positions = getPositionsFromMask(mask);
-    //then
-    expect(positions).toHaveLength(7);
-    expect(positions).toContain(9);
-    expect(positions).toContain(18);
-    expect(positions).toContain(27);
-    expect(positions).toContain(36);
-    expect(positions).toContain(45);
-    expect(positions).toContain(54);
-    expect(positions).toContain(63);
-  });
-  it("should extract last position", () => {
-    // given
-    const mask: u64 = 1 << 63;
-    // when
-    const positions = getPositionsFromMask(mask);
-    //then
-    expect(positions).toHaveLength(1);
-    expect(positions).toContain(63);
-  });
-});
 describe(`Mask iterator`, () => {
   it("should iterate through positions", () => {
     // given

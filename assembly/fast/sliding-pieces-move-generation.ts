@@ -70,7 +70,7 @@ function initBishopMoveCache(): void {
 initBishopMoveCache();
 
 export function rookMoves(board: u64, rookPosition: i8): u64 {
-  const blockerMask = board & rookMaskCache[rookPosition];
+  const blockerMask = board & unchecked(rookMaskCache[rookPosition]);
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
     unchecked(rookMagicNumbers[rookPosition]),
@@ -119,7 +119,7 @@ export function addRookPseudoLegalMoves(
 }
 
 export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
-  const blockerMask = mask & bishopMaskCache[bishopPosition];
+  const blockerMask = mask & unchecked(bishopMaskCache[bishopPosition]);
   const magicIndex: i32 = transformBlock2Index(
     blockerMask,
     unchecked(bishopMagicNumbers[bishopPosition]),

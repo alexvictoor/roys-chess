@@ -51,6 +51,9 @@ export const PREVIOUS_ACTION: i8 = 16;
 export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
 
+const BIT_MASK_4 = (1 << 4) - 1;
+const BIT_MASK_6 = (1 << 6) - 1;
+
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 export class BitBoard {
   constructor(private bits: StaticArray<u64> = new StaticArray<u64>(17)) {}
@@ -107,27 +110,35 @@ export class BitBoard {
     return -1;
   }
 
+  @inline
   getAllPiecesMask(): u64 {
     return unchecked(this.bits[ALL_PIECES]);
   }
+  @inline
   getPlayerPiecesMask(player: i8): u64 {
     return unchecked(this.bits[PLAYER_PIECES + player]);
   }
+  @inline
   getKingMask(player: i8): u64 {
     return unchecked(this.bits[KING + player]);
   }
+  @inline
   getQueenMask(player: i8): u64 {
     return unchecked(this.bits[QUEEN + player]);
   }
+  @inline
   getRookMask(player: i8): u64 {
     return unchecked(this.bits[ROOK + player]);
   }
+  @inline
   getBishopMask(player: i8): u64 {
     return unchecked(this.bits[BISHOP + player]);
   }
+  @inline
   getKnightMask(player: i8): u64 {
     return unchecked(this.bits[KNIGHT + player]);
   }
+  @inline
   getPawnMask(player: i8): u64 {
     return unchecked(this.bits[PAWN + player]);
   }
@@ -149,20 +160,20 @@ export class BitBoard {
   }
 
   execute(action: u64): BitBoard {
-    const srcPiece: i8 = <i8>(action & ((1 << 4) - 1));
-    const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
-    const destPiece: i8 = <i8>((action >> 10) & ((1 << 4) - 1));
-    const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
+    const srcPiece: i8 = <i8>(action & BIT_MASK_4);
+    const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
+    const destPiece: i8 = <i8>((action >> 10) & BIT_MASK_4);
+    const toPosition: i8 = <i8>((action >> 14) & BIT_MASK_6);
 
-    const player = srcPiece % 2;
+    const player = srcPiece & 1;
 
     const bits = StaticArray.slice(this.bits);
     unchecked((bits[PREVIOUS_ACTION] = action));
     const updatedBoard = new BitBoard(bits);
     updatedBoard.remove(srcPiece, fromPosition);
 
-    const capturedPiece: i8 = <i8>((action >> 20) & ((1 << 4) - 1));
-    const capturePosition: i8 = <i8>((action >> 24) & ((1 << 6) - 1));
+    const capturedPiece: i8 = <i8>((action >> 20) & BIT_MASK_4);
+    const capturePosition: i8 = <i8>((action >> 24) & BIT_MASK_6);
     if (capturePosition || capturedPiece) {
       updatedBoard.remove(capturedPiece, capturePosition);
     }
@@ -174,9 +185,9 @@ export class BitBoard {
       updatedBoard.removeQueenSideCastlingRight(player);
     }
 
-    const castlingRookPiece: i8 = <i8>((action >> 30) & ((1 << 4) - 1));
-    const castlingRookPosition: i8 = <i8>((action >> 34) & ((1 << 6) - 1));
-    const castlingRookDestination: i8 = <i8>((action >> 40) & ((1 << 6) - 1));
+    const castlingRookPiece: i8 = <i8>((action >> 30) & BIT_MASK_4);
+    const castlingRookPosition: i8 = <i8>((action >> 34) & BIT_MASK_6);
+    const castlingRookDestination: i8 = <i8>((action >> 40) & BIT_MASK_6);
     if (castlingRookPiece) {
       updatedBoard.remove(castlingRookPiece, castlingRookPosition);
       updatedBoard.put(castlingRookPiece, castlingRookDestination);
@@ -192,8 +203,7 @@ export class BitBoard {
     }
 
     // en passant file
-    bits[EXTRA] =
-      (bits[EXTRA] & ~((1 << 4) - 1)) | ((action >> 46) & ((1 << 4) - 1));
+    bits[EXTRA] = (bits[EXTRA] & ~BIT_MASK_4) | ((action >> 46) & BIT_MASK_4);
 
     // validate bits
     /*
@@ -344,24 +354,6 @@ export class BitBoard {
     return result;
   }
 }
-
-export function getPositionsFromMask(mask: u64): i8[] {
-  const result: i8[] = [];
-  addPositionsFromMask(result, mask);
-  return result;
-}
-
-export function addPositionsFromMask(positions: i8[], mask: u64): void {
-  let currentMask: u64 = mask;
-  let currentPosition: i8 = 0;
-  while (currentMask) {
-    currentPosition += <i8>ctz(currentMask);
-    positions.push(currentPosition);
-    currentMask = (currentMask >> (<u64>ctz(currentMask))) >> 1;
-    currentPosition++;
-  }
-}
-
 export class MaskIterator {
   public currentMask: u64;
   public currentPosition: i8;
@@ -392,10 +384,10 @@ export function encodeMove(
   toPosition: i8
 ): u64 {
   return (
-    (<u64>(srcPiece & ((1 << 4) - 1))) |
-    ((<u64>(fromPosition & ((1 << 6) - 1))) << 4) |
-    ((<u64>(dstPiece & ((1 << 4) - 1))) << 10) |
-    ((<u64>(toPosition & ((1 << 6) - 1))) << 14)
+    (<u64>(srcPiece & BIT_MASK_4)) |
+    ((<u64>(fromPosition & BIT_MASK_6)) << 4) |
+    ((<u64>(dstPiece & BIT_MASK_4)) << 10) |
+    ((<u64>(toPosition & BIT_MASK_6)) << 14)
   );
 }
 
@@ -419,8 +411,8 @@ export function encodeCapture(
 ): u64 {
   return (
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
-    ((<u64>(capturedPiece & ((1 << 4) - 1))) << 20) |
-    ((<u64>(capturedPosition & ((1 << 6) - 1))) << 24)
+    ((<u64>(capturedPiece & BIT_MASK_4)) << 20) |
+    ((<u64>(capturedPosition & BIT_MASK_6)) << 24)
   );
 }
 
@@ -434,9 +426,9 @@ export function encodeCastling(
 ): u64 {
   return (
     encodeCapture(kingPiece, kingPosition, kingPiece, kingDestination, 0, 0) |
-    ((<u64>(rookPiece & ((1 << 4) - 1))) << 30) |
-    ((<u64>(rookPosition & ((1 << 6) - 1))) << 34) |
-    ((<u64>(rookDestination & ((1 << 6) - 1))) << 40)
+    ((<u64>(rookPiece & BIT_MASK_4)) << 30) |
+    ((<u64>(rookPosition & BIT_MASK_6)) << 34) |
+    ((<u64>(rookDestination & BIT_MASK_6)) << 40)
   );
 }
 
@@ -448,9 +440,9 @@ function getCodeFromPosition(position: i8): string {
 }
 
 export function toNotation(action: u64): string {
-  const fromPosition: i8 = <i8>((action >> 4) & ((1 << 6) - 1));
-  const toPosition: i8 = <i8>((action >> 14) & ((1 << 6) - 1));
-  const castlingRookDestination: i8 = <i8>((action >> 40) & ((1 << 6) - 1));
+  const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
+  const toPosition: i8 = <i8>((action >> 14) & BIT_MASK_6);
+  const castlingRookDestination: i8 = <i8>((action >> 40) & BIT_MASK_6);
   if (castlingRookDestination) {
     return castlingRookDestination > fromPosition ? "O-O" : "O-O-O";
   }
