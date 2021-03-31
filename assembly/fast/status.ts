@@ -101,3 +101,7 @@ export function isInCheck(player: i8, board: BitBoard): boolean {
     isInCheckByKing(kingMask, opponentPlayer, board)
   );
 }
+
+export function isDraw(player: i8, board: BitBoard): boolean {
+  return board.getHalfMoveClock() == 100;
+}

@@ -159,6 +159,10 @@ export class BitBoard {
     unchecked((this.bits[EXTRA] |= 1 << (6 + player)));
   }
 
+  getHalfMoveClock(): i8 {
+    return <i8>((this.bits[EXTRA] >> 8) & 0xff);
+  }
+
   execute(action: u64): BitBoard {
     const srcPiece: i8 = <i8>(action & BIT_MASK_4);
     const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
@@ -204,6 +208,17 @@ export class BitBoard {
 
     // en passant file
     bits[EXTRA] = (bits[EXTRA] & ~BIT_MASK_4) | ((action >> 46) & BIT_MASK_4);
+
+    // update clock
+    if (capturePosition || capturedPiece || srcPiece == PAWN + player) {
+      bits[EXTRA] = bits[EXTRA] & ~(0xff << 8);
+    } else {
+      //log(<i8>(bits[EXTRA] >> 8));
+      //log((bits[EXTRA] >> 8) & 0xff);
+      const clock: i8 = <i8>((bits[EXTRA] >> 8) & 0xff) + 1;
+      //log(clock);
+      bits[EXTRA] = (bits[EXTRA] & ~(0xff << 8)) | ((<u64>clock) << 8);
+    }
 
     // validate bits
     /*

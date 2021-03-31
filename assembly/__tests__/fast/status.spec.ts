@@ -2,14 +2,16 @@ import {
   BISHOP,
   BitBoard,
   BLACK,
+  encodeMove,
   KING,
   KNIGHT,
+  maskString,
   PAWN,
   QUEEN,
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
-import { isInCheck } from "../../fast/status";
+import { isDraw, isInCheck } from "../../fast/status";
 
 describe(`Status`, () => {
   it("should be checked when attacked by opponent rook", () => {
@@ -147,5 +149,55 @@ describe(`Status`, () => {
     board.putPiece(PAWN, WHITE, whitePawnPosition);
     // then
     expect(isInCheck(BLACK, board)).toBe(false);
+  });
+
+  it("should be draw after 50 moves without any capture or pawn moved", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(ROOK, WHITE, 6);
+    board.putPiece(ROOK, BLACK, 63);
+    // when
+    let boardUpdated = board;
+    for (let i = 0; i < 25; i++) {
+      //log(boardUpdated.getHalfMoveClock());
+      boardUpdated = boardUpdated
+        .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
+        .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
+        .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
+        .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    }
+    // then
+    log(boardUpdated.getHalfMoveClock());
+    expect(isDraw(WHITE, boardUpdated)).toBe(true);
+  });
+
+  it("should not be draw after 50 moves with a pawn move", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(ROOK, WHITE, 6);
+    board.putPiece(ROOK, BLACK, 63);
+    board.putPiece(PAWN, WHITE, 8);
+    board.putPiece(PAWN, BLACK, 48);
+    // when
+    let boardUpdated = board;
+    for (let i = 0; i < 24; i++) {
+      boardUpdated = boardUpdated
+        .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
+        .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
+        .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
+        .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    }
+    boardUpdated = boardUpdated
+      .execute(encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16))
+      .execute(encodeMove(BLACK + PAWN, 48, BLACK + PAWN, 40))
+      .execute(encodeMove(WHITE + PAWN, 16, WHITE + PAWN, 24))
+      .execute(encodeMove(BLACK + PAWN, 40, BLACK + PAWN, 32));
+
+    // then
+    expect(isDraw(WHITE, boardUpdated)).toBe(false);
   });
 });
