@@ -81,6 +81,34 @@ describe(`Bit Board hash`, () => {
     // then
     expect(hash1).not.toBe(hash2);
   });
+
+  it("should be different for two boards (bis)", () => {
+    // given
+    const board1 = new BitBoard();
+    board1.putPiece(KING, WHITE, 42);
+    const hash1 = board1.hashCode();
+    const board2 = board1.execute(
+      encodeMove(KING + WHITE, 42, KING + WHITE, 43)
+    );
+    // when
+    const hash2 = board2.hashCode();
+    // then
+    expect(hash1).not.toBe(hash2);
+  });
+  it("should be equal for two equivalent boards built differently", () => {
+    // given
+    const board1 = new BitBoard();
+    board1.putPiece(KING, WHITE, 42);
+
+    const board2 = board1
+      .execute(encodeMove(KING + WHITE, 42, KING + WHITE, 43))
+      .execute(encodeMove(KING + WHITE, 43, KING + WHITE, 42));
+    // when
+    const hash1 = board1.hashCode();
+    const hash2 = board2.hashCode();
+    // then
+    expect(hash1).toBe(hash2);
+  });
 });
 
 describe(`Mask iterator`, () => {

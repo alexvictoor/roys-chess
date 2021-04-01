@@ -49,6 +49,7 @@ export const PLAYER_PIECES: i8 = 12;
 export const ALL_PIECES: i8 = 14;
 export const EXTRA: i8 = 15;
 export const PREVIOUS_ACTION: i8 = 16;
+export const HASH: i8 = 17;
 
 export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
@@ -58,7 +59,7 @@ const BIT_MASK_6 = (1 << 6) - 1;
 
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 export class BitBoard {
-  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(17)) {}
+  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(18)) {}
 
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
@@ -88,6 +89,8 @@ export class BitBoard {
     unchecked((this.bits[piece] |= mask));
     unchecked((this.bits[PLAYER_PIECES + player] |= mask));
     unchecked((this.bits[ALL_PIECES] |= mask));
+
+    this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position];
   }
 
   removePiece(piece: i8, player: i8, position: i8): void {
@@ -103,6 +106,8 @@ export class BitBoard {
     unchecked((this.bits[piece] &= mask));
     unchecked((this.bits[PLAYER_PIECES + player] &= mask));
     unchecked((this.bits[ALL_PIECES] &= mask));
+
+    this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position];
   }
 
   getEnPassantFile(): i8 {
@@ -334,16 +339,25 @@ export class BitBoard {
     return result;
   }
 
-  hashCode(): u64 {
+  private computehashCode(): u64 {
     let result: u64 = 0;
     for (let position: i8 = 0; position < 64; position++) {
       const pieceAtPosition = (<u64>(1 << position)) & this.getAllPiecesMask();
       if (pieceAtPosition) {
         const piece = this.getPieceAt(position);
-        result ^= zobristKeys[<u32>piece * 64 + <u32>position];
+        result ^= zobristKeys[((<u32>piece) << 6) + <u32>position];
       }
     }
     return result;
+  }
+
+  hashCode(): u64 {
+    let hash = this.bits[HASH];
+    if (!hash) {
+      hash = this.computehashCode();
+      this.bits[HASH] = hash;
+    }
+    return hash;
   }
 
   toString(): string {
