@@ -39,3 +39,16 @@ export function findBishopMagicNumbers(): string {
     .map<string>((m) => "0x" + m.toString(16))
     .join(", ");
 }
+
+function randomU64(): u64 {
+  return <u64>(Math.random() * Math.random() * <f64>u64.MAX_VALUE);
+}
+
+export function generateZobristKeys(): string {
+  const randomKeys: u64[] = [];
+  const numberOfKeysNeeded = 64 * (1 + 1 + 1 + 1 + 1 + 1) * 2; // one key per board square color piece
+  for (let index = 0; index < numberOfKeysNeeded; index++) {
+    randomKeys.push(randomU64());
+  }
+  return randomKeys.join(", ");
+}

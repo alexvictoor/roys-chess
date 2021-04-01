@@ -169,7 +169,6 @@ describe(`Status`, () => {
         .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
     }
     // then
-    log(boardUpdated.getHalfMoveClock());
     expect(isDraw(WHITE, boardUpdated)).toBe(true);
   });
 
@@ -199,5 +198,17 @@ describe(`Status`, () => {
 
     // then
     expect(isDraw(WHITE, boardUpdated)).toBe(false);
+  });
+  it("should be draw when current player cannot move any piece", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(ROOK, WHITE, 49);
+    board.putPiece(PAWN, WHITE, 42);
+    // when
+    log(board.toString());
+    // then
+    expect(isDraw(BLACK, board)).toBe(true);
   });
 });

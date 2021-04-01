@@ -1,4 +1,5 @@
 import { BitBoard, MaskIterator, opponent } from "./bitboard";
+import { legalMoves } from "./engine";
 import { kingMoves } from "./king-move-generation";
 import { knightMovesFromCache } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
@@ -103,5 +104,7 @@ export function isInCheck(player: i8, board: BitBoard): boolean {
 }
 
 export function isDraw(player: i8, board: BitBoard): boolean {
-  return board.getHalfMoveClock() == 100;
+  return (
+    board.getHalfMoveClock() == 100 || legalMoves(board, player).length === 0
+  );
 }

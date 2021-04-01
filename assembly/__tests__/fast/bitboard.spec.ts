@@ -62,6 +62,27 @@ describe(`Bit Board`, () => {
   });
 });
 
+describe(`Bit Board hash`, () => {
+  it("should be different for two boards", () => {
+    // given
+    const board1 = new BitBoard();
+    board1.putPiece(KING, WHITE, 42);
+    board1.putPiece(KING, BLACK, 38);
+    board1.putPiece(PAWN, BLACK, 17);
+    board1.putPiece(ROOK, WHITE, 23);
+    const board2 = new BitBoard();
+    board1.putPiece(KING, WHITE, 42);
+    board1.putPiece(KING, BLACK, 38);
+    board1.putPiece(PAWN, BLACK, 17);
+    board1.putPiece(ROOK, WHITE, 22);
+    // when
+    const hash1 = board1.hashCode();
+    const hash2 = board2.hashCode();
+    // then
+    expect(hash1).not.toBe(hash2);
+  });
+});
+
 describe(`Mask iterator`, () => {
   it("should iterate through positions", () => {
     // given

@@ -1,3 +1,5 @@
+import { zobristKeys } from "./generated-zobrist-keys";
+
 export const noBorderMask: u64 =
   (((1 << 48) - 1) << 8) ^
   ((1 << 8) | (1 << 16) | (1 << 24) | (1 << 32) | (1 << 40) | (1 << 48)) ^
@@ -327,6 +329,18 @@ export class BitBoard {
       }
       if (y > 0) {
         result += "/";
+      }
+    }
+    return result;
+  }
+
+  hashCode(): u64 {
+    let result: u64 = 0;
+    for (let position: i8 = 0; position < 64; position++) {
+      const pieceAtPosition = (<u64>(1 << position)) & this.getAllPiecesMask();
+      if (pieceAtPosition) {
+        const piece = this.getPieceAt(position);
+        result ^= zobristKeys[<u32>piece * 64 + <u32>position];
       }
     }
     return result;
