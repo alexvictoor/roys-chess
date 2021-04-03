@@ -211,4 +211,29 @@ describe(`Status`, () => {
     // then
     expect(isDraw(BLACK, board)).toBe(true);
   });
+
+  it("should be draw on the third board repetition", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(ROOK, WHITE, 6);
+    board.putPiece(ROOK, BLACK, 63);
+    // when
+    const boardUpdated = board
+      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
+      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
+      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
+      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63))
+      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
+      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
+      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
+      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63))
+      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
+      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
+      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
+      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    // then
+    expect(isDraw(WHITE, boardUpdated)).toBe(true);
+  });
 });

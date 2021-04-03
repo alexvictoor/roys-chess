@@ -12,7 +12,7 @@ import {
 } from "./bitboard";
 
 export function parseFEN(fen: string): BitBoard {
-  const bits = new StaticArray<u64>(17);
+  const bits = new StaticArray<u64>(19);
   const board = new BitBoard(bits);
   const fenFragments = fen.split(" ");
   let y = 0;

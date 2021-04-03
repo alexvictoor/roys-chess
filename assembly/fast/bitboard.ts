@@ -48,8 +48,9 @@ export const PLAYER_PIECES: i8 = 12;
 
 export const ALL_PIECES: i8 = 14;
 export const EXTRA: i8 = 15;
-export const PREVIOUS_ACTION: i8 = 16;
-export const HASH: i8 = 17;
+export const HASH: i8 = 16;
+export const PREVIOUS_ACTION: i8 = 17;
+export const CLOCK: i8 = 18;
 
 export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
@@ -59,7 +60,9 @@ const BIT_MASK_6 = (1 << 6) - 1;
 
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 export class BitBoard {
-  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(18)) {}
+  public previousBoard: BitBoard | null;
+
+  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(19)) {}
 
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
@@ -167,7 +170,7 @@ export class BitBoard {
   }
 
   getHalfMoveClock(): i8 {
-    return <i8>((this.bits[EXTRA] >> 8) & 0xff);
+    return <i8>this.bits[CLOCK];
   }
 
   execute(action: u64): BitBoard {
@@ -218,13 +221,9 @@ export class BitBoard {
 
     // update clock
     if (capturePosition || capturedPiece || srcPiece == PAWN + player) {
-      bits[EXTRA] = bits[EXTRA] & ~(0xff << 8);
+      bits[CLOCK] = 0;
     } else {
-      //log(<i8>(bits[EXTRA] >> 8));
-      //log((bits[EXTRA] >> 8) & 0xff);
-      const clock: i8 = <i8>((bits[EXTRA] >> 8) & 0xff) + 1;
-      //log(clock);
-      bits[EXTRA] = (bits[EXTRA] & ~(0xff << 8)) | ((<u64>clock) << 8);
+      bits[CLOCK]++;
     }
 
     // validate bits
@@ -269,6 +268,9 @@ export class BitBoard {
 
       throw "pas bobn pas bon";
     }*/
+
+    updatedBoard.previousBoard = this;
+
     return updatedBoard;
   }
 
@@ -358,6 +360,15 @@ export class BitBoard {
       this.bits[HASH] = hash;
     }
     return hash;
+  }
+
+  equals(board: BitBoard): boolean {
+    for (let index: i8 = 16; index > 0; index--) {
+      if (this.bits[index] !== board.bits[index]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   toString(): string {

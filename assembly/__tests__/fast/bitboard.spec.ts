@@ -97,9 +97,12 @@ describe(`Bit Board hash`, () => {
   });
   it("should be equal for two equivalent boards built differently", () => {
     // given
-    const board1 = new BitBoard();
-    board1.putPiece(KING, WHITE, 42);
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 42);
 
+    const board1 = board
+      .execute(encodeMove(KING + WHITE, 42, KING + WHITE, 43))
+      .execute(encodeMove(KING + WHITE, 43, KING + WHITE, 42));
     const board2 = board1
       .execute(encodeMove(KING + WHITE, 42, KING + WHITE, 43))
       .execute(encodeMove(KING + WHITE, 43, KING + WHITE, 42));
@@ -108,6 +111,7 @@ describe(`Bit Board hash`, () => {
     const hash2 = board2.hashCode();
     // then
     expect(hash1).toBe(hash2);
+    expect(board1.equals(board2)).toBe(true);
   });
 });
 

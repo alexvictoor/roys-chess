@@ -103,8 +103,25 @@ export function isInCheck(player: i8, board: BitBoard): boolean {
   );
 }
 
+function isDrawByRepetition(player: i8, board: BitBoard): boolean {
+  let previousBoard = board.previousBoard;
+  let repetitionCount: i8 = 0;
+
+  while (previousBoard && repetitionCount < 2) {
+    if (board.equals(previousBoard)) {
+      repetitionCount++;
+    }
+    previousBoard = previousBoard.getHalfMoveClock()
+      ? previousBoard.previousBoard
+      : null;
+  }
+  return repetitionCount > 1;
+}
+
 export function isDraw(player: i8, board: BitBoard): boolean {
   return (
-    board.getHalfMoveClock() == 100 || legalMoves(board, player).length === 0
+    board.getHalfMoveClock() == 100 ||
+    legalMoves(board, player).length === 0 ||
+    isDrawByRepetition(player, board)
   );
 }
