@@ -58,3 +58,30 @@ export function addKnightPseudoLegalMoves(
     }
   }
 }
+
+export function addKnightPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const knightMask = board.getKnightMask(player);
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
+    const mask = knightMovesFromCache(from);
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const capturePosition = capturePositions.next();
+      moves.push(
+        encodeCapture(
+          KNIGHT + player,
+          from,
+          KNIGHT + player,
+          capturePosition,
+          board.getPieceAt(capturePosition)
+        )
+      );
+    }
+  }
+}

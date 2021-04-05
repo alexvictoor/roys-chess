@@ -4,11 +4,12 @@ import {
   BLACK,
   KING,
   KNIGHT,
+  PAWN,
   QUEEN,
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
-import { legalMoves } from "../../fast/engine";
+import { legalCaptures, legalMoves } from "../../fast/engine";
 import { parseFEN } from "../../fast/fen-parser";
 
 describe(`Engine move generation`, () => {
@@ -122,5 +123,79 @@ describe(`Engine move generation`, () => {
 
     // then
     expect(moves).toHaveLength(4);
+  });
+});
+
+describe(`Engine captures`, () => {
+  it("should get king captures", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(PAWN, BLACK, 12);
+    board.putPiece(KING, WHITE, 4);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+    expect(captures[0].getPawnMask(BLACK)).toBe(0);
+  });
+  it("should get knight captures", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(QUEEN, BLACK, 53);
+    board.putPiece(PAWN, WHITE, 37);
+    board.putPiece(KNIGHT, WHITE, 43);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+    expect(captures[0].getQueenMask(BLACK)).toBe(0);
+  });
+  it("should capture on the side", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(PAWN, WHITE, 23);
+    board.putPiece(PAWN, BLACK, 30);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+  });
+  it("should get rook captures", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KNIGHT, BLACK, 8);
+    board.putPiece(ROOK, WHITE, 0);
+    board.putPiece(KNIGHT, WHITE, 3);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+    expect(captures[0].getKnightMask(BLACK)).toBe(0);
+  });
+
+  it("should get bishop captures", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KNIGHT, BLACK, 54);
+    board.putPiece(BISHOP, WHITE, 36);
+    board.putPiece(KNIGHT, WHITE, 43);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+    expect(captures[0].getKnightMask(BLACK)).toBe(0);
+  });
+
+  it("should get queen captures in diagonals", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KNIGHT, BLACK, 54);
+    board.putPiece(QUEEN, WHITE, 36);
+    board.putPiece(KNIGHT, WHITE, 43);
+    // when
+    const captures = legalCaptures(board, WHITE);
+    // then
+    expect(captures).toHaveLength(1);
+    expect(captures[0].getKnightMask(BLACK)).toBe(0);
   });
 });

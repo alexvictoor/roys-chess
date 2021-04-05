@@ -58,3 +58,30 @@ export function addKingPseudoLegalMoves(
     }
   }
 }
+
+export function addKingPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const knightMask = board.getKingMask(player);
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
+    const mask = kingMoves(from);
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
+      moves.push(
+        encodeCapture(
+          KING + player,
+          from,
+          KING + player,
+          c,
+          board.getPieceAt(c)
+        )
+      );
+    }
+  }
+}

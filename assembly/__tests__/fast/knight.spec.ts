@@ -1,5 +1,13 @@
-import { maskString } from "../../fast/bitboard";
+import {
+  BitBoard,
+  BLACK,
+  KNIGHT,
+  PAWN,
+  QUEEN,
+  WHITE,
+} from "../../fast/bitboard";
 import { getKnightMoves } from "../../fast/knight";
+import { addKnightPseudoLegalCaptures } from "../../fast/knight-move-generation";
 
 describe(`Knight move generation`, () => {
   it("should get knight moves from the center of the board", () => {
@@ -58,7 +66,6 @@ describe(`Knight move generation`, () => {
 
   it("should get knight moves from left border", () => {
     // given
-    const board: u64 = 0;
     const position: i8 = 16;
     // when
     const moves = getKnightMoves(position);

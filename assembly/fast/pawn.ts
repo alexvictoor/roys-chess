@@ -77,6 +77,8 @@ export function addPawnPseudoLegalMoves(
   board: BitBoard,
   player: i8
 ): void {
+  addPawnPseudoLegalCaptures(moves, board, player);
+
   const pawnMask = board.getPawnMask(player);
 
   positions.reset(
@@ -109,6 +111,29 @@ export function addPawnPseudoLegalMoves(
       );
     }
   }
+
+  const pawnsOnInitialRowMask = pawnMask & pawnInitialRowMask(player);
+  const pawnsMovingTwiceMask = oneSquareMoveMask(
+    player,
+    oneSquareMoveMask(player, pawnsOnInitialRowMask, board.getAllPiecesMask()),
+    board.getAllPiecesMask()
+  );
+  pawnsMovingTwicePositions.reset(pawnsMovingTwiceMask);
+  while (pawnsMovingTwicePositions.hasNext()) {
+    const targetPosition = pawnsMovingTwicePositions.next();
+    const currentPosition = targetPosition - direction * 16;
+    moves.push(encodePawnDoubleMove(player, currentPosition, targetPosition));
+  }
+}
+
+export function addPawnPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const pawnMask = board.getPawnMask(player);
+
+  const direction: i8 = player === WHITE ? 1 : -1;
 
   const captureMaskOnLeft =
     pawnAttacksOnLeft(player, pawnMask) &
@@ -177,19 +202,6 @@ export function addPawnPseudoLegalMoves(
         )
       );
     }
-  }
-
-  const pawnsOnInitialRowMask = pawnMask & pawnInitialRowMask(player);
-  const pawnsMovingTwiceMask = oneSquareMoveMask(
-    player,
-    oneSquareMoveMask(player, pawnsOnInitialRowMask, board.getAllPiecesMask()),
-    board.getAllPiecesMask()
-  );
-  pawnsMovingTwicePositions.reset(pawnsMovingTwiceMask);
-  while (pawnsMovingTwicePositions.hasNext()) {
-    const targetPosition = pawnsMovingTwicePositions.next();
-    const currentPosition = targetPosition - direction * 16;
-    moves.push(encodePawnDoubleMove(player, currentPosition, targetPosition));
   }
 
   const enPassantFile = board.getEnPassantFile();

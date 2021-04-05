@@ -118,6 +118,34 @@ export function addRookPseudoLegalMoves(
   }
 }
 
+export function addRookPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const allPiecesMask = board.getAllPiecesMask();
+  const rookMask = board.getRookMask(player);
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
+    const mask = rookMoves(allPiecesMask, from);
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
+      moves.push(
+        encodeCapture(
+          ROOK + player,
+          from,
+          ROOK + player,
+          c,
+          board.getPieceAt(c)
+        )
+      );
+    }
+  }
+}
+
 export function bishopMoves(mask: u64, bishopPosition: i8): u64 {
   const blockerMask = mask & unchecked(bishopMaskCache[bishopPosition]);
   const magicIndex: i32 = transformBlock2Index(
@@ -166,6 +194,35 @@ export function addBishopPseudoLegalMoves(
     }
   }
 }
+
+export function addBishopPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const allPiecesMask = board.getAllPiecesMask();
+  const bishopMask = board.getBishopMask(player);
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
+    const mask = bishopMoves(allPiecesMask, from);
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
+      moves.push(
+        encodeCapture(
+          BISHOP + player,
+          from,
+          BISHOP + player,
+          c,
+          board.getPieceAt(c)
+        )
+      );
+    }
+  }
+}
+
 export function addQueenPseudoLegalMoves(
   moves: u64[],
   board: BitBoard,
@@ -184,6 +241,34 @@ export function addQueenPseudoLegalMoves(
         encodeMove(QUEEN + player, from, QUEEN + player, toPositions.next())
       );
     }
+    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    capturePositions.reset(captureMask);
+    while (capturePositions.hasNext()) {
+      const c = capturePositions.next();
+      moves.push(
+        encodeCapture(
+          QUEEN + player,
+          from,
+          QUEEN + player,
+          c,
+          board.getPieceAt(c)
+        )
+      );
+    }
+  }
+}
+
+export function addQueenPseudoLegalCaptures(
+  moves: u64[],
+  board: BitBoard,
+  player: i8
+): void {
+  const allPiecesMask = board.getAllPiecesMask();
+  const queenMask = board.getQueenMask(player);
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    const from = positions.next();
+    const mask = queenMoves(allPiecesMask, from);
     const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {

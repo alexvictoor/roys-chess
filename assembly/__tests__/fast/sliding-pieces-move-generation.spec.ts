@@ -23,7 +23,7 @@ describe(`Rook magic move generation`, () => {
     // when
     const moves = rookMoves(board, position);
     // then
-    expect(rookMoves(board, position)).toBe(rookAttacks(position, board));
+    expect(moves).toBe(rookAttacks(position, board));
   });
   it("should get rook moves on border", () => {
     // given
@@ -32,7 +32,7 @@ describe(`Rook magic move generation`, () => {
     // when
     const moves = rookMoves(board, position);
     // then
-    expect(rookMoves(board, position)).toBe(rookAttacks(position, board));
+    expect(moves).toBe(rookAttacks(position, board));
   });
   it("should get rook pseudo legal moves", () => {
     // given
