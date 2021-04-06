@@ -1,4 +1,4 @@
-import { BitBoard, MaskIterator } from "./bitboard";
+import { BitBoard, BLACK, MaskIterator } from "./bitboard";
 
 const WHITE_PAWN_WEIGHTS: i32[] = [
   0,
@@ -994,7 +994,7 @@ function isPastMiddleGame(board: BitBoard): boolean {
   return pieceCount < 20;
 }
 
-export function evaluate(board: BitBoard): i32 {
+export function evaluate(player: i8, board: BitBoard): i32 {
   const weights = isPastMiddleGame(board)
     ? WEIGHTS_END_GAME
     : WEIGHTS_MIDDLE_GAME;
@@ -1006,6 +1006,9 @@ export function evaluate(board: BitBoard): i32 {
       const piece = board.getPieceAt(position);
       result += PIECE_VALUES[piece] + weights[piece][position];
     }
+  }
+  if (player === BLACK) {
+    result = -result;
   }
   return result;
 }
