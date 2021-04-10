@@ -1,6 +1,9 @@
 import {
+  BISHOP,
   BitBoard,
   BLACK,
+  decodeCapturedPiece,
+  decodeSrcPiece,
   encodeCapture,
   encodeCastling,
   encodeMove,
@@ -170,5 +173,25 @@ describe(`Previous actions`, () => {
   it("should provide the code of the queen side castling that has just been done", () => {
     const castling = encodeCastling(KING + WHITE, 4, 2, ROOK + WHITE, 0, 3);
     expect(toNotation(castling)).toBe("O-O-O");
+  });
+});
+
+describe("Action encoding", () => {
+  it("should decode moved piece and captured piece", () => {
+    // given
+    const captureAction = encodeCapture(
+      PAWN + BLACK,
+      8,
+      BISHOP + BLACK,
+      1,
+      ROOK + WHITE,
+      1
+    );
+    // when
+    const srcPiece = decodeSrcPiece(captureAction);
+    const capturedPiece = decodeCapturedPiece(captureAction);
+    // then
+    expect(srcPiece).toBe(PAWN + BLACK);
+    expect(capturedPiece).toBe(ROOK + WHITE);
   });
 });

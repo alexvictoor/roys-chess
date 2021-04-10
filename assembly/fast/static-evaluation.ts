@@ -1,4 +1,5 @@
 import { BitBoard, BLACK, MaskIterator } from "./bitboard";
+import { isCheckMate, isDraw } from "./status";
 
 const WHITE_PAWN_WEIGHTS: i32[] = [
   0,
@@ -967,7 +968,7 @@ const WEIGHTS_END_GAME: i32[][] = [
   BLACK_KING_END_GAME_WEIGHTS,
 ];
 
-const PIECE_VALUES: i32[] = [
+export const PIECE_VALUES: i32[] = [
   100,
   -100,
   320,
@@ -982,19 +983,18 @@ const PIECE_VALUES: i32[] = [
   -20000,
 ];
 
-const allPieceIterator = new MaskIterator();
-
 function isPastMiddleGame(board: BitBoard): boolean {
-  allPieceIterator.reset(board.getAllPiecesMask());
-  let pieceCount = 0;
-  while (allPieceIterator.hasNext()) {
-    allPieceIterator.next();
-    pieceCount++;
-  }
+  const pieceCount = popcnt(board.getAllPiecesMask());
   return pieceCount < 20;
 }
 
 export function evaluate(player: i8, board: BitBoard): i32 {
+  /*if (isCheckMate(player, board)) {
+    return -100000;
+  }
+  if (isDraw(player, board)) {
+    return 0;
+  }*/
   const weights = isPastMiddleGame(board)
     ? WEIGHTS_END_GAME
     : WEIGHTS_MIDDLE_GAME;

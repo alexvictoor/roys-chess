@@ -11,7 +11,7 @@ import {
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
-import { isDraw, isInCheck } from "../../fast/status";
+import { isCheckMate, isDraw, isInCheck } from "../../fast/status";
 
 describe(`Status`, () => {
   it("should be checked when attacked by opponent rook", () => {
@@ -207,9 +207,20 @@ describe(`Status`, () => {
     board.putPiece(ROOK, WHITE, 49);
     board.putPiece(PAWN, WHITE, 42);
     // when
-    log(board.toString());
     // then
     expect(isDraw(BLACK, board)).toBe(true);
+  });
+  it("should be checkmate", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(ROOK, WHITE, 49);
+    board.putPiece(PAWN, WHITE, 42);
+    board.putPiece(QUEEN, WHITE, 60);
+    // when
+    // then
+    expect(isCheckMate(BLACK, board)).toBe(true);
   });
 
   it("should be draw on the third board repetition", () => {

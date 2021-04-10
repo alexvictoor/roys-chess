@@ -470,6 +470,13 @@ export function encodeCapture(
   );
 }
 
+export function decodeSrcPiece(action: u64): i8 {
+  return <i8>(action & BIT_MASK_4); //<i8>((action >> 20) & BIT_MASK_4);
+}
+export function decodeCapturedPiece(action: u64): i8 {
+  return <i8>((action >> 20) & BIT_MASK_4);
+}
+
 export function encodeCastling(
   kingPiece: i8,
   kingPosition: i8,

@@ -125,3 +125,7 @@ export function isDraw(player: i8, board: BitBoard): boolean {
     isDrawByRepetition(player, board)
   );
 }
+
+export function isCheckMate(player: i8, board: BitBoard): boolean {
+  return isInCheck(player, board) && legalMoves(board, player).length === 0;
+}
