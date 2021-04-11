@@ -17,7 +17,13 @@ function isInCheckByRook(
   board: BitBoard
 ): boolean {
   const rookMask: u64 = board.getRookMask(opponentPlayer);
-  return !!(rookMask & rookMoves(board.getAllPiecesMask(), <i8>ctz(kingMask)));
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    if (!!(kingMask & rookMoves(board.getAllPiecesMask(), positions.next()))) {
+      return true;
+    }
+  }
+  return false;
 }
 function isInCheckByBishop(
   kingMask: u64,
@@ -25,9 +31,13 @@ function isInCheckByBishop(
   board: BitBoard
 ): boolean {
   const bishopMask = board.getBishopMask(opponentPlayer);
-  return !!(
-    bishopMask & bishopMoves(board.getAllPiecesMask(), <i8>ctz(kingMask))
-  );
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    if (kingMask & bishopMoves(board.getAllPiecesMask(), positions.next())) {
+      return true;
+    }
+  }
+  return false;
 }
 function isInCheckByQueen(
   kingMask: u64,
@@ -35,9 +45,13 @@ function isInCheckByQueen(
   board: BitBoard
 ): boolean {
   const queenMask = board.getQueenMask(opponentPlayer);
-  return !!(
-    queenMask & queenMoves(board.getAllPiecesMask(), <i8>ctz(kingMask))
-  );
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    if (kingMask & queenMoves(board.getAllPiecesMask(), positions.next())) {
+      return true;
+    }
+  }
+  return false;
 }
 function isInCheckByKnight(
   kingMask: u64,
@@ -45,7 +59,13 @@ function isInCheckByKnight(
   board: BitBoard
 ): boolean {
   const knightMask = board.getKnightMask(opponentPlayer);
-  return !!(knightMask & knightMovesFromCache(<i8>ctz(kingMask)));
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    if (kingMask & knightMovesFromCache(positions.next())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isInCheckByKing(

@@ -134,10 +134,11 @@ export function addPawnPseudoLegalCaptures(
   const pawnMask = board.getPawnMask(player);
 
   const direction: i8 = player === WHITE ? 1 : -1;
+  const opponentPlayer = opponent(player);
 
   const captureMaskOnLeft =
     pawnAttacksOnLeft(player, pawnMask) &
-    board.getPlayerPiecesMask(opponent(player));
+    board.getPlayerPiecesMask(opponentPlayer);
   const pawnCapturingMaskOnLeft =
     pawnAttacksOnLeft(opponent(player), captureMaskOnLeft) &
     board.getPlayerPiecesMask(player);

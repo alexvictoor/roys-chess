@@ -9,8 +9,9 @@ import {
   ROOK,
   WHITE,
 } from "../../fast/bitboard";
-import { legalCaptures, legalMoves } from "../../fast/engine";
+import { legalMoves } from "../../fast/engine";
 import { parseFEN } from "../../fast/fen-parser";
+import { legalCaptures } from "../../fast/quiescence-evaluation";
 
 describe(`Engine move generation`, () => {
   it("should get bishop legal moves", () => {

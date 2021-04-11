@@ -28,7 +28,7 @@ describe(`Static evaluation`, () => {
     const board = parseFEN(fen);
     expect(evaluate(WHITE, board)).toBeLessThan(0);
   });
-  it("should be very low when player is checkmate", () => {
+  xit("should be very low when player is checkmate", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 5);
@@ -40,7 +40,7 @@ describe(`Static evaluation`, () => {
     // then
     expect(evaluate(BLACK, board)).toBe(-100000);
   });
-  it("should be 0 when game is draw", () => {
+  xit("should be 0 when game is draw", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 5);

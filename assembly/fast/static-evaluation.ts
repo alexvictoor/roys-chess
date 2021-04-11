@@ -1,5 +1,4 @@
 import { BitBoard, BLACK, MaskIterator } from "./bitboard";
-import { isCheckMate, isDraw } from "./status";
 
 const WHITE_PAWN_WEIGHTS: i32[] = [
   0,

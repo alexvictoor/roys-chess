@@ -31,6 +31,7 @@ export function addKingPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const knightMask = board.getKingMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(knightMask);
   while (positions.hasNext()) {
     const from = positions.next();
@@ -42,7 +43,7 @@ export function addKingPseudoLegalMoves(
         encodeMove(KING + player, from, KING + player, toPositions.next())
       );
     }
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -65,11 +66,12 @@ export function addKingPseudoLegalCaptures(
   player: i8
 ): void {
   const knightMask = board.getKingMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(knightMask);
   while (positions.hasNext()) {
     const from = positions.next();
     const mask = kingMoves(from);
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();

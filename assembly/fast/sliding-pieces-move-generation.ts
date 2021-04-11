@@ -90,6 +90,7 @@ export function addRookPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const rookMask = board.getRookMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(rookMask);
   while (positions.hasNext()) {
     const from = positions.next();
@@ -101,7 +102,7 @@ export function addRookPseudoLegalMoves(
         encodeMove(ROOK + player, from, ROOK + player, toPositions.next())
       );
     }
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -125,11 +126,12 @@ export function addRookPseudoLegalCaptures(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const rookMask = board.getRookMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(rookMask);
   while (positions.hasNext()) {
     const from = positions.next();
     const mask = rookMoves(allPiecesMask, from);
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -167,6 +169,7 @@ export function addBishopPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const bishopMask = board.getBishopMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(bishopMask);
   while (positions.hasNext()) {
     const from = positions.next();
@@ -178,7 +181,7 @@ export function addBishopPseudoLegalMoves(
         encodeMove(BISHOP + player, from, BISHOP + player, toPositions.next())
       );
     }
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -202,11 +205,12 @@ export function addBishopPseudoLegalCaptures(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const bishopMask = board.getBishopMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(bishopMask);
   while (positions.hasNext()) {
     const from = positions.next();
     const mask = bishopMoves(allPiecesMask, from);
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -230,6 +234,7 @@ export function addQueenPseudoLegalMoves(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const queenMask = board.getQueenMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(queenMask);
   while (positions.hasNext()) {
     const from = positions.next();
@@ -241,7 +246,7 @@ export function addQueenPseudoLegalMoves(
         encodeMove(QUEEN + player, from, QUEEN + player, toPositions.next())
       );
     }
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
@@ -265,11 +270,12 @@ export function addQueenPseudoLegalCaptures(
 ): void {
   const allPiecesMask = board.getAllPiecesMask();
   const queenMask = board.getQueenMask(player);
+  const opponentPlayer = opponent(player);
   positions.reset(queenMask);
   while (positions.hasNext()) {
     const from = positions.next();
     const mask = queenMoves(allPiecesMask, from);
-    const captureMask = mask & board.getPlayerPiecesMask(opponent(player));
+    const captureMask = mask & board.getPlayerPiecesMask(opponentPlayer);
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const c = capturePositions.next();
