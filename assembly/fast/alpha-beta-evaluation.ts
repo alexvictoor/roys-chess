@@ -13,7 +13,7 @@ export function evaluatePosition(
   beta: i32 = i32.MAX_VALUE >> 1,
   ply: i8 = 2
 ): i32 {
-  if (depth === 0) {
+  if (depth == 0) {
     return evaluateQuiescence(player, board, alpha, beta);
   }
   //const moves = legalMoves(board, player);

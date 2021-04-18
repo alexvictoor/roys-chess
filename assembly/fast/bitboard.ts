@@ -59,7 +59,7 @@ const BIT_MASK_4 = (1 << 4) - 1;
 const BIT_MASK_6 = (1 << 6) - 1;
 const BIT_MASK_50: u64 = ((<u64>1) << 50) - 1;
 
-export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
+export const opponent = (player: i8): i8 => (player == WHITE ? BLACK : WHITE);
 export class BitBoard {
   public previousBoard: BitBoard | null;
 
@@ -266,7 +266,7 @@ export class BitBoard {
       const capturedPiece: i8 = decodeCapturedPiece(action);
       const enPassantFlag: i8 = decodeCaptureEnPassantFlag(action);
       if (enPassantFlag) {
-        const offset: i8 = player === WHITE ? -8 : 8;
+        const offset: i8 = player == WHITE ? -8 : 8;
         this.remove(capturedPiece, toPosition + offset);
       } else {
         this.remove(capturedPiece, toPosition);
@@ -540,6 +540,8 @@ export class MaskIterator {
   }
 }
 
+// @ts-ignore
+@inline
 export function encodeMove(
   srcPiece: i8,
   fromPosition: i8,
@@ -554,6 +556,8 @@ export function encodeMove(
   );
 }
 
+// @ts-ignore
+@inline
 export function encodePawnDoubleMove(
   player: i8,
   fromPosition: i8,
@@ -564,6 +568,8 @@ export function encodePawnDoubleMove(
   return move;
 }
 
+// @ts-ignore
+@inline
 export function encodeCapture(
   srcPiece: i8,
   fromPosition: i8,
@@ -576,41 +582,61 @@ export function encodeCapture(
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
     ((<u64>(capturedPiece & BIT_MASK_4)) << 20) |
     ((<u64>(capturedPiece > 0 ? 1 : 0)) << 24) |
-    ((<u64>(toPosition === capturedPosition ? 0 : 1)) << 25) // TODO clean up
+    ((<u64>(toPosition == capturedPosition ? 0 : 1)) << 25) // TODO clean up
     //((<u64>(capturedPosition & BIT_MASK_6)) << 24)
   );
 }
 
+// @ts-ignore
+@inline
 export function decodeSrcPiece(action: u64): i8 {
   return <i8>(action & BIT_MASK_4);
 }
+// @ts-ignore
+@inline
 export function decodeFromPosition(action: u64): i8 {
   return <i8>((action >> 4) & BIT_MASK_6);
 }
+// @ts-ignore
+@inline
 export function decodeDestPiece(action: u64): i8 {
   return <i8>((action >> 10) & BIT_MASK_4);
 }
+// @ts-ignore
+@inline
 export function decodeToPosition(action: u64): i8 {
   return <i8>((action >> 14) & BIT_MASK_6);
 }
+// @ts-ignore
+@inline
 export function decodeCapturedPiece(action: u64): i8 {
   return <i8>((action >> 20) & BIT_MASK_4);
 }
+// @ts-ignore
+@inline
 export function decodeCaptureFlag(action: u64): i8 {
   return <i8>((action >> 24) & 1);
 }
+// @ts-ignore
+@inline
 export function decodeCaptureEnPassantFlag(action: u64): i8 {
   return <i8>((action >> 25) & 1);
 }
 
+// @ts-ignore
+@inline
 export function decodeEnPassantFile(action: u64): u64 {
   return (action >> 26) & BIT_MASK_4;
 }
 
+// @ts-ignore
+@inline
 export function decodeAction(state: u64): u64 {
   return state;
 }
 
+// @ts-ignore
+@inline
 export function decodeCastlingRights(state: u64): u64 {
   return (state >> 50) & BIT_MASK_4;
 }

@@ -11,7 +11,7 @@ const SCORES: i8[] = [1, 3, 4, 5, 9, 10];
 const captureScores = new StaticArray<u32>(256);
 for (let i = 0; i < SCORES.length; i++) {
   for (let j = 0; j < SCORES.length; j++) {
-    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * 100 + 1024;
+    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * 100 + 800;
   }
 }
 
@@ -27,10 +27,13 @@ export function score(player: i8, ply: i8, action: u64): u32 {
   //return 0;
   return history.getMoveScore(player, ply, action);
 }
-
+// @ts-ignore
+@inline
 function encodeScore(action: u64, score: u32): u64 {
   return action | ((<u64>score) << 32);
 }
+// @ts-ignore
+@inline
 function decodeScore(action: u64): u32 {
   return <i8>(action >> 32);
 }

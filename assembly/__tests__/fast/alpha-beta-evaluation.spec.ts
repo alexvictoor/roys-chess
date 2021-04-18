@@ -74,6 +74,17 @@ describe(`Alpha-Beta move chooser`, () => {
     expect(isCheckMate(BLACK, nextBoard)).toBe(true);
   });
 
+  it("freeze ?", () => {
+    const board = parseFEN(
+      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
+      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/8/5Q1p/P1PpBPP1/R3K2R w KQkq - 0 1"
+      //"r3k2r/p1ppqpb1/bn1Ppnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1"
+      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1
+    );
+    const move = chooseBestMove(WHITE, board, 3);
+    log(board.execute(move).toString());
+    log(board.execute(move).toFEN());
+  });
   xit("freeze ? Error in ~lib/rt/tlsf.ts:243:14", () => {
     const board = parseFEN(
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"

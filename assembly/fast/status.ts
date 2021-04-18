@@ -88,7 +88,7 @@ function isDrawByRepetition(board: BitBoard): boolean {
   let hashHistoryIndex: i8 = <i8>board.hashHistory.length - 1;
 
   while (nbLoop < clock && repetitionCount < 2) {
-    if (board.hashHistory[hashHistoryIndex] === hash) {
+    if (board.hashHistory[hashHistoryIndex] == hash) {
       repetitionCount++;
     }
     hashHistoryIndex--;
@@ -96,7 +96,7 @@ function isDrawByRepetition(board: BitBoard): boolean {
   }
   return repetitionCount > 1;
 }
-
+// TODO remove ?
 export function isDraw(player: i8, board: BitBoard): boolean {
   return (
     board.getHalfMoveClock() == 100 ||
@@ -105,6 +105,7 @@ export function isDraw(player: i8, board: BitBoard): boolean {
   );
 }
 
+// TODO remove ?
 export function isCheckMate(player: i8, board: BitBoard): boolean {
   return isInCheck(player, board) && legalMoves(board, player).length === 0;
 }
