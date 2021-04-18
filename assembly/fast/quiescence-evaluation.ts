@@ -4,7 +4,8 @@ import {
   decodeSrcPiece,
   opponent,
 } from "./bitboard";
-import { removeCheckedBoardFrom } from "./engine";
+import { sortCaptures } from "./capture-ordering";
+import { canMove, removeCheckedBoardFrom } from "./engine";
 import { addKingPseudoLegalCaptures } from "./king-move-generation";
 import { addKnightPseudoLegalCaptures } from "./knight-move-generation";
 import { addPawnPseudoLegalCaptures } from "./pawn";
@@ -14,8 +15,7 @@ import {
   addRookPseudoLegalCaptures,
 } from "./sliding-pieces-move-generation";
 import { evaluate, PIECE_VALUES } from "./static-evaluation";
-
-let counter: u64 = 0;
+import { isInCheck } from "./status";
 
 export function evaluateQuiescence(
   player: i8,
@@ -28,6 +28,16 @@ export function evaluateQuiescence(
   log(board.toFEN());
   log(alpha);
   log(beta);*/
+
+  // cannot move ?
+  // checked ?
+  if (!canMove(board, player)) {
+    if (isInCheck(player, board)) {
+      return -10000;
+    }
+    return 0;
+  }
+
   const staticEvaluation = evaluate(player, board);
   let alphaUpdated: i32 = alpha;
   if (staticEvaluation >= beta) {
@@ -38,16 +48,28 @@ export function evaluateQuiescence(
   if (alpha < staticEvaluation) {
     alphaUpdated = staticEvaluation;
   }
-  const captures = legalCaptures(board, player);
-  for (let index = 0; index < captures.length; index++) {
-    const boardAfterCapture = unchecked(captures[index]);
+
+  /*if (ply > 4) {
+    return alphaUpdated;
+  }*/
+
+  const captureMoves = pseudoLegalCaptures(board, player);
+  sortCaptures(captureMoves);
+  for (let index = 0; index < captureMoves.length; index++) {
+    const capture = unchecked(captureMoves[index]);
+    board.do(capture);
+    if (isInCheck(player, board)) {
+      board.undo();
+      continue;
+    }
     const score = -evaluateQuiescence(
       opponent(player),
-      boardAfterCapture,
+      board,
       -beta,
       -alphaUpdated,
       ply + 1
     );
+    board.undo();
     if (score >= beta) {
       return beta;
     }
@@ -58,15 +80,20 @@ export function evaluateQuiescence(
   return alphaUpdated;
 }
 
-export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
+export function pseudoLegalCaptures(board: BitBoard, player: i8): u64[] {
   const moves: u64[] = [];
-
   addPawnPseudoLegalCaptures(moves, board, player);
   addKnightPseudoLegalCaptures(moves, board, player);
   addBishopPseudoLegalCaptures(moves, board, player);
   addRookPseudoLegalCaptures(moves, board, player);
   addQueenPseudoLegalCaptures(moves, board, player);
   addKingPseudoLegalCaptures(moves, board, player);
+  return moves;
+}
+
+export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
+  const moves: u64[] = pseudoLegalCaptures(board, player);
+  sortCaptures(moves);
 
   return removeCheckedBoardFrom(
     moves, //.sort(compareCaptures_MVV_LVA),
@@ -74,16 +101,10 @@ export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
     player
   );
 }
-
-function evaluateCapture(capture: u64): i32 {
-  return (
-    unchecked(PIECE_VALUES[decodeCapturedPiece(capture)]) +
-    unchecked(PIECE_VALUES[decodeSrcPiece(capture)])
-  );
-}
+/*
 export function compareCaptures_MVV_LVA(
   firstCapture: u64,
   secondCapture: u64
 ): i32 {
-  return evaluateCapture(firstCapture) - evaluateCapture(secondCapture);
-}
+  return scoreCapture(firstCapture) - scoreCapture(secondCapture);
+}*/

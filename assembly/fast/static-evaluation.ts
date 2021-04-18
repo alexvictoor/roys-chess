@@ -1,4 +1,4 @@
-import { BitBoard, BLACK, MaskIterator } from "./bitboard";
+import { BitBoard, BLACK, MaskIterator, PLAYER_PIECES } from "./bitboard";
 
 const WHITE_PAWN_WEIGHTS: i32[] = [
   0,
@@ -982,28 +982,31 @@ export const PIECE_VALUES: i32[] = [
   -20000,
 ];
 
+for (let piece: i8 = 0; piece < PIECE_VALUES.length; piece++) {
+  for (let position: i8 = 0; position < 64; position++) {
+    WEIGHTS_MIDDLE_GAME[piece][position] += PIECE_VALUES[piece];
+    WEIGHTS_END_GAME[piece][position] += PIECE_VALUES[piece];
+  }
+}
+
 function isPastMiddleGame(board: BitBoard): boolean {
   const pieceCount = popcnt(board.getAllPiecesMask());
   return pieceCount < 20;
 }
 
+const positions = new MaskIterator();
+
 export function evaluate(player: i8, board: BitBoard): i32 {
-  /*if (isCheckMate(player, board)) {
-    return -100000;
-  }
-  if (isDraw(player, board)) {
-    return 0;
-  }*/
   const weights = isPastMiddleGame(board)
     ? WEIGHTS_END_GAME
     : WEIGHTS_MIDDLE_GAME;
-  const allPiecesMask = board.getAllPiecesMask();
   let result: i32 = 0;
-  for (let position: i8 = 0; position < 64; position++) {
-    const pieceAtPosition = (<u64>(1 << position)) & allPiecesMask;
-    if (pieceAtPosition) {
-      const piece = board.getPieceAt(position);
-      result += PIECE_VALUES[piece] + weights[piece][position];
+  for (let piece = 0; piece < 12; piece++) {
+    const pieceMask = unchecked(board.bits[piece]);
+    positions.reset(pieceMask);
+    while (positions.hasNext()) {
+      const position = positions.next();
+      result += unchecked(weights[piece][position]);
     }
   }
   if (player === BLACK) {

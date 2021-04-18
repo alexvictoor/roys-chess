@@ -75,15 +75,19 @@ export function addKnightPseudoLegalCaptures(
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const capturePosition = capturePositions.next();
-      moves.push(
-        encodeCapture(
-          KNIGHT + player,
-          from,
-          KNIGHT + player,
-          capturePosition,
-          board.getPieceAt(capturePosition)
-        )
+      const capturedPiece = board.getPieceAt(capturePosition);
+      const captureAction = encodeCapture(
+        KNIGHT + player,
+        from,
+        KNIGHT + player,
+        capturePosition,
+        board.getPieceAt(capturePosition)
       );
+      if (capturedPiece > KNIGHT) {
+        moves.unshift(captureAction);
+      } else {
+        moves.push(captureAction);
+      }
     }
   }
 }

@@ -57,12 +57,16 @@ export const BLACK: i8 = 1;
 
 const BIT_MASK_4 = (1 << 4) - 1;
 const BIT_MASK_6 = (1 << 6) - 1;
+const BIT_MASK_50: u64 = ((<u64>1) << 50) - 1;
 
 export const opponent = (player: i8): i8 => (player === WHITE ? BLACK : WHITE);
 export class BitBoard {
   public previousBoard: BitBoard | null;
 
-  constructor(private bits: StaticArray<u64> = new StaticArray<u64>(19)) {}
+  private stateHistory: u64[] = [];
+  public hashHistory: u64[] = [];
+
+  constructor(public bits: StaticArray<u64> = new StaticArray<u64>(19)) {}
 
   getPieceAt(position: i8): i8 {
     const mask: u64 = 1 << position;
@@ -93,7 +97,9 @@ export class BitBoard {
     unchecked((this.bits[PLAYER_PIECES + player] |= mask));
     unchecked((this.bits[ALL_PIECES] |= mask));
 
-    this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position];
+    unchecked(
+      (this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position])
+    );
   }
 
   removePiece(piece: i8, player: i8, position: i8): void {
@@ -110,7 +116,9 @@ export class BitBoard {
     unchecked((this.bits[PLAYER_PIECES + player] &= mask));
     unchecked((this.bits[ALL_PIECES] &= mask));
 
-    this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position];
+    unchecked(
+      (this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position])
+    );
   }
 
   getEnPassantFile(): i8 {
@@ -174,6 +182,13 @@ export class BitBoard {
   }
 
   execute(action: u64): BitBoard {
+    const bits = StaticArray.slice(this.bits);
+    unchecked((bits[PREVIOUS_ACTION] = action));
+    const updatedBoard = new BitBoard(bits);
+    updatedBoard.do(action);
+    return updatedBoard;
+    /*
+
     const srcPiece: i8 = <i8>(action & BIT_MASK_4);
     const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
     const destPiece: i8 = <i8>((action >> 10) & BIT_MASK_4);
@@ -217,7 +232,7 @@ export class BitBoard {
     }
 
     // en passant file
-    bits[EXTRA] = (bits[EXTRA] & ~BIT_MASK_4) | ((action >> 46) & BIT_MASK_4);
+    bits[EXTRA] = (bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(action);
 
     // update clock
     if (capturePosition || capturedPiece || srcPiece == PAWN + player) {
@@ -226,52 +241,146 @@ export class BitBoard {
       bits[CLOCK]++;
     }
 
-    // validate bits
-    /*
-    let whitePieces: u64 = 0;
-    let blackPieces: u64 = 0;
-    let allPieces: u64 = 0;
-    let allPieces2: u64 = 0;
-    for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
-      if (i % 2 === 0) {
-        whitePieces ^= bits[i];
-      } else {
-        blackPieces ^= bits[i];
-      }
-      allPieces ^= bits[i];
-      allPieces2 |= bits[i];
-    }
-    if (
-      updatedBoard.getAllPiecesMask() != allPieces ||
-      updatedBoard.getAllPiecesMask() != allPieces2 ||
-      updatedBoard.getPlayerPiecesMask(WHITE) != whitePieces ||
-      updatedBoard.getPlayerPiecesMask(BLACK) != blackPieces
-    ) {
-      log(this.toString());
-      log(
-        "srcPiece " +
-          srcPiece.toString() +
-          " fromPosition " +
-          fromPosition.toString() +
-          " toPosition " +
-          toPosition.toString()
-      );
-      log(
-        "capturedPiece " +
-          capturedPiece.toString() +
-          " capturePosition " +
-          capturePosition.toString()
-      );
-      log(maskString(action));
-      log(maskString(this.bits[PREVIOUS_ACTION]));
-      log(maskString(this.bits[EXTRA]));
-
-      throw "pas bobn pas bon";
-    }*/
-
     updatedBoard.previousBoard = this;
 
-    return updatedBoard;
+    return updatedBoard;*/
+  }
+
+  do(action: u64): void {
+    this.hashHistory.push(this.hashCode());
+    this.storeState(action);
+    const srcPiece: i8 = decodeSrcPiece(action);
+    const fromPosition: i8 = decodeFromPosition(action);
+    const destPiece: i8 = decodeDestPiece(action);
+    const toPosition: i8 = decodeToPosition(action);
+
+    const player = srcPiece & 1;
+
+    //const bits = StaticArray.slice(this.bits);
+    //unchecked((bits[PREVIOUS_ACTION] = action));
+    //const updatedBoard = new BitBoard(bits);
+    this.remove(srcPiece, fromPosition);
+
+    const captureFlag: i8 = decodeCaptureFlag(action);
+    if (captureFlag) {
+      const capturedPiece: i8 = decodeCapturedPiece(action);
+      const enPassantFlag: i8 = decodeCaptureEnPassantFlag(action);
+      if (enPassantFlag) {
+        const offset: i8 = player === WHITE ? -8 : 8;
+        this.remove(capturedPiece, toPosition + offset);
+      } else {
+        this.remove(capturedPiece, toPosition);
+      }
+    }
+
+    this.put(destPiece, toPosition);
+
+    const kingSideRookPosition: i8 = player * 56 + 7;
+    const queenSideRookPosition: i8 = player * 56;
+
+    if (srcPiece == KING + player) {
+      this.removeKingSideCastlingRight(player);
+      this.removeQueenSideCastlingRight(player);
+
+      const castling = Math.abs(toPosition - fromPosition) === 2;
+      if (castling) {
+        const kingSide = toPosition > fromPosition;
+        if (kingSide) {
+          const castlingRookDestination: i8 = player * 56 + 5;
+          this.remove(ROOK + player, kingSideRookPosition);
+          this.put(ROOK + player, castlingRookDestination);
+        } else {
+          const castlingRookDestination: i8 = player * 56 + 3;
+          this.remove(ROOK + player, queenSideRookPosition);
+          this.put(ROOK + player, castlingRookDestination);
+        }
+      }
+    }
+
+    if (!(this.bits[ROOK + player] & (1 << kingSideRookPosition))) {
+      this.removeKingSideCastlingRight(player);
+    }
+    if (!(this.bits[ROOK + player] & (1 << queenSideRookPosition))) {
+      this.removeQueenSideCastlingRight(player);
+    }
+
+    // en passant file
+    this.bits[EXTRA] =
+      (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(action);
+
+    // update clock
+    if (captureFlag || srcPiece == PAWN + player) {
+      this.bits[CLOCK] = 0;
+    } else {
+      this.bits[CLOCK]++;
+    }
+
+    //updatedBoard.previousBoard = this;
+  }
+
+  storeState(action: u64): void {
+    this.stateHistory.push(
+      (action & BIT_MASK_50) |
+        (((this.bits[EXTRA] >> 4) & BIT_MASK_4) << 50) |
+        (this.bits[CLOCK] << 54)
+    );
+  }
+
+  undo(): void {
+    this.hashHistory.pop();
+    const action = this.stateHistory.pop();
+    const castlingRights = decodeCastlingRights(action);
+    this.bits[EXTRA] &= castlingRights << 4;
+    this.bits[CLOCK] = action >> 54;
+
+    const srcPiece: i8 = decodeSrcPiece(action);
+    const fromPosition: i8 = decodeFromPosition(action);
+    const destPiece: i8 = decodeDestPiece(action);
+    const toPosition: i8 = decodeToPosition(action);
+    const player = srcPiece & 1;
+
+    this.remove(destPiece, toPosition);
+    this.put(srcPiece, fromPosition);
+
+    // en passant file
+    if (this.stateHistory.length > 0) {
+      const previousAction = this.stateHistory[this.stateHistory.length - 1];
+      this.bits[EXTRA] =
+        (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(previousAction);
+    } else {
+      this.bits[EXTRA] = this.bits[EXTRA] & ~BIT_MASK_4;
+    }
+
+    const captureFlag: i8 = decodeCaptureFlag(action);
+    if (captureFlag) {
+      const capturedPiece: i8 = decodeCapturedPiece(action);
+      const enPassantFlag: i8 = decodeCaptureEnPassantFlag(action);
+      if (enPassantFlag) {
+        const offset: i8 = player === WHITE ? -8 : 8;
+        this.put(capturedPiece, toPosition + offset);
+      } else {
+        this.put(capturedPiece, toPosition);
+      }
+    }
+
+    if (srcPiece == KING + player) {
+      const kingSideRookPosition: i8 = player * 56 + 7;
+      const queenSideRookPosition: i8 = player * 56;
+
+      const castling = Math.abs(toPosition - fromPosition) === 2;
+      if (castling) {
+        const kingSide = toPosition > fromPosition;
+        if (kingSide) {
+          const castlingRookDestination: i8 = player * 56 + 5;
+          this.remove(ROOK + player, castlingRookDestination);
+          this.put(ROOK + player, kingSideRookPosition);
+        } else {
+          const castlingRookDestination: i8 = player * 56 + 3;
+          this.remove(ROOK + player, castlingRookDestination);
+          this.put(ROOK + player, queenSideRookPosition);
+        }
+      }
+    }
   }
 
   checkBitsValidity(): void {
@@ -451,7 +560,7 @@ export function encodePawnDoubleMove(
   toPosition: i8
 ): u64 {
   let move = encodeMove(PAWN + player, fromPosition, PAWN + player, toPosition);
-  move |= ((<u64>toPosition % 8 << 1) + 1) << 46;
+  move |= ((<u64>toPosition % 8 << 1) + 1) << 26;
   return move;
 }
 
@@ -466,31 +575,44 @@ export function encodeCapture(
   return (
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
     ((<u64>(capturedPiece & BIT_MASK_4)) << 20) |
-    ((<u64>(capturedPosition & BIT_MASK_6)) << 24)
+    ((<u64>(capturedPiece > 0 ? 1 : 0)) << 24) |
+    ((<u64>(toPosition === capturedPosition ? 0 : 1)) << 25) // TODO clean up
+    //((<u64>(capturedPosition & BIT_MASK_6)) << 24)
   );
 }
 
 export function decodeSrcPiece(action: u64): i8 {
-  return <i8>(action & BIT_MASK_4); //<i8>((action >> 20) & BIT_MASK_4);
+  return <i8>(action & BIT_MASK_4);
+}
+export function decodeFromPosition(action: u64): i8 {
+  return <i8>((action >> 4) & BIT_MASK_6);
+}
+export function decodeDestPiece(action: u64): i8 {
+  return <i8>((action >> 10) & BIT_MASK_4);
+}
+export function decodeToPosition(action: u64): i8 {
+  return <i8>((action >> 14) & BIT_MASK_6);
 }
 export function decodeCapturedPiece(action: u64): i8 {
   return <i8>((action >> 20) & BIT_MASK_4);
 }
+export function decodeCaptureFlag(action: u64): i8 {
+  return <i8>((action >> 24) & 1);
+}
+export function decodeCaptureEnPassantFlag(action: u64): i8 {
+  return <i8>((action >> 25) & 1);
+}
 
-export function encodeCastling(
-  kingPiece: i8,
-  kingPosition: i8,
-  kingDestination: i8,
-  rookPiece: i8,
-  rookPosition: i8,
-  rookDestination: i8
-): u64 {
-  return (
-    encodeCapture(kingPiece, kingPosition, kingPiece, kingDestination, 0, 0) |
-    ((<u64>(rookPiece & BIT_MASK_4)) << 30) |
-    ((<u64>(rookPosition & BIT_MASK_6)) << 34) |
-    ((<u64>(rookDestination & BIT_MASK_6)) << 40)
-  );
+export function decodeEnPassantFile(action: u64): u64 {
+  return (action >> 26) & BIT_MASK_4;
+}
+
+export function decodeAction(state: u64): u64 {
+  return state;
+}
+
+export function decodeCastlingRights(state: u64): u64 {
+  return (state >> 50) & BIT_MASK_4;
 }
 
 const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -501,11 +623,14 @@ function getCodeFromPosition(position: i8): string {
 }
 
 export function toNotation(action: u64): string {
-  const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
-  const toPosition: i8 = <i8>((action >> 14) & BIT_MASK_6);
-  const castlingRookDestination: i8 = <i8>((action >> 40) & BIT_MASK_6);
-  if (castlingRookDestination) {
-    return castlingRookDestination > fromPosition ? "O-O" : "O-O-O";
+  const fromPosition: i8 = decodeFromPosition(action);
+  const toPosition: i8 = decodeToPosition(action);
+  const srcPiece = decodeSrcPiece(action);
+  const player = srcPiece & 1;
+  const castling =
+    srcPiece === KING + player && Math.abs(toPosition - fromPosition) === 2;
+  if (castling) {
+    return toPosition > fromPosition ? "O-O" : "O-O-O";
   }
   return (
     getCodeFromPosition(fromPosition) + "-" + getCodeFromPosition(toPosition)

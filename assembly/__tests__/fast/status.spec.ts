@@ -159,17 +159,16 @@ describe(`Status`, () => {
     board.putPiece(ROOK, WHITE, 6);
     board.putPiece(ROOK, BLACK, 63);
     // when
-    let boardUpdated = board;
     for (let i = 0; i < 25; i++) {
       //log(boardUpdated.getHalfMoveClock());
-      boardUpdated = boardUpdated
-        .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
-        .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
-        .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
-        .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+
+      board.do(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5));
+      board.do(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62));
+      board.do(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6));
+      board.do(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
     }
     // then
-    expect(isDraw(WHITE, boardUpdated)).toBe(true);
+    expect(isDraw(WHITE, board)).toBe(true);
   });
 
   it("should not be draw after 50 moves with a pawn move", () => {
@@ -182,22 +181,19 @@ describe(`Status`, () => {
     board.putPiece(PAWN, WHITE, 8);
     board.putPiece(PAWN, BLACK, 48);
     // when
-    let boardUpdated = board;
     for (let i = 0; i < 24; i++) {
-      boardUpdated = boardUpdated
-        .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
-        .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
-        .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
-        .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+      board.do(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5));
+      board.do(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62));
+      board.do(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6));
+      board.do(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
     }
-    boardUpdated = boardUpdated
-      .execute(encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16))
-      .execute(encodeMove(BLACK + PAWN, 48, BLACK + PAWN, 40))
-      .execute(encodeMove(WHITE + PAWN, 16, WHITE + PAWN, 24))
-      .execute(encodeMove(BLACK + PAWN, 40, BLACK + PAWN, 32));
+    board.do(encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16));
+    board.do(encodeMove(BLACK + PAWN, 48, BLACK + PAWN, 40));
+    board.do(encodeMove(WHITE + PAWN, 16, WHITE + PAWN, 24));
+    board.do(encodeMove(BLACK + PAWN, 40, BLACK + PAWN, 32));
 
     // then
-    expect(isDraw(WHITE, boardUpdated)).toBe(false);
+    expect(isDraw(WHITE, board)).toBe(false);
   });
   it("should be draw when current player cannot move any piece", () => {
     // given
@@ -231,20 +227,19 @@ describe(`Status`, () => {
     board.putPiece(ROOK, WHITE, 6);
     board.putPiece(ROOK, BLACK, 63);
     // when
-    const boardUpdated = board
-      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
-      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
-      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
-      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63))
-      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
-      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
-      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
-      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63))
-      .execute(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5))
-      .execute(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62))
-      .execute(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6))
-      .execute(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    board.do(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5));
+    board.do(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62));
+    board.do(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6));
+    board.do(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    board.do(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5));
+    board.do(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62));
+    board.do(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6));
+    board.do(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
+    board.do(encodeMove(WHITE + ROOK, 6, WHITE + ROOK, 5));
+    board.do(encodeMove(BLACK + ROOK, 63, BLACK + ROOK, 62));
+    board.do(encodeMove(WHITE + ROOK, 5, WHITE + ROOK, 6));
+    board.do(encodeMove(BLACK + ROOK, 62, BLACK + ROOK, 63));
     // then
-    expect(isDraw(WHITE, boardUpdated)).toBe(true);
+    expect(isDraw(WHITE, board)).toBe(true);
   });
 });

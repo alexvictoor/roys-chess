@@ -6,38 +6,12 @@ import {
   KING,
   PAWN,
   QUEEN,
+  ROOK,
   WHITE,
 } from "../../fast/bitboard";
 import { parseFEN } from "../../fast/fen-parser";
-import {
-  compareCaptures_MVV_LVA,
-  evaluateQuiescence,
-} from "../../fast/quiescence-evaluation";
+import { evaluateQuiescence } from "../../fast/quiescence-evaluation";
 import { evaluate } from "../../fast/static-evaluation";
-
-describe('"Most valuable victim, least valuable attacker" capture comparison', () => {
-  xit("should compare captures", () => {
-    const lowValueCaptureAction = encodeCapture(
-      BISHOP + WHITE,
-      8,
-      BISHOP + WHITE,
-      1,
-      BISHOP + BLACK,
-      1
-    );
-    const highValueCaptureAction = encodeCapture(
-      BISHOP + WHITE,
-      8,
-      BISHOP + WHITE,
-      1,
-      QUEEN + BLACK,
-      1
-    );
-    expect(
-      compareCaptures_MVV_LVA(lowValueCaptureAction, highValueCaptureAction)
-    ).toBeGreaterThan(0);
-  });
-});
 
 describe(`Quiescence evaluation`, () => {
   xit("should be greather than static evaluation when opponent pieces are not protected", () => {
@@ -54,7 +28,21 @@ describe(`Quiescence evaluation`, () => {
     expect(quiescenceEvaluation).toBeGreaterThan(staticEvaluation);
   });
 
-  it("xxx", () => {
+  xit("should be great when opponent will be checkmate", () => {
+    // given
+    const board = new BitBoard();
+    board.putPiece(KING, WHITE, 4);
+    board.putPiece(KING, BLACK, 56);
+    board.putPiece(QUEEN, WHITE, 42);
+    board.putPiece(ROOK, BLACK, 49);
+    board.putPiece(ROOK, WHITE, 41);
+    // when
+    const quiescenceEvaluation = evaluateQuiescence(WHITE, board);
+    // then
+    expect(quiescenceEvaluation).toBe(10000);
+  });
+
+  it("bench", () => {
     const board = parseFEN(
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
     );

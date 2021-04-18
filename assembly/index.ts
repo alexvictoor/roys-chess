@@ -6,7 +6,7 @@ import {
   findAllBishopMagicNumbers,
   findAllRookMagicNumbers,
 } from "./fast/magic";
-import { perft } from "./fast/perft";
+import { perft, perft2 } from "./fast/perft";
 
 export function add(a: i32, b: i32): i32 {
   return a + b;
@@ -26,6 +26,11 @@ export function benchPerft(): f64 {
   const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
 
   return <f64>perft(4, parseFEN(board), BLACK);
+}
+export function benchPerftOptimized(): f64 {
+  const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
+
+  return <f64>perft2(4, parseFEN(board), BLACK);
 }
 export function findRookMagicNumbers(): string {
   return findAllRookMagicNumbers()

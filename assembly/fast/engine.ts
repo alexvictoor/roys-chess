@@ -1,20 +1,11 @@
-import { addCastlingMoves } from "./castling";
 import { BitBoard } from "./bitboard";
+import { addCastlingMoves } from "./castling";
+import { addKingPseudoLegalMoves } from "./king-move-generation";
+import { addKnightPseudoLegalMoves } from "./knight-move-generation";
+import { addPawnPseudoLegalMoves } from "./pawn";
 import {
-  addKingPseudoLegalCaptures,
-  addKingPseudoLegalMoves,
-} from "./king-move-generation";
-import {
-  addKnightPseudoLegalCaptures,
-  addKnightPseudoLegalMoves,
-} from "./knight-move-generation";
-import { addPawnPseudoLegalCaptures, addPawnPseudoLegalMoves } from "./pawn";
-import {
-  addBishopPseudoLegalCaptures,
   addBishopPseudoLegalMoves,
-  addQueenPseudoLegalCaptures,
   addQueenPseudoLegalMoves,
-  addRookPseudoLegalCaptures,
   addRookPseudoLegalMoves,
 } from "./sliding-pieces-move-generation";
 import { isInCheck } from "./status";
@@ -35,15 +26,64 @@ export function removeCheckedBoardFrom(
   return result;
 }
 
-export function legalMoves(board: BitBoard, player: i8): BitBoard[] {
+export function pseudoLegalMoves(board: BitBoard, player: i8): u64[] {
   const moves: u64[] = [];
-  addRookPseudoLegalMoves(moves, board, player);
-  addBishopPseudoLegalMoves(moves, board, player);
+  addCastlingMoves(moves, board, player);
+  addPawnPseudoLegalMoves(moves, board, player);
   addKnightPseudoLegalMoves(moves, board, player);
+  addBishopPseudoLegalMoves(moves, board, player);
+  addRookPseudoLegalMoves(moves, board, player);
   addQueenPseudoLegalMoves(moves, board, player);
   addKingPseudoLegalMoves(moves, board, player);
+
+  return moves;
+}
+
+function hasLegalMove(moves: u64[], board: BitBoard, player: i8): boolean {
+  while (moves.length > 0) {
+    const move: u64 = moves.pop();
+    board.do(move);
+    if (!isInCheck(player, board)) {
+      board.undo();
+      return true;
+    }
+    board.undo();
+  }
+  return false;
+}
+
+export function canMove(board: BitBoard, player: i8): boolean {
+  const moves: u64[] = [];
   addPawnPseudoLegalMoves(moves, board, player);
-  addCastlingMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+  addKnightPseudoLegalMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+  addBishopPseudoLegalMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+  addRookPseudoLegalMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+  addQueenPseudoLegalMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+  addKingPseudoLegalMoves(moves, board, player);
+  if (hasLegalMove(moves, board, player)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function legalMoves(board: BitBoard, player: i8): BitBoard[] {
+  const moves: u64[] = pseudoLegalMoves(board, player);
 
   return removeCheckedBoardFrom(moves, board, player);
 }
