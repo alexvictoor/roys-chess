@@ -42,7 +42,7 @@ describe("Score from history", () => {
     const betterMove = encodeMove(ROOK + WHITE, 0, ROOK + WHITE, 2);
     // when
     h.recordCutOffMove(WHITE, 1, goodMove);
-    h.recordCutOffMove(WHITE, 1, betterMove);
+    h.recordCutOffMove(WHITE, 2, betterMove);
     h.recordPlayedMove(WHITE, 1, goodMove);
     h.recordPlayedMove(WHITE, 2, betterMove);
     h.recordPlayedMove(WHITE, 1, goodMove);

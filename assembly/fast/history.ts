@@ -44,14 +44,14 @@ export class History {
     /*if (cutOff === 0) {
       return 0;
     }*/
-    let result: i32 = cutOff - unchecked(this.playedMoveCounters[index]);
+    /*let result: i32 = cutOff - unchecked(this.playedMoveCounters[index]);
     if (unchecked(this.primaryKillers[ply]) === move) {
       result += 32;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
       result += 8;
-    }
-    return result;
+    }*/
+    return cutOff - unchecked(this.playedMoveCounters[index]);
   }
   resetHistory(): void {
     for (let index = 0; index < this.primaryKillers.length; index++) {
