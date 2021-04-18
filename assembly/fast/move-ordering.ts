@@ -11,7 +11,7 @@ const SCORES: i8[] = [1, 3, 4, 5, 9, 10];
 const captureScores = new StaticArray<u32>(256);
 for (let i = 0; i < SCORES.length; i++) {
   for (let j = 0; j < SCORES.length; j++) {
-    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * 100 + 800;
+    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * 100 + 4096;
   }
 }
 
