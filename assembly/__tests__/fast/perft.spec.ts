@@ -13,7 +13,7 @@ import {
 } from "../../fast/bitboard";
 import { legalMoves } from "../../fast/engine";
 import { parseFEN } from "../../fast/fen-parser";
-import { perft } from "../../fast/perft";
+import { perft, perft2 } from "../../fast/perft";
 
 function perftDivide(depth: i8, board: BitBoard, player: i8): string {
   const boards = legalMoves(board, player);
@@ -34,16 +34,16 @@ describe(`Perft`, () => {
     const initialBoard =
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     log(parseFEN(initialBoard).toString());
-    const result = perft(3, parseFEN(initialBoard), WHITE);
+    const result = perft2(3, parseFEN(initialBoard), WHITE);
     expect(result).toBe(8902);
     //expect(result).toBe(4865609);
   });
-  xit("should perft from r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ", () => {
-    const board =
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+  it("should perft from r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq - ", () => {
+    const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
+
+    //return <f64>perft2(4, parseFEN(board), BLACK);
     //log(parseFEN(board).toString());
-    expect(perft(3, parseFEN(board), WHITE)).toBe(97862);
-    expect(perft(4, parseFEN(board), WHITE)).toBe(4085603);
+    expect(<f64>perft2(4, parseFEN(board), BLACK)).toBe(<f64>909807);
   });
   xit("should perft from 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ", () => {
     // interessant
@@ -146,9 +146,9 @@ describe(`Perft`, () => {
     const board =
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
     log(parseFEN(board).toString());
-    expect(perft(1, parseFEN(board), WHITE)).toBe(48);
-    expect(perft(2, parseFEN(board), WHITE)).toBe(2039);
-    expect(perft(3, parseFEN(board), WHITE)).toBe(97862);
+    expect(perft2(1, parseFEN(board), WHITE)).toBe(48);
+    expect(perft2(2, parseFEN(board), WHITE)).toBe(2039);
+    expect(perft2(3, parseFEN(board), WHITE)).toBe(97862);
     //expect(perft(5, parseFEN(board), WHITE)).toBe(4085603);
   });
   xit("should perft r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", () => {

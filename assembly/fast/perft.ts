@@ -37,7 +37,7 @@ export function perft2(depth: i8, board: BitBoard, player: i8): u64 {
   for (let index = 0; index < moves.length; index++) {
     board.do(unchecked(moves[index]));
     if (!isInCheck(player, board)) {
-      result += perft(d, board, opponentPlayer);
+      result += perft2(d, board, opponentPlayer);
     }
     board.undo();
   }
