@@ -187,63 +187,6 @@ export class BitBoard {
     const updatedBoard = new BitBoard(bits);
     updatedBoard.do(action);
     return updatedBoard;
-    /*
-
-    const srcPiece: i8 = <i8>(action & BIT_MASK_4);
-    const fromPosition: i8 = <i8>((action >> 4) & BIT_MASK_6);
-    const destPiece: i8 = <i8>((action >> 10) & BIT_MASK_4);
-    const toPosition: i8 = <i8>((action >> 14) & BIT_MASK_6);
-
-    const player = srcPiece & 1;
-
-    const bits = StaticArray.slice(this.bits);
-    unchecked((bits[PREVIOUS_ACTION] = action));
-    const updatedBoard = new BitBoard(bits);
-    updatedBoard.remove(srcPiece, fromPosition);
-
-    const capturedPiece: i8 = <i8>((action >> 20) & BIT_MASK_4);
-    const capturePosition: i8 = <i8>((action >> 24) & BIT_MASK_6);
-    if (capturePosition || capturedPiece) {
-      updatedBoard.remove(capturedPiece, capturePosition);
-    }
-
-    updatedBoard.put(destPiece, toPosition);
-
-    if (srcPiece == KING + player) {
-      updatedBoard.removeKingSideCastlingRight(player);
-      updatedBoard.removeQueenSideCastlingRight(player);
-    }
-
-    const castlingRookPiece: i8 = <i8>((action >> 30) & BIT_MASK_4);
-    const castlingRookPosition: i8 = <i8>((action >> 34) & BIT_MASK_6);
-    const castlingRookDestination: i8 = <i8>((action >> 40) & BIT_MASK_6);
-    if (castlingRookPiece) {
-      updatedBoard.remove(castlingRookPiece, castlingRookPosition);
-      updatedBoard.put(castlingRookPiece, castlingRookDestination);
-    }
-
-    const kingSideRookPosition = player === WHITE ? 7 : 63;
-    if (!(bits[ROOK + player] & (1 << kingSideRookPosition))) {
-      updatedBoard.removeKingSideCastlingRight(player);
-    }
-    const queenSideRookPosition = player === WHITE ? 0 : 56;
-    if (!(bits[ROOK + player] & (1 << queenSideRookPosition))) {
-      updatedBoard.removeQueenSideCastlingRight(player);
-    }
-
-    // en passant file
-    bits[EXTRA] = (bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(action);
-
-    // update clock
-    if (capturePosition || capturedPiece || srcPiece == PAWN + player) {
-      bits[CLOCK] = 0;
-    } else {
-      bits[CLOCK]++;
-    }
-
-    updatedBoard.previousBoard = this;
-
-    return updatedBoard;*/
   }
 
   do(action: u64): void {
