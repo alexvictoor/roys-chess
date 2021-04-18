@@ -18,7 +18,7 @@ import {
 import { parseFEN } from "../../fast/fen-parser";
 
 describe(`Bit Board`, () => {
-  xit("should put piece on board", () => {
+  it("should put piece on board", () => {
     // given
     const board = new BitBoard();
     // when
@@ -28,7 +28,7 @@ describe(`Bit Board`, () => {
     expect(board.getPlayerPiecesMask(WHITE)).toBe(1 << 42);
     expect(board.getPlayerPiecesMask(BLACK)).toBe(0);
   });
-  xit("should move piece on board", () => {
+  it("should move piece on board", () => {
     // given
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 42);
@@ -45,30 +45,30 @@ describe(`Bit Board`, () => {
     expect(updatedBoard.getPlayerPiecesMask(WHITE)).toBe(1 << 43);
     expect(updatedBoard.getPawnMask(WHITE)).toBe(1 << 43);
   });
-  xit("should capture piece on board", () => {
+  it("should capture piece on board", () => {
     // given
     const board = new BitBoard();
-    board.putPiece(KING, WHITE, 40);
-    board.putPiece(PAWN, BLACK, 48);
+    board.putPiece(KING, BLACK, 40);
+    board.putPiece(PAWN, WHITE, 48);
 
     // when
     const action = encodeCapture(
-      KING + WHITE,
+      KING + BLACK,
       40,
-      KING + WHITE,
+      KING + BLACK,
       48,
-      PAWN + BLACK
+      PAWN + WHITE
     );
     const updatedBoard = board.execute(action);
     // then
     expect(updatedBoard.getAllPiecesMask()).toBe(1 << 48);
-    expect(updatedBoard.getPlayerPiecesMask(WHITE)).toBe(1 << 48);
-    expect(updatedBoard.getPlayerPiecesMask(BLACK)).toBe(0);
+    expect(updatedBoard.getPlayerPiecesMask(BLACK)).toBe(1 << 48);
+    expect(updatedBoard.getPlayerPiecesMask(WHITE)).toBe(0);
   });
 });
 
 describe(`Bit Board hash`, () => {
-  xit("should be different for two boards", () => {
+  it("should be different for two boards", () => {
     // given
     const board1 = new BitBoard();
     board1.putPiece(KING, WHITE, 42);
@@ -87,7 +87,7 @@ describe(`Bit Board hash`, () => {
     expect(hash1).not.toBe(hash2);
   });
 
-  xit("should be different for two boards (bis)", () => {
+  it("should be different for two boards (bis)", () => {
     // given
     const board1 = new BitBoard();
     board1.putPiece(KING, WHITE, 42);
@@ -100,7 +100,7 @@ describe(`Bit Board hash`, () => {
     // then
     expect(hash1).not.toBe(hash2);
   });
-  xit("should be equal for two equivalent boards built differently", () => {
+  it("should be equal for two equivalent boards built differently", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 42);
@@ -121,7 +121,7 @@ describe(`Bit Board hash`, () => {
 });
 
 describe(`Mask iterator`, () => {
-  xit("should iterate through positions", () => {
+  it("should iterate through positions", () => {
     // given
     const mask: u64 =
       (1 << 9) +
@@ -151,7 +151,7 @@ describe(`Mask iterator`, () => {
     expect(it.next()).toBe(63);
     expect(it.hasNext()).toBe(false);
   });
-  xit("should iterate to last position", () => {
+  it("should iterate to last position", () => {
     // given
     const mask: u64 = 1 << 63;
     const it = new MaskIterator();
@@ -179,7 +179,7 @@ describe(`Previous actions`, () => {
 });
 
 describe("Action encoding", () => {
-  xit("should decode moved piece and captured piece", () => {
+  it("should decode moved piece and captured piece", () => {
     // given
     const captureAction = encodeCapture(
       PAWN + BLACK,

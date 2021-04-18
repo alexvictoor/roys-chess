@@ -581,7 +581,7 @@ export function encodeCapture(
   return (
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
     ((<u64>(capturedPiece & BIT_MASK_4)) << 20) |
-    ((<u64>(capturedPiece > 0 ? 1 : 0)) << 24) |
+    (<u64>1 << 24) |
     ((<u64>(toPosition == capturedPosition ? 0 : 1)) << 25) // TODO clean up
     //((<u64>(capturedPosition & BIT_MASK_6)) << 24)
   );
