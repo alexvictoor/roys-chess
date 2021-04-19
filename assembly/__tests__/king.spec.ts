@@ -11,7 +11,7 @@ import {
 } from "../chess";
 import { BitBoard } from "../bitboard";
 
-describe(`King`, () => {
+describe("King", () => {
   it("should move one square on all directions", () => {
     // given
     const piece: PieceOnBoard = {

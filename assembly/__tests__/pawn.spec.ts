@@ -13,7 +13,7 @@ import {
 } from "../chess";
 import { pawnPseudoLegalMoves } from "../pawn";
 
-describe(`Pawn`, () => {
+describe("Pawn", () => {
   it("should be able to move forward if the square is empty", () => {
     // given
     const piece: PieceOnBoard = {

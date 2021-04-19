@@ -27,7 +27,7 @@ function decodeScore(action: u64): i8 {
   return <i8>(action & mask);
 }
 
-describe(`Alpha-Beta evaluation`, () => {
+describe("Alpha-Beta evaluation", () => {
   xit("should be great when player will win next turn", () => {
     // given
     const board = new BitBoard();
@@ -50,8 +50,8 @@ describe(`Alpha-Beta evaluation`, () => {
     expect(score).toBe(100000);
   });
 });
-describe(`Alpha-Beta move chooser`, () => {
-  xit("should find check mate move", () => {
+describe("Alpha-Beta move chooser", () => {
+  it("should find check mate move", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 6);
@@ -74,11 +74,11 @@ describe(`Alpha-Beta move chooser`, () => {
     expect(isCheckMate(BLACK, nextBoard)).toBe(true);
   });
 
-  it("freeze ?", () => {
+  xit("freeze ?", () => {
     const board = parseFEN(
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/8/5Q1p/P1PpBPP1/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn1Ppnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1"
+      //"r3k2r/p1ppqpb1/Bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQkq - 0 1"
+      //"r3k2r/p1ppqpb1/Bn2pnp1/3PN3/4P3/2p2Q1p/PPPB1PPP/R3K2R w KQkq - 0 1"
       //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1
     );
     const move = chooseBestMove(WHITE, board, 3);

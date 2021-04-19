@@ -9,7 +9,7 @@ import {
 import { getKnightMoves } from "../../fast/knight";
 import { addKnightPseudoLegalCaptures } from "../../fast/knight-move-generation";
 
-describe(`Knight move generation`, () => {
+describe("Knight move generation", () => {
   it("should get knight moves from the center of the board", () => {
     // given
     const position: i8 = 36;

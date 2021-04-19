@@ -9,7 +9,7 @@ import {
   WHITE,
 } from "../chess";
 
-describe(`Bishop`, () => {
+describe("Bishop", () => {
   it("should move on diagonals", () => {
     // given
     const piece: PieceOnBoard = {

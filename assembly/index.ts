@@ -1,6 +1,7 @@
 // The entry file of your WebAssembly module.
 
-import { BLACK, WHITE } from "./fast/bitboard";
+import { chooseBestMove } from "./fast/alpha-beta-evaluation";
+import { BLACK, toNotation, WHITE } from "./fast/bitboard";
 import { parseFEN } from "./fast/fen-parser";
 import {
   findAllBishopMagicNumbers,
@@ -32,6 +33,14 @@ export function benchPerftOptimized(): f64 {
 
   return <f64>perft2(4, parseFEN(board), BLACK);
 }
+
+export function nextMove(fen: string, player: f64): string {
+  const board = parseFEN(fen);
+  const move = chooseBestMove(<i8>player, board, 6);
+
+  return toNotation(move);
+}
+
 export function findRookMagicNumbers(): string {
   return findAllRookMagicNumbers()
     .slice(0)

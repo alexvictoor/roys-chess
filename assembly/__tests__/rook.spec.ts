@@ -10,7 +10,7 @@ import {
 } from "../chess";
 import { rookPseudoLegalMoves } from "../rook";
 
-describe(`Rook`, () => {
+describe("Rook", () => {
   it("should move horizontaly and verticaly", () => {
     // given
     const piece: PieceOnBoard = {

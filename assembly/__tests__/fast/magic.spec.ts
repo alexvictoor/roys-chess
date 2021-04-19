@@ -10,7 +10,7 @@ import {
   findAllBishopMagicNumbers,
 } from "../../fast/magic";
 
-describe(`Rook masks`, () => {
+describe("Rook masks", () => {
   it("should get bits on horizontal & vertical lines", () => {
     // given
     const squareIndex: i8 = 0;
@@ -33,7 +33,7 @@ describe(`Rook masks`, () => {
     );
   });
 });
-describe(`Rook attacks`, () => {
+describe("Rook attacks", () => {
   it("should be blocked on vertical and horizontal lines", () => {
     // given
     const squareIndex: i8 = 0;
@@ -45,7 +45,7 @@ describe(`Rook attacks`, () => {
   });
 });
 
-describe(`Bishop masks`, () => {
+describe("Bishop masks", () => {
   it("should get bits on verticals", () => {
     // given
     const squareIndex: i8 = 0;
@@ -57,7 +57,7 @@ describe(`Bishop masks`, () => {
     );
   });
 });
-describe(`Bishop attacks`, () => {
+describe("Bishop attacks", () => {
   it("should be blocked on both verticals", () => {
     // given
     const squareIndex: i8 = 19;
@@ -71,7 +71,7 @@ describe(`Bishop attacks`, () => {
   });
 });
 
-describe(`Rook blocker mask generated`, () => {
+describe("Rook blocker mask generated", () => {
   it("should be inside original mask", () => {
     // given
     const squareIndex: i8 = 0;
@@ -85,7 +85,7 @@ describe(`Rook blocker mask generated`, () => {
   });
 });
 
-describe(`Rook magic finder`, () => {
+describe("Rook magic finder", () => {
   it("should find a magic number", () => {
     // given
     const squareIndex: i8 = 0;
@@ -103,7 +103,7 @@ describe(`Rook magic finder`, () => {
   });
 });
 
-describe(`Bishop magic finder`, () => {
+describe("Bishop magic finder", () => {
   it("should find a magic number", () => {
     // given
     const squareIndex: i8 = 0;

@@ -13,7 +13,7 @@ import { parseFEN } from "../../fast/fen-parser";
 import { evaluateQuiescence } from "../../fast/quiescence-evaluation";
 import { evaluate } from "../../fast/static-evaluation";
 
-describe(`Quiescence evaluation`, () => {
+describe("Quiescence evaluation", () => {
   xit("should be greather than static evaluation when opponent pieces are not protected", () => {
     // given
     const board = new BitBoard();

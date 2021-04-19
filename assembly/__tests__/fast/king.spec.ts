@@ -9,7 +9,7 @@ import {
 import { getKingMoves } from "../../fast/king";
 import { addKingPseudoLegalCaptures } from "../../fast/king-move-generation";
 
-describe(`King move generation`, () => {
+describe("King move generation", () => {
   it("should get king moves from the center of the board", () => {
     // given
     const board: u64 = 0;

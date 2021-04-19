@@ -10,7 +10,7 @@ import {
 import { knightPseudoLegalMoves } from "../knight";
 import { BitBoard } from "../bitboard";
 
-describe(`Knight`, () => {
+describe("Knight", () => {
   it("should move 2 squares in one direction then turn 90 degres and move one square", () => {
     // given
     const piece: PieceOnBoard = {

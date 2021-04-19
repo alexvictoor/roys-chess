@@ -13,7 +13,7 @@ import {
   addRookPseudoLegalCaptures,
 } from "../../fast/sliding-pieces-move-generation";
 
-describe(`Rook captures`, () => {
+describe("Rook captures", () => {
   it("should get rook captures", () => {
     // given
     const board = new BitBoard();
@@ -29,7 +29,7 @@ describe(`Rook captures`, () => {
   });
 });
 
-describe(`Bishop captures`, () => {
+describe("Bishop captures", () => {
   it("should get bishop captures", () => {
     // given
     const board = new BitBoard();
@@ -45,7 +45,7 @@ describe(`Bishop captures`, () => {
   });
 });
 
-describe(`Queen captures`, () => {
+describe("Queen captures", () => {
   it("should get queen captures in diagonals", () => {
     // given
     const board = new BitBoard();

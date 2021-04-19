@@ -17,7 +17,7 @@ import {
   addPawnPseudoLegalMoves,
 } from "../../fast/pawn";
 
-describe(`Pawn move generation`, () => {
+describe("Pawn move generation", () => {
   it("should get pawn move one square forward when nothing is in the way", () => {
     // given
     const board = new BitBoard();

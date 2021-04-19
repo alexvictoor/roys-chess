@@ -17,7 +17,7 @@ import {
 } from "../../fast/bitboard";
 import { parseFEN } from "../../fast/fen-parser";
 
-describe(`Bit Board`, () => {
+describe("Bit Board", () => {
   it("should put piece on board", () => {
     // given
     const board = new BitBoard();
@@ -67,7 +67,7 @@ describe(`Bit Board`, () => {
   });
 });
 
-describe(`Bit Board hash`, () => {
+describe("Bit Board hash", () => {
   it("should be different for two boards", () => {
     // given
     const board1 = new BitBoard();
@@ -120,7 +120,7 @@ describe(`Bit Board hash`, () => {
   });
 });
 
-describe(`Mask iterator`, () => {
+describe("Mask iterator", () => {
   it("should iterate through positions", () => {
     // given
     const mask: u64 =
@@ -163,7 +163,7 @@ describe(`Mask iterator`, () => {
   });
 });
 
-describe(`Previous actions`, () => {
+describe("Previous actions", () => {
   it("should provide the previous action code", () => {
     const move = encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16);
     expect(toNotation(move)).toBe("a2-a3");

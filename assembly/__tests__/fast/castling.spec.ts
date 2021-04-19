@@ -10,7 +10,7 @@ import {
 import { addCastlingMoves } from "../../fast/castling";
 import { parseFEN } from "../../fast/fen-parser";
 
-describe(`Castling`, () => {
+describe("Castling", () => {
   it("should be possible for white on king side", () => {
     // given
     const board = new BitBoard();

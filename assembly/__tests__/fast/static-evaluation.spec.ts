@@ -10,7 +10,7 @@ import {
   WHITE,
 } from "../../fast/bitboard";
 
-describe(`Static evaluation`, () => {
+describe("Static evaluation", () => {
   it("should be 0 when the game begins", () => {
     const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     const initialBoard = parseFEN(fen);

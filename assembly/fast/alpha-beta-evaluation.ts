@@ -58,6 +58,7 @@ export function evaluatePosition(
 }
 
 export function chooseBestMove(player: i8, board: BitBoard, depth: i8): u64 {
+  history.resetHistory();
   const moves = pseudoLegalMoves(board, player);
   sortMoves(player, 1, moves);
   let alpha: i32 = i32.MIN_VALUE >> 1;

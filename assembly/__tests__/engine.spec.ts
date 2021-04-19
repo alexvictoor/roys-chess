@@ -13,7 +13,7 @@ import {
 } from "../chess";
 import { castlingMoves, isInCheck, legalMoves } from "../engine";
 
-describe(`Engine`, () => {
+describe("Engine", () => {
   it("should be checked when under attack by opponent rook", () => {
     // given
     const whiteKing: PieceOnBoard = {
@@ -123,7 +123,7 @@ describe(`Engine`, () => {
     expect(check).toBe(true);
   });
 
-  describe(`Castling`, () => {
+  describe("Castling", () => {
     it("should be possible for white on king side", () => {
       // given
       const whiteKing: PieceOnBoard = {

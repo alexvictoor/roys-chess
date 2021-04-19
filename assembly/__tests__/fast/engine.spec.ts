@@ -13,7 +13,7 @@ import { legalMoves } from "../../fast/engine";
 import { parseFEN } from "../../fast/fen-parser";
 import { legalCaptures } from "../../fast/quiescence-evaluation";
 
-describe(`Engine move generation`, () => {
+describe("Engine move generation", () => {
   it("should get bishop legal moves", () => {
     // given
     const board = new BitBoard();
@@ -127,7 +127,7 @@ describe(`Engine move generation`, () => {
   });
 });
 
-describe(`Engine captures`, () => {
+describe("Engine captures", () => {
   it("should get king captures", () => {
     // given
     const board = new BitBoard();

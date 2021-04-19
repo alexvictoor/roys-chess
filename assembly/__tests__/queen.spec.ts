@@ -2,7 +2,7 @@ import { BitBoard } from "../bitboard";
 import { MoveOutcome, PieceOnBoard, QUEEN, WHITE } from "../chess";
 import { queenPseudoLegalMoves } from "../queen";
 
-describe(`Queen`, () => {
+describe("Queen", () => {
   it("should move as rooks and bishops", () => {
     // given
     const piece: PieceOnBoard = {

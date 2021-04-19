@@ -29,7 +29,7 @@ function perftDivide(depth: i8, board: BitBoard, player: i8): string {
   return result;
 }
 
-describe(`Perft`, () => {
+describe("Perft", () => {
   xit("should perft from initial", () => {
     const initialBoard =
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

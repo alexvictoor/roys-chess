@@ -13,7 +13,7 @@ import {
 } from "../../fast/bitboard";
 import { isCheckMate, isDraw, isInCheck } from "../../fast/status";
 
-describe(`Status`, () => {
+describe("Status", () => {
   it("should be checked when attacked by opponent rook", () => {
     // given
     const board = new BitBoard();

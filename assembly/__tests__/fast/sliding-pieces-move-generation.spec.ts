@@ -15,7 +15,7 @@ import {
   rookMoves,
 } from "../../fast/sliding-pieces-move-generation";
 
-describe(`Rook magic move generation`, () => {
+describe("Rook magic move generation", () => {
   it("should get rook moves", () => {
     // given
     const board: u64 = (1 << 2) + (1 << 9);
@@ -76,7 +76,7 @@ describe(`Rook magic move generation`, () => {
   });
 });
 
-describe(`Bishop magic move generation`, () => {
+describe("Bishop magic move generation", () => {
   it("should get bishop moves", () => {
     // given
     const position: i8 = 19;
