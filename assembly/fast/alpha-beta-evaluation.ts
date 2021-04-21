@@ -57,32 +57,35 @@ export function evaluatePosition(
   return alphaUpdated;
 }
 
-export function chooseBestMove(player: i8, board: BitBoard, depth: i8): u64 {
+export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
   history.resetHistory();
-  const moves = pseudoLegalMoves(board, player);
-  sortMoves(player, 1, moves);
+
   let alpha: i32 = i32.MIN_VALUE >> 1;
-  let bestMove: u64 = 0;
+  let bestMove: u32 = 0;
   const opponentPlayer = opponent(player);
-  while (moves.length > 0) {
-    const move = moves.pop();
-    board.do(move);
-    if (isInCheck(player, board)) {
+  for (let depth: i8 = 1; depth <= maxDepth; depth++) {
+    const moves = pseudoLegalMoves(board, player);
+    sortMoves(player, 1, moves);
+    while (moves.length > 0) {
+      const move = moves.pop();
+      board.do(move);
+      if (isInCheck(player, board)) {
+        board.undo();
+        continue;
+      }
+      const score = -evaluatePosition(
+        opponentPlayer,
+        board,
+        depth,
+        i32.MIN_VALUE >> 1,
+        -alpha,
+        2
+      );
       board.undo();
-      continue;
-    }
-    const score = -evaluatePosition(
-      opponentPlayer,
-      board,
-      depth,
-      i32.MIN_VALUE >> 1,
-      -alpha,
-      2
-    );
-    board.undo();
-    if (score > alpha) {
-      alpha = score;
-      bestMove = move;
+      if (score > alpha) {
+        alpha = score;
+        bestMove = move;
+      }
     }
   }
   return bestMove;
