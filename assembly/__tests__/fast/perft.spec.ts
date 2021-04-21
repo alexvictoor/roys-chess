@@ -38,7 +38,7 @@ describe("Perft", () => {
     expect(result).toBe(8902);
     //expect(result).toBe(4865609);
   });
-  it("should perft from r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq - ", () => {
+  xit("should perft from r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq - ", () => {
     const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
 
     //return <f64>perft2(4, parseFEN(board), BLACK);
