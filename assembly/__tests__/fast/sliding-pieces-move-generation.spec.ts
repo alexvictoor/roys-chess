@@ -40,7 +40,7 @@ describe("Rook magic move generation", () => {
     const whiteRookPosition: i8 = 0;
     board.putPiece(ROOK, WHITE, whiteRookPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addRookPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(14);
@@ -53,7 +53,7 @@ describe("Rook magic move generation", () => {
     const whiteRookPosition: i8 = 0;
     board.putPiece(ROOK, WHITE, whiteRookPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addRookPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(7);
@@ -68,7 +68,7 @@ describe("Rook magic move generation", () => {
     const whiteKnightPosition: i8 = 1;
     board.putPiece(KNIGHT, WHITE, whiteKnightPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addRookPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(1);
@@ -92,7 +92,7 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addBishopPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(7);
@@ -105,7 +105,7 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addBishopPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(0);
@@ -118,7 +118,7 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addBishopPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(1);

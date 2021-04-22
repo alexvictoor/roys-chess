@@ -10,7 +10,7 @@ import {
 import { isInCheck } from "./status";
 
 export function addCastlingMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {

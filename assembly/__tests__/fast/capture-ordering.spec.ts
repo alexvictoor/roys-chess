@@ -67,7 +67,7 @@ describe('"Most valuable victim, least valuable attacker" capture comparison', (
       QUEEN + BLACK,
       17
     );
-    const captures: u64[] = [
+    const captures: u32[] = [
       lowValueCapture,
       highestValueCapture,
       mediumValueCapture,

@@ -21,7 +21,7 @@ function perftDivide(depth: i8, board: BitBoard, player: i8): string {
   for (let index = 0; index < boards.length; index++) {
     const b = boards[index];
     result +=
-      toNotation(b.getPreviousMove()) +
+      toNotation(<u32>b.getPreviousMove()) +
       " " +
       (depth == 1 ? "1" : perft(depth - 1, b, opponent(player)).toString()) +
       "\n";

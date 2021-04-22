@@ -4,11 +4,11 @@ export class History {
   private playedMoveCounters: StaticArray<i32> = new StaticArray<i32>(SIZE);
   private cutOffMoveCounters: StaticArray<i32> = new StaticArray<i32>(SIZE);
 
-  private primaryKillers: StaticArray<u64> = new StaticArray<u64>(12);
-  private secondaryKillers: StaticArray<u64> = new StaticArray<u64>(12);
+  private primaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
+  private secondaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
 
   @inline
-  private computeMoveIndex(player: i8, move: u64): i32 {
+  private computeMoveIndex(player: i8, move: u32): i32 {
     return (
       ((((<i32>decodeFromPosition(move)) << 6) + <i32>decodeToPosition(move)) <<
         1) +
@@ -16,13 +16,13 @@ export class History {
     );
   }
   @inline
-  recordPlayedMove(player: i8, ply: i8, move: u64): void {
+  recordPlayedMove(player: i8, ply: i8, move: u32): void {
     unchecked(
       (this.playedMoveCounters[this.computeMoveIndex(player, move)] += 1)
     );
   }
   @inline
-  recordCutOffMove(player: i8, ply: i8, move: u64): void {
+  recordCutOffMove(player: i8, ply: i8, move: u32): void {
     //log(this.computeMoveIndex(player, move));
     //log(1 << ply);
     unchecked(
@@ -36,7 +36,7 @@ export class History {
   }
 
   @inline
-  getMoveScore(player: i8, ply: i8, move: u64): i32 {
+  getMoveScore(player: i8, ply: i8, move: u32): i32 {
     //log(this.cutOffMoveCounters[this.computeMoveIndex(player, move)]);
 
     const index = this.computeMoveIndex(player, move);

@@ -33,10 +33,10 @@ describe("Bit Board", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 42);
     // when
-    const action: u64 =
-      (<u64>(PAWN + WHITE)) |
+    const action: u32 =
+      (<u32>(PAWN + WHITE)) |
       (42 << 4) |
-      ((<u64>(PAWN + WHITE)) << 10) |
+      ((<u32>(PAWN + WHITE)) << 10) |
       (43 << 14);
 
     const updatedBoard = board.execute(action);
@@ -204,7 +204,7 @@ describe("Action do/undo", () => {
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 42);
     // when
-    const action: u64 = encodeMove(WHITE + KING, 42, WHITE + KING, 43);
+    const action = encodeMove(WHITE + KING, 42, WHITE + KING, 43);
     board.do(action);
     // then
     expect(board.getAllPiecesMask()).toBe(1 << 43);

@@ -73,7 +73,7 @@ const pawnCapturinEnPassantLeftPositions = new MaskIterator();
 const pawnCapturinEnPassantRightPositions = new MaskIterator();
 
 export function addPawnPseudoLegalMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -127,7 +127,7 @@ export function addPawnPseudoLegalMoves(
 }
 
 export function addPawnPseudoLegalCaptures(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {

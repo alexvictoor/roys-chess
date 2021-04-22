@@ -24,7 +24,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 16);
     board.putPiece(PAWN, BLACK, 24);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(1);
@@ -37,7 +37,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 16);
     board.putPiece(PAWN, BLACK, 24);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(0);
@@ -51,7 +51,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 10);
     board.putPiece(PAWN, BLACK, 17);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(2);
@@ -64,7 +64,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 17);
     board.putPiece(PAWN, BLACK, 19);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(5);
@@ -76,7 +76,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 23);
     board.putPiece(PAWN, BLACK, 30);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(1);
@@ -88,7 +88,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 16);
     board.putPiece(PAWN, BLACK, 8);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(4);
@@ -104,7 +104,7 @@ describe("Pawn move generation", () => {
     board.putPiece(ROOK, WHITE, 1);
     board.putPiece(PAWN, BLACK, 8);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, BLACK);
     // then
     expect(moves).toHaveLength(4);
@@ -127,7 +127,7 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board, WHITE);
     // then
     expect(moves).toHaveLength(2);
@@ -137,12 +137,12 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     board.putPiece(PAWN, BLACK, 25);
-    const whiteMoves: u64[] = [];
+    const whiteMoves: u32[] = [];
     addPawnPseudoLegalMoves(whiteMoves, board, WHITE);
     // when pawn moves 2 squares forward
     const boardAfterPawnMove = board.execute(whiteMoves[1]);
     // then
-    const blackMoves: u64[] = [];
+    const blackMoves: u32[] = [];
     addPawnPseudoLegalMoves(blackMoves, boardAfterPawnMove, BLACK);
     expect(blackMoves).toHaveLength(2);
   });
@@ -161,7 +161,7 @@ describe("Pawn move generation", () => {
 
     const board2 = board.execute(encodePawnDoubleMove(BLACK, 48, 32));
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addPawnPseudoLegalMoves(moves, board2, WHITE);
     // then
     expect(moves).toHaveLength(2);
@@ -172,7 +172,7 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     board.putPiece(PAWN, BLACK, 25);
-    const whiteMoves: u64[] = [];
+    const whiteMoves: u32[] = [];
     addPawnPseudoLegalMoves(whiteMoves, board, WHITE);
     // when pawn moves 2 squares forward
     const boardAfterPawnMove = board.execute(whiteMoves[1]);
@@ -189,7 +189,7 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 50);
     // when pawn moves 2 squares forward
     const board2 = board.execute(encodePawnDoubleMove(BLACK, 50, 34));
-    const whiteMoves: u64[] = [];
+    const whiteMoves: u32[] = [];
     addPawnPseudoLegalMoves(whiteMoves, board2, WHITE);
     // then white pawns should be able to eat en passant
     expect(whiteMoves).toHaveLength(2);

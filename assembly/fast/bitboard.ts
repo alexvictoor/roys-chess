@@ -77,9 +77,9 @@ export class BitBoard {
     }
     throw new Error(
       "Piece not found at position " +
-        position.toString() +
-        " on board " +
-        this.toString()
+        position.toString() 
+        //" on board " +
+        //this.toString()
     );
   }
 
@@ -181,7 +181,7 @@ export class BitBoard {
     return <i8>this.bits[CLOCK];
   }
 
-  execute(action: u64): BitBoard {
+  execute(action: u32): BitBoard {
     const bits = StaticArray.slice(this.bits);
     unchecked((bits[PREVIOUS_ACTION] = action));
     const updatedBoard = new BitBoard(bits);
@@ -189,7 +189,7 @@ export class BitBoard {
     return updatedBoard;
   }
 
-  do(action: u64): void {
+  do(action: u32): void {
     this.hashHistory.push(this.hashCode());
     this.storeState(action);
     const srcPiece: i8 = decodeSrcPiece(action);
@@ -271,10 +271,12 @@ export class BitBoard {
 
   undo(): void {
     this.hashHistory.pop();
-    const action = this.stateHistory.pop();
-    const castlingRights = decodeCastlingRights(action);
+    const state = this.stateHistory.pop();
+    const castlingRights = decodeCastlingRights(state);
     this.bits[EXTRA] &= castlingRights << 4;
-    this.bits[CLOCK] = action >> 54;
+    this.bits[CLOCK] = state >> 54;
+
+    const action = decodeAction(state);
 
     const srcPiece: i8 = decodeSrcPiece(action);
     const fromPosition: i8 = decodeFromPosition(action);
@@ -287,7 +289,8 @@ export class BitBoard {
 
     // en passant file
     if (this.stateHistory.length > 0) {
-      const previousAction = this.stateHistory[this.stateHistory.length - 1];
+      const previousState = this.stateHistory[this.stateHistory.length - 1];
+      const previousAction = decodeAction(previousState);
       this.bits[EXTRA] =
         (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(previousAction);
     } else {
@@ -490,12 +493,12 @@ export function encodeMove(
   fromPosition: i8,
   dstPiece: i8,
   toPosition: i8
-): u64 {
+): u32 {
   return (
-    (<u64>(srcPiece & BIT_MASK_4)) |
-    ((<u64>(fromPosition & BIT_MASK_6)) << 4) |
-    ((<u64>(dstPiece & BIT_MASK_4)) << 10) |
-    ((<u64>(toPosition & BIT_MASK_6)) << 14)
+    (<u32>(srcPiece & BIT_MASK_4)) |
+    ((<u32>(fromPosition & BIT_MASK_6)) << 4) |
+    ((<u32>(dstPiece & BIT_MASK_4)) << 10) |
+    ((<u32>(toPosition & BIT_MASK_6)) << 14)
   );
 }
 
@@ -505,9 +508,9 @@ export function encodePawnDoubleMove(
   player: i8,
   fromPosition: i8,
   toPosition: i8
-): u64 {
+): u32 {
   let move = encodeMove(PAWN + player, fromPosition, PAWN + player, toPosition);
-  move |= ((<u64>toPosition % 8 << 1) + 1) << 26;
+  move |= ((<u32>toPosition % 8 << 1) + 1) << 26;
   return move;
 }
 
@@ -520,62 +523,62 @@ export function encodeCapture(
   toPosition: i8,
   capturedPiece: i8,
   capturedPosition: i8 = toPosition
-): u64 {
+): u32 {
   return (
     encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
-    ((<u64>(capturedPiece & BIT_MASK_4)) << 20) |
-    (<u64>1 << 24) |
-    ((<u64>(toPosition == capturedPosition ? 0 : 1)) << 25) // TODO clean up
+    ((<u32>(capturedPiece & BIT_MASK_4)) << 20) |
+    (<u32>1 << 24) |
+    ((<u32>(toPosition == capturedPosition ? 0 : 1)) << 25) // TODO clean up
     //((<u64>(capturedPosition & BIT_MASK_6)) << 24)
   );
 }
 
 // @ts-ignore
 @inline
-export function decodeSrcPiece(action: u64): i8 {
+export function decodeSrcPiece(action: u32): i8 {
   return <i8>(action & BIT_MASK_4);
 }
 // @ts-ignore
 @inline
-export function decodeFromPosition(action: u64): i8 {
+export function decodeFromPosition(action: u32): i8 {
   return <i8>((action >> 4) & BIT_MASK_6);
 }
 // @ts-ignore
 @inline
-export function decodeDestPiece(action: u64): i8 {
+export function decodeDestPiece(action: u32): i8 {
   return <i8>((action >> 10) & BIT_MASK_4);
 }
 // @ts-ignore
 @inline
-export function decodeToPosition(action: u64): i8 {
+export function decodeToPosition(action: u32): i8 {
   return <i8>((action >> 14) & BIT_MASK_6);
 }
 // @ts-ignore
 @inline
-export function decodeCapturedPiece(action: u64): i8 {
+export function decodeCapturedPiece(action: u32): i8 {
   return <i8>((action >> 20) & BIT_MASK_4);
 }
 // @ts-ignore
 @inline
-export function decodeCaptureFlag(action: u64): i8 {
+export function decodeCaptureFlag(action: u32): i8 {
   return <i8>((action >> 24) & 1);
 }
 // @ts-ignore
 @inline
-export function decodeCaptureEnPassantFlag(action: u64): i8 {
+export function decodeCaptureEnPassantFlag(action: u32): i8 {
   return <i8>((action >> 25) & 1);
 }
 
 // @ts-ignore
 @inline
-export function decodeEnPassantFile(action: u64): u64 {
+export function decodeEnPassantFile(action: u32): u64 {
   return (action >> 26) & BIT_MASK_4;
 }
 
 // @ts-ignore
 @inline
-export function decodeAction(state: u64): u64 {
-  return state;
+export function decodeAction(state: u64): u32 {
+  return <u32>(state & 0xFFFFFFFF);
 }
 
 // @ts-ignore
@@ -591,7 +594,7 @@ function getCodeFromPosition(position: i8): string {
   return cols[x] + y.toString();
 }
 
-export function toNotation(action: u64): string {
+export function toNotation(action: u32): string {
   const fromPosition: i8 = decodeFromPosition(action);
   const toPosition: i8 = decodeToPosition(action);
   const srcPiece = decodeSrcPiece(action);

@@ -80,8 +80,8 @@ export function evaluateQuiescence(
   return alphaUpdated;
 }
 
-export function pseudoLegalCaptures(board: BitBoard, player: i8): u64[] {
-  const moves: u64[] = [];
+export function pseudoLegalCaptures(board: BitBoard, player: i8): u32[] {
+  const moves: u32[] = [];
   addPawnPseudoLegalCaptures(moves, board, player);
   addKnightPseudoLegalCaptures(moves, board, player);
   addBishopPseudoLegalCaptures(moves, board, player);
@@ -92,7 +92,7 @@ export function pseudoLegalCaptures(board: BitBoard, player: i8): u64[] {
 }
 
 export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
-  const moves: u64[] = pseudoLegalCaptures(board, player);
+  const moves: u32[] = pseudoLegalCaptures(board, player);
   sortCaptures(moves);
 
   return removeCheckedBoardFrom(

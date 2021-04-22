@@ -25,7 +25,7 @@ const toPositions = new MaskIterator();
 const capturePositions = new MaskIterator();
 
 export function addKnightPseudoLegalMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -61,7 +61,7 @@ export function addKnightPseudoLegalMoves(
 }
 
 export function addKnightPseudoLegalCaptures(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {

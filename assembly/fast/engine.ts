@@ -11,7 +11,7 @@ import {
 import { isInCheck } from "./status";
 
 export function removeCheckedBoardFrom(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): BitBoard[] {
@@ -26,8 +26,8 @@ export function removeCheckedBoardFrom(
   return result;
 }
 
-export function pseudoLegalMoves(board: BitBoard, player: i8): u64[] {
-  const moves: u64[] = [];
+export function pseudoLegalMoves(board: BitBoard, player: i8): u32[] {
+  const moves: u32[] = [];
   addCastlingMoves(moves, board, player);
   addPawnPseudoLegalMoves(moves, board, player);
   addKnightPseudoLegalMoves(moves, board, player);
@@ -39,9 +39,9 @@ export function pseudoLegalMoves(board: BitBoard, player: i8): u64[] {
   return moves;
 }
 
-function hasLegalMove(moves: u64[], board: BitBoard, player: i8): boolean {
+function hasLegalMove(moves: u32[], board: BitBoard, player: i8): boolean {
   while (moves.length > 0) {
-    const move: u64 = moves.pop();
+    const move: u32 = moves.pop();
     board.do(move);
     if (!isInCheck(player, board)) {
       board.undo();
@@ -53,7 +53,7 @@ function hasLegalMove(moves: u64[], board: BitBoard, player: i8): boolean {
 }
 
 export function canMove(board: BitBoard, player: i8): boolean {
-  const moves: u64[] = [];
+  const moves: u32[] = [];
   addPawnPseudoLegalMoves(moves, board, player);
   if (hasLegalMove(moves, board, player)) {
     return true;
@@ -83,7 +83,7 @@ export function canMove(board: BitBoard, player: i8): boolean {
 }
 
 export function legalMoves(board: BitBoard, player: i8): BitBoard[] {
-  const moves: u64[] = pseudoLegalMoves(board, player);
+  const moves: u32[] = pseudoLegalMoves(board, player);
 
   return removeCheckedBoardFrom(moves, board, player);
 }

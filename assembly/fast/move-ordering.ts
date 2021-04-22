@@ -15,7 +15,7 @@ for (let i = 0; i < SCORES.length; i++) {
   }
 }
 
-export function score(player: i8, ply: i8, action: u64): u32 {
+export function score(player: i8, ply: i8, action: u32): u32 {
   const isCapture: i8 = decodeCaptureFlag(action);
 
   if (isCapture) {
@@ -38,25 +38,28 @@ function decodeScore(action: u64): u32 {
   return <i8>(action >> 32);
 }
 
-export function sortMoves(player: i8, ply: i8, moves: u64[]): void {
+const scores: StaticArray<u32> = new StaticArray<u32>(256);
+export function sortMoves(player: i8, ply: i8, moves: u32[]): void {
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
-    const scoredMove = encodeScore(move, score(player, ply, move));
-    unchecked((moves[index] = scoredMove));
+    unchecked(scores[index] = score(player, ply, move));
   }
   // in place insertion sort
   for (let i = 1; i < moves.length; i++) {
     const move = unchecked(moves[i]);
-    const score = decodeScore(move);
+    const score = unchecked(scores[i]);
     let j = i - 1;
     while (j >= 0) {
       const otherMove = unchecked(moves[j]);
-      if (decodeScore(otherMove) >= score) {
+      const otherScore = unchecked(scores[j]);
+      if (otherScore >= score) {
         break;
       }
       unchecked((moves[j + 1] = otherMove));
+      unchecked((scores[j + 1] = otherScore));
       j--;
     }
     unchecked((moves[j + 1] = move));
+    unchecked((scores[j + 1] = score));
   }
 }

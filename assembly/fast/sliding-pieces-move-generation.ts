@@ -84,7 +84,7 @@ const toPositions = new MaskIterator();
 const capturePositions = new MaskIterator();
 
 export function addRookPseudoLegalMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -120,7 +120,7 @@ export function addRookPseudoLegalMoves(
 }
 
 export function addRookPseudoLegalCaptures(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -163,7 +163,7 @@ export function queenMoves(board: u64, queenPosition: i8): u64 {
 }
 
 export function addBishopPseudoLegalMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -199,7 +199,7 @@ export function addBishopPseudoLegalMoves(
 }
 
 export function addBishopPseudoLegalCaptures(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -228,7 +228,7 @@ export function addBishopPseudoLegalCaptures(
 }
 
 export function addQueenPseudoLegalMoves(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {
@@ -264,7 +264,7 @@ export function addQueenPseudoLegalMoves(
 }
 
 export function addQueenPseudoLegalCaptures(
-  moves: u64[],
+  moves: u32[],
   board: BitBoard,
   player: i8
 ): void {

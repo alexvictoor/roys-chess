@@ -19,7 +19,7 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, WHITE);
 
     // then
@@ -36,7 +36,7 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, WHITE);
 
     // then
@@ -55,7 +55,7 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, BLACK);
 
     // then
@@ -79,7 +79,7 @@ describe("Castling", () => {
     );
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board2, BLACK);
 
     // then
@@ -97,7 +97,7 @@ describe("Castling", () => {
     const board3 = board2.execute(encodeMove(ROOK + WHITE, 0, ROOK + WHITE, 1));
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board3, BLACK);
 
     // then
@@ -118,7 +118,7 @@ describe("Castling", () => {
       .execute(encodeMove(KING + WHITE, 12, KING + WHITE, 4));
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, boardAfterKingMoves, WHITE);
 
     // then
@@ -139,7 +139,7 @@ describe("Castling", () => {
       .execute(encodeMove(KING + BLACK, 52, KING + BLACK, 60));
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, boardAfterKingMoves, BLACK);
 
     // then
@@ -160,7 +160,7 @@ describe("Castling", () => {
       .execute(encodeMove(ROOK + WHITE, 8, ROOK + WHITE, 0));
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, boardAfterKingMoves, WHITE);
 
     // then
@@ -179,7 +179,7 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, BLACK);
 
     // then
@@ -196,7 +196,7 @@ describe("Castling", () => {
     board.putPiece(BISHOP, WHITE, 51);
 
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, BLACK);
 
     // then
@@ -213,7 +213,7 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
     board.putPiece(BISHOP, WHITE, 52);
     // when
-    const moves: u64[] = [];
+    const moves: u32[] = [];
     addCastlingMoves(moves, board, BLACK);
 
     // then
