@@ -1,8 +1,6 @@
 import {
-  BISHOP,
   BitBoard,
   BLACK,
-  encodeCapture,
   KING,
   PAWN,
   QUEEN,
@@ -14,7 +12,7 @@ import { evaluateQuiescence } from "../../fast/quiescence-evaluation";
 import { evaluate } from "../../fast/static-evaluation";
 
 describe("Quiescence evaluation", () => {
-  xit("should be greather than static evaluation when opponent pieces are not protected", () => {
+  it("should be greather than static evaluation when opponent pieces are not protected", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 4);
@@ -28,7 +26,7 @@ describe("Quiescence evaluation", () => {
     expect(quiescenceEvaluation).toBeGreaterThan(staticEvaluation);
   });
 
-  xit("should be great when opponent will be checkmate", () => {
+  it("should be great when opponent will be checkmate", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 4);
@@ -42,7 +40,7 @@ describe("Quiescence evaluation", () => {
     expect(quiescenceEvaluation).toBe(10000);
   });
 
-  it("bench", () => {
+  xit("bench", () => {
     const board = parseFEN(
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
     );
