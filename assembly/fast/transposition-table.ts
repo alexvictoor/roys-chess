@@ -25,21 +25,23 @@ export class TranspositionTable {
     const hash = board.hashCode();
     const verificationEntry: u64 = (<u64>depth) | ((hash >> 5) << 5);
     const index: i32 = <i32>(hash % this.size);
-    this.verificationEntries[index] = verificationEntry;
-    this.moveEntries[index] =
-      (<u64>scoreType) |
-      ((<u64>move) << 2) |
-      ((<u64>score) << 32) |
-      ((<u64>depth) << 48);
+    unchecked((this.verificationEntries[index] = verificationEntry));
+    unchecked(
+      (this.moveEntries[index] =
+        (<u64>scoreType) |
+        ((<u64>move) << 2) |
+        ((<u64>score) << 32) |
+        ((<u64>depth) << 48))
+    );
   }
 
   getEntry(board: BitBoard): u64 {
     const hash = board.hashCode();
     const index = <i32>(hash % this.size);
-    const verificationEntry = this.verificationEntries[index];
+    const verificationEntry = unchecked(this.verificationEntries[index]);
     const hashVerified = verificationEntry >> 5 == hash >> 5;
     if (hashVerified) {
-      return this.moveEntries[index];
+      return unchecked(this.moveEntries[index]);
     }
     return 0;
   }
@@ -58,4 +60,14 @@ export function decodeScoreTypeFromEntry(entry: u64): i8 {
 }
 export function decodeDepthFromEntry(entry: u64): i8 {
   return <i8>(entry >> 48);
+}
+
+let transpositionTable: TranspositionTable = new TranspositionTable(1);
+
+export function getTranspositionTable(): TranspositionTable {
+  return transpositionTable;
+}
+
+export function setupTranspositionTable(): void {
+  transpositionTable = new TranspositionTable(1);
 }

@@ -38,7 +38,7 @@ describe("Static evaluation", () => {
     board.putPiece(QUEEN, WHITE, 60);
     // when
     // then
-    expect(evaluate(BLACK, board)).toBe(-100000);
+    expect(evaluate(BLACK, board)).toBe(<i16>-100000);
   });
   xit("should be 0 when game is draw", () => {
     // given

@@ -20,10 +20,10 @@ import { isInCheck } from "./status";
 export function evaluateQuiescence(
   player: i8,
   board: BitBoard,
-  alpha: i32 = i32.MIN_VALUE,
-  beta: i32 = i32.MAX_VALUE,
+  alpha: i16 = i16.MIN_VALUE,
+  beta: i16 = i16.MAX_VALUE,
   ply: i32 = 0
-): i32 {
+): i16 {
   /*log(player);
   log(board.toFEN());
   log(alpha);
@@ -39,7 +39,7 @@ export function evaluateQuiescence(
   }
 
   const staticEvaluation = evaluate(player, board);
-  let alphaUpdated: i32 = alpha;
+  let alphaUpdated: i16 = alpha;
   if (staticEvaluation >= beta) {
     // null move rule, if we go further score
     // might still increase

@@ -1,6 +1,6 @@
 import { BitBoard, BLACK, MaskIterator, PLAYER_PIECES } from "./bitboard";
 
-const WHITE_PAWN_WEIGHTS: i32[] = [
+const WHITE_PAWN_WEIGHTS: i16[] = [
   0,
   0,
   0,
@@ -67,7 +67,7 @@ const WHITE_PAWN_WEIGHTS: i32[] = [
   0,
 ];
 
-const BLACK_PAWN_WEIGHTS: i32[] = [
+const BLACK_PAWN_WEIGHTS: i16[] = [
   0,
   0,
   0,
@@ -134,7 +134,7 @@ const BLACK_PAWN_WEIGHTS: i32[] = [
   0,
 ];
 
-const WHITE_KNIGHT_WEIGHTS: i32[] = [
+const WHITE_KNIGHT_WEIGHTS: i16[] = [
   -50,
   -40,
   -30,
@@ -201,7 +201,7 @@ const WHITE_KNIGHT_WEIGHTS: i32[] = [
   -50,
 ];
 
-const BLACK_KNIGHT_WEIGHTS: i32[] = [
+const BLACK_KNIGHT_WEIGHTS: i16[] = [
   50,
   40,
   30,
@@ -268,7 +268,7 @@ const BLACK_KNIGHT_WEIGHTS: i32[] = [
   50,
 ];
 
-const WHITE_BISHOP_WEIGHTS: i32[] = [
+const WHITE_BISHOP_WEIGHTS: i16[] = [
   -20,
   -10,
   -10,
@@ -335,7 +335,7 @@ const WHITE_BISHOP_WEIGHTS: i32[] = [
   -20,
 ];
 
-const BLACK_BISHOP_WEIGHTS: i32[] = [
+const BLACK_BISHOP_WEIGHTS: i16[] = [
   20,
   10,
   10,
@@ -402,7 +402,7 @@ const BLACK_BISHOP_WEIGHTS: i32[] = [
   20,
 ];
 
-const WHITE_ROOK_WEIGHTS: i32[] = [
+const WHITE_ROOK_WEIGHTS: i16[] = [
   0,
   0,
   0,
@@ -469,7 +469,7 @@ const WHITE_ROOK_WEIGHTS: i32[] = [
   0,
 ];
 
-const BLACK_ROOK_WEIGHTS = [
+const BLACK_ROOK_WEIGHTS: i16[] = [
   0,
   0,
   0,
@@ -536,7 +536,7 @@ const BLACK_ROOK_WEIGHTS = [
   0,
 ];
 
-const WHITE_QUEEN_WEIGHTS: i32[] = [
+const WHITE_QUEEN_WEIGHTS: i16[] = [
   -20,
   -10,
   -10,
@@ -603,7 +603,7 @@ const WHITE_QUEEN_WEIGHTS: i32[] = [
   -20,
 ];
 
-const BLACK_QUEEN_WEIGHTS: i32[] = [
+const BLACK_QUEEN_WEIGHTS: i16[] = [
   20,
   10,
   10,
@@ -670,7 +670,7 @@ const BLACK_QUEEN_WEIGHTS: i32[] = [
   20,
 ];
 
-const WHITE_KING_MIDDLE_GAME_WEIGHTS: i32[] = [
+const WHITE_KING_MIDDLE_GAME_WEIGHTS: i16[] = [
   20,
   30,
   10,
@@ -737,7 +737,7 @@ const WHITE_KING_MIDDLE_GAME_WEIGHTS: i32[] = [
   -30,
 ];
 
-const BLACK_KING_MIDDLE_GAME_WEIGHTS: i32[] = [
+const BLACK_KING_MIDDLE_GAME_WEIGHTS: i16[] = [
   30,
   40,
   40,
@@ -804,7 +804,7 @@ const BLACK_KING_MIDDLE_GAME_WEIGHTS: i32[] = [
   -20,
 ];
 
-const WHITE_KING_END_GAME_WEIGHTS: i32[] = [
+const WHITE_KING_END_GAME_WEIGHTS: i16[] = [
   -50,
   -30,
   -30,
@@ -871,7 +871,7 @@ const WHITE_KING_END_GAME_WEIGHTS: i32[] = [
   -50,
 ];
 
-const BLACK_KING_END_GAME_WEIGHTS: i32[] = [
+const BLACK_KING_END_GAME_WEIGHTS: i16[] = [
   50,
   40,
   30,
@@ -938,7 +938,7 @@ const BLACK_KING_END_GAME_WEIGHTS: i32[] = [
   50,
 ];
 
-const WEIGHTS_MIDDLE_GAME: i32[][] = [
+const WEIGHTS_MIDDLE_GAME: i16[][] = [
   WHITE_PAWN_WEIGHTS,
   BLACK_PAWN_WEIGHTS,
   WHITE_KNIGHT_WEIGHTS,
@@ -952,7 +952,7 @@ const WEIGHTS_MIDDLE_GAME: i32[][] = [
   WHITE_KING_MIDDLE_GAME_WEIGHTS,
   BLACK_KING_MIDDLE_GAME_WEIGHTS,
 ];
-const WEIGHTS_END_GAME: i32[][] = [
+const WEIGHTS_END_GAME: i16[][] = [
   WHITE_PAWN_WEIGHTS,
   BLACK_PAWN_WEIGHTS,
   WHITE_KNIGHT_WEIGHTS,
@@ -967,7 +967,7 @@ const WEIGHTS_END_GAME: i32[][] = [
   BLACK_KING_END_GAME_WEIGHTS,
 ];
 
-export const PIECE_VALUES: i32[] = [
+export const PIECE_VALUES: i16[] = [
   100,
   -100,
   320,
@@ -996,11 +996,11 @@ function isPastMiddleGame(board: BitBoard): boolean {
 
 const positions = new MaskIterator();
 
-export function evaluate(player: i8, board: BitBoard): i32 {
+export function evaluate(player: i8, board: BitBoard): i16 {
   const weights = isPastMiddleGame(board)
     ? WEIGHTS_END_GAME
     : WEIGHTS_MIDDLE_GAME;
-  let result: i32 = 0;
+  let result: i16 = 0;
   for (let piece = 0; piece < 12; piece++) {
     const pieceMask = unchecked(board.bits[piece]);
     positions.reset(pieceMask);

@@ -1,8 +1,8 @@
 import { decodeFromPosition, decodeToPosition } from "./bitboard";
 const SIZE = 2 * 64 * 64;
 export class History {
-  private playedMoveCounters: StaticArray<i32> = new StaticArray<i32>(SIZE);
-  private cutOffMoveCounters: StaticArray<i32> = new StaticArray<i32>(SIZE);
+  private playedMoveCounters: StaticArray<i16> = new StaticArray<i16>(SIZE);
+  private cutOffMoveCounters: StaticArray<i16> = new StaticArray<i16>(SIZE);
 
   private primaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
   private secondaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
@@ -36,7 +36,7 @@ export class History {
   }
 
   @inline
-  getMoveScore(player: i8, ply: i8, move: u32): i32 {
+  getMoveScore(player: i8, ply: i8, move: u32): i16 {
     //log(this.cutOffMoveCounters[this.computeMoveIndex(player, move)]);
 
     const index = this.computeMoveIndex(player, move);
@@ -44,13 +44,13 @@ export class History {
     /*if (cutOff === 0) {
       return 0;
     }*/
-    let result: i32 = cutOff - unchecked(this.playedMoveCounters[index]);
-    if (unchecked(this.primaryKillers[ply]) === move) {
+    let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
+    /*if (unchecked(this.primaryKillers[ply]) === move) {
       result += 400;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
       result += 200;
-    }
+    }*/
     return result;
     //return cutOff - unchecked(this.playedMoveCounters[index]);
   }

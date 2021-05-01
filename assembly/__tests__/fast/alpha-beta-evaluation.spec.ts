@@ -47,7 +47,7 @@ describe("Alpha-Beta evaluation", () => {
     // when
     const score = evaluatePosition(WHITE, board, 1);
     // then
-    expect(score).toBe(100000);
+    expect(score).toBe(<i16>100000);
   });
 });
 describe("Alpha-Beta move chooser", () => {
@@ -120,13 +120,13 @@ describe("Alpha-Beta move chooser", () => {
     );
     const moves = legalMoves(board, WHITE);
     log(moves.length);
-    let alpha: i32 = i32.MIN_VALUE >> 1;
+    let alpha: i16 = i16.MIN_VALUE >> 1;
     for (let index = 0; index < moves.length; index++) {
       const score = -evaluatePosition(
         BLACK,
         moves[index],
         0,
-        i32.MIN_VALUE >> 1,
+        i16.MIN_VALUE >> 1,
         -alpha
       );
       if (score > alpha) {
