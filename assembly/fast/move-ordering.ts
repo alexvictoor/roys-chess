@@ -11,7 +11,8 @@ const SCORES: i8[] = [1, 3, 4, 5, 9, 10];
 const captureScores = new StaticArray<i16>(256);
 for (let i = 0; i < SCORES.length; i++) {
   for (let j = 0; j < SCORES.length; j++) {
-    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * <i16>100 + <i16>4096;
+    captureScores[(i << 3) + j] =
+      (SCORES[i] - SCORES[j]) * <i16>100 + <i16>4096;
   }
 }
 
@@ -30,22 +31,17 @@ export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
   //return 0;
   return history.getMoveScore(player, ply, action);
 }
-// @ts-ignore
-@inline
-function encodeScore(action: u64, score: u32): u64 {
-  return action | ((<u64>score) << 32);
-}
-// @ts-ignore
-@inline
-function decodeScore(action: u64): u32 {
-  return <i8>(action >> 32);
-}
 
 const scores: StaticArray<u32> = new StaticArray<u32>(256);
-export function sortMoves(player: i8, ply: i8, moves: u32[], bestMove: u32): void {
+export function sortMoves(
+  player: i8,
+  ply: i8,
+  moves: u32[],
+  bestMove: u32
+): void {
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
-    unchecked(scores[index] = score(player, ply, move, bestMove));
+    unchecked((scores[index] = score(player, ply, move, bestMove)));
   }
   // in place insertion sort
   for (let i = 1; i < moves.length; i++) {

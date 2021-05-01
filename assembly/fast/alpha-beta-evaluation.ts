@@ -1,5 +1,5 @@
 import { BitBoard, decodeCaptureFlag, opponent } from "./bitboard";
-import { legalMoves, pseudoLegalMoves } from "./engine";
+import { pseudoLegalMoves } from "./engine";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
 import { evaluateQuiescence } from "./quiescence-evaluation";
@@ -90,7 +90,6 @@ export function evaluatePosition(
       if (score > alphaUpdated) {
         // upper bound ?
         alphaUpdated = score;
-        transpositionTable.record(board, move, score, ALPHA_SCORE, depth);
       }
     }
   }
