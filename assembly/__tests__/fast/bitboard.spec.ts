@@ -7,6 +7,7 @@ import {
   encodeCapture,
   encodeMove,
   encodePawnDoubleMove,
+  fromNotation,
   KING,
   KNIGHT,
   MaskIterator,
@@ -163,8 +164,8 @@ describe("Mask iterator", () => {
   });
 });
 
-describe("Previous actions", () => {
-  it("should provide the previous action code", () => {
+describe("toNotation", () => {
+  it("should generate a regular move code", () => {
     const move = encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16);
     expect(toNotation(move)).toBe("a2-a3");
   });
@@ -175,6 +176,29 @@ describe("Previous actions", () => {
   it("should provide the code of the queen side castling that has just been done", () => {
     const castling = encodeMove(KING + WHITE, 4, KING + WHITE, 2);
     expect(toNotation(castling)).toBe("O-O-O");
+  });
+});
+
+describe("fromNotation", () => {
+  it("should generate a regular move", () => {
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    const move = fromNotation("a2-a3", board, WHITE);
+    const expectedMove = encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16);
+    expect(move).toBe(expectedMove);
+  });
+  it("should generate a capture", () => {
+    const board = parseFEN("4k1r1/p4p2/6pp/R3n3/4B3/6P1/P3KP1P/8 w KQkq - 0 1");
+    const move = fromNotation("a5-e5", board, WHITE);
+    const expectedMove = encodeCapture(
+      WHITE + ROOK,
+      32,
+      WHITE + ROOK,
+      36,
+      BLACK + KNIGHT
+    );
+    expect(move).toBe(expectedMove);
   });
 });
 

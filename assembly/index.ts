@@ -1,7 +1,7 @@
 // The entry file of your WebAssembly module.
 
 import { chooseBestMove } from "./fast/alpha-beta-evaluation";
-import { BLACK, toNotation, WHITE } from "./fast/bitboard";
+import { BitBoard, BLACK, toNotation, WHITE } from "./fast/bitboard";
 import { parseFEN } from "./fast/fen-parser";
 import {
   findAllBishopMagicNumbers,
@@ -65,4 +65,30 @@ export function generateZobristKeys(): string {
     randomKeys.push(randomU64());
   }
   return randomKeys.join(", ");
+}
+
+export class Game {
+  board: BitBoard;
+
+  constructor() {
+    this.board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+  }
+
+  startFrom(fen: string): void {
+    this.board = parseFEN(fen);
+  }
+
+  chooseNextMove(player: f64): string {
+    const move = chooseBestMove(<i8>player, this.board, 2);
+    this.board.do(move);
+    return toNotation(move);
+    //return this.board.toFEN();
+  }
+
+  performMove(move: f64): string {
+    this.board.do(<u32>move);
+    return this.board.toFEN();
+  }
 }

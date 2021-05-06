@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>chessboardjs Example #5003 - Highlight Legal Moves</title>
+    <!-- <base href="../" /> -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
+        integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <!--- Begin Example HTML ------------------------------------------------------>
+    <div id="myBoard" style="width: 400px"></div>
+    <!--- End Example HTML -------------------------------------------------------->
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
+        crossorigin="anonymous"></script>
+
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"
+        integrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"
+        integrity="sha384-s3XgLpvmHyscVpijnseAmye819Ee3yaGa8NxstkJVyA6nuDFjt59u1QvuEl/mecz"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@assemblyscript/loader/umd/index.js"></script>
+    <script>
+
+        const WHITE = 0;
+        const BLACK = 1;
+        const PAWN = 0;
+        const BIT_MASK_4 = (1 << 4) - 1;
+        const BIT_MASK_6 = (1 << 6) - 1;
+
+        function encodeMove(
+            srcPiece,
+            fromPosition,
+            dstPiece,
+            toPosition
+        ) {
+            return (
+                ((srcPiece & BIT_MASK_4)) |
+                (((fromPosition & BIT_MASK_6)) << 4) |
+                (((dstPiece & BIT_MASK_4)) << 10) |
+                (((toPosition & BIT_MASK_6)) << 14)
+            );
+        }
+
+        function encodePawnDoubleMove(
+            player,
+            fromPosition,
+            toPosition
+        ) {
+            let move = encodeMove(PAWN + player, fromPosition, PAWN + player, toPosition);
+            move |= ((toPosition % 8 << 1) + 1) << 26;
+            return move;
+        }
+
+        function encodeCapture(
+            srcPiece,
+            fromPosition,
+            dstPiece,
+            toPosition,
+            capturedPiece,
+            capturedPosition = toPosition
+        ) {
+            return (
+                encodeMove(srcPiece, fromPosition, dstPiece, toPosition) |
+                (((capturedPiece & BIT_MASK_4)) << 20) |
+                (1 << 24) |
+                (((toPosition == capturedPosition ? 0 : 1)) << 25) // TODO clean up
+                //((<u64>(capturedPosition & BIT_MASK_6)) << 24)
+            );
+        }
+
+
+        const cols = "abcdefgh";
+        const pieces = "pnbrqk";
+
+        function parsePosition(notation) {
+            return cols.indexOf(notation.substring(0, 1)) + (parseInt(notation.substring(1), 10) - 1) * 8
+        }
+
+        const QUEEN = 8;
+
+        function wasmMove(game, move) {
+            const player = move.color === 'w' ? 0 : 1;
+            const opponentPlayer = move.color === 'w' ? 1 : 0;
+            const piece = pieces.indexOf(game.get(move.to).type) * 2 + player;
+            if (move.flags === 'n' || move.flags === 'k' || move.flags === 'q') {
+                return encodeMove(piece, parsePosition(move.from), piece, parsePosition(move.to));
+            }
+            if (move.flags === 'p') {
+                // always promote to queen
+                return encodeMove(piece, parsePosition(move.from), QUEEN + player, parsePosition(move.to));
+            }
+            if (move.flags === 'b') {
+                return encodePawnDoubleMove(piece, parsePosition(move.from), parsePosition(move.to));
+            }
+            if (move.flags === 'c') {
+                const capturedPiece = pieces.indexOf(move.captured) * 2 + opponentPlayer;
+                return encodeCapture(piece, parsePosition(move.from), piece, parsePosition(move.to), capturedPiece);
+            }
+            if (move.flags === 'e') {
+                // TODO works only for white player
+                return encodeCapture(piece, parsePosition(move.from), piece, parsePosition(move.to), 1, parsePosition(move.to) - 8);
+            }
+        }
+
+        const setup = async () => {
+            const wasm = await loader.instantiate(fetch("build/optimized.wasm"));
+            //const initWasm = async () => await loader.instantiate(fetch("build/optimized.wasm"));
+            const iaGame = new wasm.exports.Game();
+
+            var board = null
+            var game = new Chess()
+            var whiteSquareGrey = '#a9a9a9'
+            var blackSquareGrey = '#696969'
+
+            let currentMove = 0;
+
+            function removeGreySquares() {
+                $('#myBoard .square-55d63').css('background', '')
+            }
+
+            function greySquare(square) {
+                var $square = $('#myBoard .square-' + square)
+
+                var background = whiteSquareGrey
+                if ($square.hasClass('black-3c85d')) {
+                    background = blackSquareGrey
+                }
+
+                $square.css('background', background)
+            }
+
+            function onDragStart(source, piece) {
+                // do not pick up pieces if the game is over
+                if (game.game_over()) return false
+
+                // or if it's not that side's turn
+                if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                    (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                    return false
+                }
+            }
+
+            function onDrop(source, target) {
+                removeGreySquares()
+
+                // see if the move is legal
+                var move = game.move({
+                    from: source,
+                    to: target,
+                    promotion: 'q' // NOTE: always promote to a queen for example simplicity
+                })
+
+                // illegal move
+                if (move === null) return 'snapback'
+
+                console.log({ move });
+                console.log(game.get(move.to));
+                console.log(wasmMove(game, move));
+                console.log(wasm.exports.__getString(iaGame.performMove(wasmMove(game, move))))
+                //console.log(wasm.exports.__getString(iaGame.performMove(wasmMove(game, move))))
+                setTimeout(() => {
+
+                    const move = wasm.exports.__getString(iaGame.chooseNextMove(1));
+                    console.log({ move });
+                    game.move(move, { sloppy: true });
+                    console.log({ fen: game.fen() })
+                    board.position(game.fen());
+                    //game.move(move);
+                }, 100);
+                //game = new Chess('currentBoard', wasm.exports.__getString(iaGame.chooseNextMove(1)));
+            }
+
+            function onMouseoverSquare(square, piece) {
+                // get list of possible moves for this square
+                var moves = game.moves({
+                    square: square,
+                    verbose: true
+                })
+                //console.log({moves})
+
+                // exit if there are no moves available for this square
+                if (moves.length === 0) return
+
+                // highlight the square they moused over
+                greySquare(square)
+
+                // highlight the possible squares for this piece
+                for (var i = 0; i < moves.length; i++) {
+                    greySquare(moves[i].to)
+                }
+            }
+
+            function onMouseoutSquare(square, piece) {
+                removeGreySquares()
+            }
+
+            function onSnapEnd() {
+                board.position(game.fen())
+            }
+
+            var config = {
+                draggable: true,
+                position: 'start',
+                onDragStart: onDragStart,
+                onDrop: onDrop,
+                onMouseoutSquare: onMouseoutSquare,
+                onMouseoverSquare: onMouseoverSquare,
+                onSnapEnd: onSnapEnd
+            }
+            board = Chessboard('myBoard', config)
+        }
+        setup();
+// --- End Example JS ----------------------------------------------------------
+    </script>
+</body>
+
+</html>

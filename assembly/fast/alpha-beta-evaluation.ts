@@ -103,7 +103,7 @@ export function evaluatePosition(
 
 export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
   history.resetHistory();
-  transpositionTable = new TranspositionTable(24);
+  transpositionTable.reset();
 
   let alpha: i16 = i16.MIN_VALUE >> 1;
   let bestMove: u32 = 0;

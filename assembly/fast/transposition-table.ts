@@ -9,10 +9,24 @@ export class TranspositionTable {
   moveEntries: StaticArray<u64>;
   size: i32;
 
-  constructor(sizeMagnitude: i32 = 26) {
+  constructor(sizeMagnitude: i32 = 24) {
     this.size = 1 << sizeMagnitude;
     this.verificationEntries = new StaticArray<u64>(this.size);
     this.moveEntries = new StaticArray<u64>(this.size);
+  }
+
+  reset(sizeMagnitude: i32 = 24): void {
+    const size: i32 = 1 << sizeMagnitude;
+    if (this.size == size) {
+      for (let index = 0; index < size; index++) {
+        unchecked((this.verificationEntries[index] = 0));
+        unchecked((this.moveEntries[index] = 0));
+      }
+    } else {
+      this.size = size;
+      this.verificationEntries = new StaticArray<u64>(this.size);
+      this.moveEntries = new StaticArray<u64>(this.size);
+    }
   }
 
   record(
@@ -45,8 +59,6 @@ export class TranspositionTable {
     }
     return 0;
   }
-
-  reset(): void {}
 }
 
 export function decodeMoveFromEntry(entry: u64): u32 {
