@@ -9,6 +9,10 @@ import {
 } from "./fast/magic";
 import { perft, perft2 } from "./fast/perft";
 
+export function now(): f64 {
+  return <f64>Date.now();
+}
+
 export function add(a: i32, b: i32): i32 {
   return a + b;
 }
@@ -81,7 +85,7 @@ export class Game {
   }
 
   chooseNextMove(player: f64): string {
-    const move = chooseBestMove(<i8>player, this.board, 2);
+    const move = chooseBestMove(<i8>player, this.board, 10);
     this.board.do(move);
     return toNotation(move);
     //return this.board.toFEN();
@@ -89,6 +93,12 @@ export class Game {
 
   performMove(move: f64): string {
     this.board.do(<u32>move);
+    return this.board.toFEN();
+  }
+
+  undo(): string {
+    this.board.undo();
+    this.board.undo();
     return this.board.toFEN();
   }
 }

@@ -8,14 +8,6 @@
     <!-- <base href="../" /> -->
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
         integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU" crossorigin="anonymous">
-</head>
-
-<body>
-
-    <!--- Begin Example HTML ------------------------------------------------------>
-    <div id="myBoard" style="width: 400px"></div>
-    <!--- End Example HTML -------------------------------------------------------->
-
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"
         integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
         crossorigin="anonymous"></script>
@@ -26,7 +18,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"
         integrity="sha384-s3XgLpvmHyscVpijnseAmye819Ee3yaGa8NxstkJVyA6nuDFjt59u1QvuEl/mecz"
         crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@assemblyscript/loader/umd/index.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@assemblyscript/loader/umd/index.js"></script> -->
+</head>
+
+<body>
+
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+        <div id="myBoard" style="width: 400px"></div>
+
+        <button id="undo" style="margin: 10px;">undo</button>
+    </div>
     <script>
 
         const WHITE = 0;
@@ -110,17 +111,43 @@
             }
         }
 
-        const setup = async () => {
-            const wasm = await loader.instantiate(fetch("build/optimized.wasm"));
-            //const initWasm = async () => await loader.instantiate(fetch("build/optimized.wasm"));
-            const iaGame = new wasm.exports.Game();
+        let resolveWorkerReadyFn;
+        const workerReady = new Promise(resolve => {
+            resolveWorkerReadyFn = resolve;
+        })
+        let wasmWorker = new Worker('wasm-worker.js');
+        let moveCallBack;
+        wasmWorker.onmessage = e => {
+            if (e.data === 'READY') {
+                resolveWorkerReadyFn();
+            } else {
+                moveCallBack && moveCallBack(e.data);
+            }
+        }
 
-            var board = null
-            var game = new Chess()
-            var whiteSquareGrey = '#a9a9a9'
-            var blackSquareGrey = '#696969'
+
+        const setup = async () => {
+            //const wasm = await loader.instantiate(fetch("build/optimized.wasm"));
+            //const initWasm = async () => await loader.instantiate(fetch("build/optimized.wasm"));
+            //const iaGame = new wasm.exports.Game();
+
+            await workerReady;
+
+
+            let board = null
+            const game = new Chess()
+            const whiteSquareGrey = '#a9a9a9'
+            const blackSquareGrey = '#696969'
+
+            const currentPlayer = 'w';
 
             let currentMove = 0;
+
+            moveCallBack = (move) => {
+                game.move(move, { sloppy: true });
+                console.log({ fen: game.fen() })
+                board.position(game.fen());
+            }
 
             function removeGreySquares() {
                 $('#myBoard .square-55d63').css('background', '')
@@ -139,7 +166,7 @@
 
             function onDragStart(source, piece) {
                 // do not pick up pieces if the game is over
-                if (game.game_over()) return false
+                if (game.game_over() || game.turn() !== currentPlayer) return false
 
                 // or if it's not that side's turn
                 if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
@@ -161,7 +188,10 @@
                 // illegal move
                 if (move === null) return 'snapback'
 
-                console.log({ move });
+
+                wasmWorker.postMessage(wasmMove(game, move));
+
+                /*console.log({ move });
                 console.log(game.get(move.to));
                 console.log(wasmMove(game, move));
                 console.log(wasm.exports.__getString(iaGame.performMove(wasmMove(game, move))))
@@ -174,7 +204,7 @@
                     console.log({ fen: game.fen() })
                     board.position(game.fen());
                     //game.move(move);
-                }, 100);
+                }, 100);*/
                 //game = new Chess('currentBoard', wasm.exports.__getString(iaGame.chooseNextMove(1)));
             }
 
@@ -215,10 +245,20 @@
                 onMouseoverSquare: onMouseoverSquare,
                 onSnapEnd: onSnapEnd
             }
-            board = Chessboard('myBoard', config)
+            board = Chessboard('myBoard', config);
+
+            $('#undo').on('click', () => {
+                //iaGame.undo();
+                wasmWorker.postMessage('undo');
+                game.undo();
+                game.undo();
+                board.position(game.fen());
+            });
+
         }
-        setup();
-// --- End Example JS ----------------------------------------------------------
+
+
+        $(setup);
     </script>
 </body>
 
