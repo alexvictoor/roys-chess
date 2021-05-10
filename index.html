@@ -24,7 +24,7 @@
 <body>
 
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
-        <div id="myBoard" style="width: 400px"></div>
+        <div id="myBoard" style="width: 40%"></div>
 
         <button id="undo" style="margin: 10px;">undo</button>
     </div>
@@ -191,21 +191,6 @@
 
                 wasmWorker.postMessage(wasmMove(game, move));
 
-                /*console.log({ move });
-                console.log(game.get(move.to));
-                console.log(wasmMove(game, move));
-                console.log(wasm.exports.__getString(iaGame.performMove(wasmMove(game, move))))
-                //console.log(wasm.exports.__getString(iaGame.performMove(wasmMove(game, move))))
-                setTimeout(() => {
-
-                    const move = wasm.exports.__getString(iaGame.chooseNextMove(1));
-                    console.log({ move });
-                    game.move(move, { sloppy: true });
-                    console.log({ fen: game.fen() })
-                    board.position(game.fen());
-                    //game.move(move);
-                }, 100);*/
-                //game = new Chess('currentBoard', wasm.exports.__getString(iaGame.chooseNextMove(1)));
             }
 
             function onMouseoverSquare(square, piece) {
@@ -248,7 +233,9 @@
             board = Chessboard('myBoard', config);
 
             $('#undo').on('click', () => {
-                //iaGame.undo();
+
+                if (game.turn() !== currentPlayer) return false
+
                 wasmWorker.postMessage('undo');
                 game.undo();
                 game.undo();
