@@ -1,4 +1,11 @@
-import { BitBoard, decodeCaptureFlag, opponent, PAWN } from "./bitboard";
+import {
+  BitBoard,
+  decodeCaptureFlag,
+  opponent,
+  PAWN,
+  QUEEN,
+  ROOK,
+} from "./bitboard";
 import { pseudoLegalMoves } from "./engine";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
@@ -53,11 +60,18 @@ export function evaluatePosition(
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
-  let futilityPruningPossible = depth === 1 && !isInCheck(player, board);
+  let futilityPruningPossible = depth < 4 && !isInCheck(player, board);
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
     const staticEvaluation = evaluate(player, board);
-    futilityScore = staticEvaluation + PIECE_VALUES[PAWN];
+    futilityScore = staticEvaluation;
+    if (depth === 1) {
+      futilityScore += PIECE_VALUES[PAWN];
+    } else if (depth === 2) {
+      futilityScore += PIECE_VALUES[ROOK];
+    } else {
+      futilityScore += PIECE_VALUES[QUEEN];
+    }
     futilityPruningPossible = futilityPruningPossible && futilityScore <= alpha;
   }
 
