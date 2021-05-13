@@ -1,8 +1,9 @@
-import { BitBoard, decodeCaptureFlag, opponent } from "./bitboard";
+import { BitBoard, decodeCaptureFlag, opponent, PAWN } from "./bitboard";
 import { pseudoLegalMoves } from "./engine";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
 import { evaluateQuiescence } from "./quiescence-evaluation";
+import { evaluate, PIECE_VALUES } from "./static-evaluation";
 import { isInCheck } from "./status";
 import {
   ALPHA_SCORE,
@@ -52,6 +53,14 @@ export function evaluatePosition(
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
+  let futilityPruningPossible = depth === 1 && !isInCheck(player, board);
+  let futilityScore: i16 = i16.MIN_VALUE >> 1;
+  if (futilityPruningPossible) {
+    const staticEvaluation = evaluate(player, board);
+    futilityScore = staticEvaluation + PIECE_VALUES[PAWN];
+    futilityPruningPossible = futilityPruningPossible && futilityScore <= alpha;
+  }
+
   while (moves.length > 0) {
     const move = moves.pop();
     board.do(move);
@@ -59,6 +68,21 @@ export function evaluatePosition(
       board.undo();
       continue;
     }
+    const isCapture = decodeCaptureFlag(move);
+
+    futilityPruningPossible =
+      futilityPruningPossible &&
+      !isCapture &&
+      !isInCheck(opponent(player), board);
+
+    if (futilityPruningPossible) {
+      if (bestScore < futilityScore) {
+        bestScore = futilityScore;
+        board.undo();
+        continue;
+      }
+    }
+
     const score = -evaluatePosition(
       opponent(player),
       board,
@@ -68,7 +92,6 @@ export function evaluatePosition(
       ply + 1
     );
     board.undo();
-    const isCapture = decodeCaptureFlag(move);
     if (!isCapture) {
       history.recordPlayedMove(player, ply, move);
     }
