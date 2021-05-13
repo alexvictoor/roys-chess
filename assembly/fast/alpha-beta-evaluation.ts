@@ -60,7 +60,8 @@ export function evaluatePosition(
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
-  let futilityPruningPossible = depth < 4 && !isInCheck(player, board);
+  const playerInCheck = isInCheck(player, board);
+  let futilityPruningPossible = depth < 4 && !playerInCheck;
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
     const staticEvaluation = evaluate(player, board);
@@ -74,7 +75,9 @@ export function evaluatePosition(
     }
     futilityPruningPossible = futilityPruningPossible && futilityScore <= alpha;
   }
+  let lateMoveReductionPossible = depth > 2 && !playerInCheck;
 
+  let fullyEvaluatedMoves: i8 = 0;
   while (moves.length > 0) {
     const move = moves.pop();
     board.do(move);
@@ -83,15 +86,31 @@ export function evaluatePosition(
       continue;
     }
     const isCapture = decodeCaptureFlag(move);
+    const isOpponentInCheck = isInCheck(opponent(player), board);
 
-    futilityPruningPossible =
-      futilityPruningPossible &&
-      !isCapture &&
-      !isInCheck(opponent(player), board);
-
-    if (futilityPruningPossible) {
+    if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
       if (bestScore < futilityScore) {
         bestScore = futilityScore;
+      }
+      board.undo();
+      continue;
+    }
+
+    if (
+      lateMoveReductionPossible &&
+      !isCapture &&
+      !isOpponentInCheck &&
+      fullyEvaluatedMoves > 1
+    ) {
+      const reducedDepthScore = -evaluatePosition(
+        opponent(player),
+        board,
+        depth - 2,
+        -alphaUpdated - 1,
+        -alphaUpdated,
+        ply + 1
+      );
+      if (reducedDepthScore <= alpha) {
         board.undo();
         continue;
       }
@@ -106,6 +125,7 @@ export function evaluatePosition(
       ply + 1
     );
     board.undo();
+    fullyEvaluatedMoves++;
     if (!isCapture) {
       history.recordPlayedMove(player, ply, move);
     }
