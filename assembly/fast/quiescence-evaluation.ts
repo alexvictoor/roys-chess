@@ -1,9 +1,4 @@
-import {
-  BitBoard,
-  decodeCapturedPiece,
-  decodeSrcPiece,
-  opponent,
-} from "./bitboard";
+import { BitBoard, opponent } from "./bitboard";
 import { sortCaptures } from "./capture-ordering";
 import { canMove, removeCheckedBoardFrom } from "./engine";
 import { addKingPseudoLegalCaptures } from "./king-move-generation";
@@ -14,8 +9,10 @@ import {
   addQueenPseudoLegalCaptures,
   addRookPseudoLegalCaptures,
 } from "./sliding-pieces-move-generation";
-import { evaluate, PIECE_VALUES } from "./static-evaluation";
+import { evaluate } from "./static-evaluation";
 import { isInCheck } from "./status";
+
+const DELTA_PRUNING_THRESHOLD: i16 = 1000; // queen + pawn value
 
 export function evaluateQuiescence(
   player: i8,
@@ -45,6 +42,12 @@ export function evaluateQuiescence(
     // might still increase
     return beta;
   }
+
+  if (staticEvaluation + DELTA_PRUNING_THRESHOLD < alpha) {
+    // no chance to raise alpha
+    return alpha;
+  }
+
   if (alpha < staticEvaluation) {
     alphaUpdated = staticEvaluation;
   }
@@ -95,16 +98,5 @@ export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
   const moves: u32[] = pseudoLegalCaptures(board, player);
   sortCaptures(moves);
 
-  return removeCheckedBoardFrom(
-    moves, //.sort(compareCaptures_MVV_LVA),
-    board,
-    player
-  );
+  return removeCheckedBoardFrom(moves, board, player);
 }
-/*
-export function compareCaptures_MVV_LVA(
-  firstCapture: u64,
-  secondCapture: u64
-): i32 {
-  return scoreCapture(firstCapture) - scoreCapture(secondCapture);
-}*/

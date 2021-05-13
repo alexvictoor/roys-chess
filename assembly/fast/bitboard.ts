@@ -612,7 +612,7 @@ export function toNotation(action: u32): string {
 function parsePosition(notation: string): i8 {
   return <i8>cols.indexOf(notation.substring(0, 1)) + <i8>(parseInt(notation.substring(1), 10) - 1)  * <i8>8
 }
-
+/*
 export function fromNotation(code: string, board: BitBoard, player: i8): u32 {
   const dashIndex = code.indexOf('-');
   const fromPosition = parsePosition(code.substring(0, dashIndex));
@@ -625,4 +625,4 @@ export function fromNotation(code: string, board: BitBoard, player: i8): u32 {
     // nothing
   }
   return encodeMove(piece, fromPosition, piece, toPosition);
-}
+}*/

@@ -7,7 +7,6 @@ import {
   encodeCapture,
   encodeMove,
   encodePawnDoubleMove,
-  fromNotation,
   KING,
   KNIGHT,
   MaskIterator,
@@ -179,7 +178,7 @@ describe("toNotation", () => {
   });
 });
 
-describe("fromNotation", () => {
+/*describe("fromNotation", () => {
   it("should generate a regular move", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -200,7 +199,7 @@ describe("fromNotation", () => {
     );
     expect(move).toBe(expectedMove);
   });
-});
+});*/
 
 describe("Action encoding", () => {
   it("should decode moved piece and captured piece", () => {

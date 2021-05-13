@@ -105,6 +105,8 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
   history.resetHistory();
   transpositionTable.reset();
 
+  const startTimestamp = Date.now();
+
   let alpha: i16 = i16.MIN_VALUE >> 1;
   let bestMove: u32 = 0;
   const opponentPlayer = opponent(player);
@@ -138,7 +140,8 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
     }
     transpositionTable.record(board, bestMove, alpha, EXACT_SCORE, depth);
     const iterationDuration = Date.now() - startIterationTimestamp;
-    if (iterationDuration > 3000 && depth > 5) {
+    const totalDuration = Date.now() - startTimestamp;
+    if ((iterationDuration > 3000 && depth > 5) || totalDuration > 10000) {
       return bestMove;
     }
   }

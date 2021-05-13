@@ -1,4 +1,4 @@
-import { WHITE } from "../../chess";
+import { WHITE } from "../../fast/bitboard";
 import { BLACK, encodeMove, ROOK } from "../../fast/bitboard";
 import { History } from "../../fast/history";
 
