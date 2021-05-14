@@ -17,6 +17,7 @@ setup();
 onmessage = function (e) {
   if (e.data === "undo") {
     iaGame.undo();
+    return;
   }
 
   iaGame.performMove(e.data);
