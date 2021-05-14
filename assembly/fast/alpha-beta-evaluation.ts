@@ -25,6 +25,10 @@ import {
 
 let transpositionTable: TranspositionTable = new TranspositionTable(1);
 
+const NULL_MOVE_MAX_REDUCTION: i8 = 4;
+const NULL_MOVE_MIN_REDUCTION: i8 = 3;
+const NULL_MOVE_REDUCTION: i8 = 4;
+
 export function evaluatePosition(
   player: i8,
   board: BitBoard,
@@ -66,10 +70,13 @@ export function evaluatePosition(
   const nullMovePossible = !playerInCheck && !afterNullMove;
   if (nullMovePossible) {
     board.doNullMove();
+
+    const reduction =
+      depth > 6 ? NULL_MOVE_MAX_REDUCTION : NULL_MOVE_MIN_REDUCTION;
     const nullMoveScore = -evaluatePosition(
       opponent(player),
       board,
-      depth - 3,
+      depth - reduction,
       -beta,
       -beta + 1,
       ply + 1,
@@ -77,8 +84,11 @@ export function evaluatePosition(
     );
     board.undoNullMove();
     if (nullMoveScore >= beta) {
-      // cutoff in case of fail-high
-      return nullMoveScore;
+      // reduce the depth in case of fail-high
+      depth -= NULL_MOVE_REDUCTION;
+      if (depth <= 0) {
+        return evaluateQuiescence(player, board, alpha, beta);
+      }
     }
   }
 
