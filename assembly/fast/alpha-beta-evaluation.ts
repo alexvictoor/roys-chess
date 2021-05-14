@@ -67,13 +67,13 @@ export function evaluatePosition(
     const staticEvaluation = evaluate(player, board);
     futilityScore = staticEvaluation;
     if (depth === 1) {
-      futilityScore += PIECE_VALUES[PAWN];
+      futilityScore += unchecked(PIECE_VALUES[PAWN]);
     } else if (depth === 2) {
-      futilityScore += PIECE_VALUES[ROOK];
+      futilityScore += unchecked(PIECE_VALUES[ROOK]);
     } else {
-      futilityScore += PIECE_VALUES[QUEEN];
+      futilityScore += unchecked(PIECE_VALUES[QUEEN]);
     }
-    futilityPruningPossible = futilityPruningPossible && futilityScore <= alpha;
+    futilityPruningPossible = futilityScore <= alpha;
   }
   let lateMoveReductionPossible = depth > 2 && !playerInCheck;
 
