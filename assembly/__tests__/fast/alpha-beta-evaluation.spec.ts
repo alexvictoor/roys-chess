@@ -70,69 +70,7 @@ describe("Alpha-Beta move chooser", () => {
     // when
     const move = chooseBestMove(WHITE, board, 1);
     // then
-    const nextBoard = board.execute(move);
+    const nextBoard = board.execute(<u32>(move & 0xffffffff));
     expect(isCheckMate(BLACK, nextBoard)).toBe(true);
-  });
-
-  xit("freeze ?", () => {
-    const board = parseFEN(
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/Bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/Bn2pnp1/3PN3/4P3/2p2Q1p/PPPB1PPP/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1
-    );
-    const move = chooseBestMove(WHITE, board, 3);
-    log(board.execute(move).toString());
-    log(board.execute(move).toFEN());
-  });
-  xit("freeze ? Error in ~lib/rt/tlsf.ts:243:14", () => {
-    const board = parseFEN(
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/8/5Q1p/P1PpBPP1/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn1Ppnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn2Pnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1
-    );
-    const move = chooseBestMove(WHITE, board, 4);
-    log(board.execute(move).toString());
-    log(board.execute(move).toFEN());
-  });
-  xit("freeze 2", () => {
-    const board = parseFEN(
-      //"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-      //"r3k2r/p1ppqpb1/bn1Ppnp1/4N3/1p6/2N2Q1p/P1PBBPPP/R3K2R b KQkq - 0 1"
-      "r3k2r/p1ppqpb1/bn2Pnp1/4N3/8/2p2Q1p/P1PBBPP1/R3K2R b KQkq - 0 1"
-    );
-    const move = chooseBestMove(BLACK, board, 3);
-    log(board.execute(move).toString());
-    log(board.execute(move).toFEN());
-  });
-  xit("OK evaluate q", () => {
-    const board = parseFEN(
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-    );
-    const move = evaluateQuiescence(WHITE, board);
-    //log(board.execute(move).toString());
-  });
-
-  xit("freeze ?", () => {
-    const board = parseFEN(
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"
-    );
-    const moves = legalMoves(board, WHITE);
-    log(moves.length);
-    let alpha: i16 = i16.MIN_VALUE >> 1;
-    for (let index = 0; index < moves.length; index++) {
-      const score = -evaluatePosition(
-        BLACK,
-        moves[index],
-        0,
-        i16.MIN_VALUE >> 1,
-        -alpha
-      );
-      if (score > alpha) {
-        alpha = score;
-      }
-    }
-    log("alpha" + alpha.toString());
   });
 });
