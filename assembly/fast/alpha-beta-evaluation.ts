@@ -31,6 +31,7 @@ const NULL_MOVE_REDUCTION: i8 = 4;
 
 export function evaluatePosition(
   player: i8,
+  playerInCheck: boolean,
   board: BitBoard,
   depth: i8,
   alpha: i16 = i16.MIN_VALUE >> 1,
@@ -65,7 +66,7 @@ export function evaluatePosition(
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
-  const playerInCheck = isInCheck(player, board);
+  //const playerInCheck = isInCheck(player, board);
 
   const nullMovePossible = !playerInCheck && !afterNullMove;
   if (nullMovePossible) {
@@ -75,6 +76,7 @@ export function evaluatePosition(
       depth > 6 ? NULL_MOVE_MAX_REDUCTION : NULL_MOVE_MIN_REDUCTION;
     const nullMoveScore = -evaluatePosition(
       opponent(player),
+      false,
       board,
       depth - reduction,
       -beta,
@@ -135,6 +137,7 @@ export function evaluatePosition(
     ) {
       const reducedDepthScore = -evaluatePosition(
         opponent(player),
+        false,
         board,
         depth - 2,
         -alphaUpdated - 1,
@@ -150,6 +153,7 @@ export function evaluatePosition(
 
     const score = -evaluatePosition(
       opponent(player),
+      isOpponentInCheck,
       board,
       depth - 1,
       -beta,
@@ -214,8 +218,10 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
         board.undo();
         continue;
       }
+      const isOpponentInCheck = isInCheck(opponent(player), board);
       const score = -evaluatePosition(
         opponentPlayer,
+        isOpponentInCheck,
         board,
         depth,
         i16.MIN_VALUE >> 1,
