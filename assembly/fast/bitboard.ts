@@ -258,7 +258,18 @@ export class BitBoard {
       this.bits[CLOCK]++;
     }
 
-    //updatedBoard.previousBoard = this;
+  }
+
+  doNullMove(): void {
+    this.hashHistory.push(this.hashCode());
+    this.storeState(0);
+
+    // en passant file
+    this.bits[EXTRA] =
+      (this.bits[EXTRA] & ~BIT_MASK_4);
+
+    // update clock    
+    this.bits[CLOCK]++;
   }
 
   storeState(action: u64): void {
@@ -326,6 +337,24 @@ export class BitBoard {
           this.put(ROOK + player, queenSideRookPosition);
         }
       }
+    }
+  }
+
+  undoNullMove(): void {
+    this.hashHistory.pop();
+    const state = this.stateHistory.pop();
+    const castlingRights = decodeCastlingRights(state);
+    this.bits[EXTRA] &= castlingRights << 4;
+    this.bits[CLOCK] = state >> 54;
+
+    // en passant file
+    if (this.stateHistory.length > 0) {
+      const previousState = this.stateHistory[this.stateHistory.length - 1];
+      const previousAction = decodeAction(previousState);
+      this.bits[EXTRA] =
+        (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(previousAction);
+    } else {
+      this.bits[EXTRA] = this.bits[EXTRA] & ~BIT_MASK_4;
     }
   }
 

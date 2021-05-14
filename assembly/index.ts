@@ -40,9 +40,9 @@ export function benchPerftOptimized(): f64 {
 
 export function nextMove(fen: string, player: f64): string {
   const board = parseFEN(fen);
-  const move = chooseBestMove(<i8>player, board, 7);
+  const move = chooseBestMove(<i8>player, board, 10);
 
-  return toNotation(move);
+  return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
 }
 
 export function findRookMagicNumbers(): string {
@@ -86,8 +86,8 @@ export class Game {
 
   chooseNextMove(player: f64): string {
     const move = chooseBestMove(<i8>player, this.board, 10);
-    this.board.do(move);
-    return toNotation(move);
+    this.board.do(<u32>(move & 0xffffffff));
+    return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
     //return this.board.toFEN();
   }
 

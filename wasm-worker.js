@@ -23,5 +23,5 @@ onmessage = function (e) {
   const move = wasm.exports.__getString(iaGame.chooseNextMove(BLACK));
   console.log({ move });
 
-  postMessage(move);
+  postMessage(move.split(" ")[0]);
 };

@@ -31,9 +31,10 @@ export function evaluatePosition(
   depth: i8,
   alpha: i16 = i16.MIN_VALUE >> 1,
   beta: i16 = i16.MAX_VALUE >> 1,
-  ply: i8 = 2
+  ply: i8 = 2,
+  afterNullMove: boolean = false
 ): i16 {
-  if (depth == 0) {
+  if (depth <= 0) {
     return evaluateQuiescence(player, board, alpha, beta);
   }
 
@@ -61,6 +62,26 @@ export function evaluatePosition(
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
   const playerInCheck = isInCheck(player, board);
+
+  const nullMovePossible = !playerInCheck && !afterNullMove;
+  if (nullMovePossible) {
+    board.doNullMove();
+    const nullMoveScore = -evaluatePosition(
+      opponent(player),
+      board,
+      depth - 3,
+      -beta,
+      -beta + 1,
+      ply + 1,
+      false
+    );
+    board.undoNullMove();
+    if (nullMoveScore >= beta) {
+      // cutoff in case of fail-high
+      return nullMoveScore;
+    }
+  }
+
   let futilityPruningPossible = depth < 4 && !playerInCheck;
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
@@ -108,7 +129,8 @@ export function evaluatePosition(
         depth - 2,
         -alphaUpdated - 1,
         -alphaUpdated,
-        ply + 1
+        ply + 1,
+        false
       );
       if (reducedDepthScore <= alpha) {
         board.undo();
@@ -122,7 +144,8 @@ export function evaluatePosition(
       depth - 1,
       -beta,
       -alphaUpdated,
-      ply + 1
+      ply + 1,
+      false
     );
     board.undo();
     fullyEvaluatedMoves++;
@@ -158,7 +181,7 @@ export function evaluatePosition(
   return alphaUpdated;
 }
 
-export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
+export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
   history.resetHistory();
   transpositionTable.reset();
 
@@ -199,8 +222,8 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u32 {
     const iterationDuration = Date.now() - startIterationTimestamp;
     const totalDuration = Date.now() - startTimestamp;
     if ((iterationDuration > 3000 && depth > 5) || totalDuration > 10000) {
-      return bestMove;
+      return <u64>bestMove + ((<u64>depth) << 32);
     }
   }
-  return bestMove;
+  return <u64>bestMove + ((<u64>maxDepth) << 32);
 }
