@@ -26,7 +26,13 @@
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
         <div id="myBoard" style="width: 40%"></div>
 
-        <button id="undo" style="margin: 10px;">undo</button>
+        <div>
+
+            <input type="text" id="fen" size=45 placeholder="FEN string" /> <button id="loadFEN"
+                style="margin: 10px;">Load
+                FEN</button>
+            <button id="undo" style="margin: 10px;">Undo last move</button>
+        </div>
     </div>
     <script>
 
@@ -94,7 +100,7 @@
             if (move.flags === 'n' || move.flags === 'k' || move.flags === 'q') {
                 return encodeMove(piece, parsePosition(move.from), piece, parsePosition(move.to));
             }
-            if (move.flags === 'p') {
+            if (move.flags === 'np') {
                 // always promote to queen
                 return encodeMove(piece, parsePosition(move.from), QUEEN + player, parsePosition(move.to));
             }
@@ -104,6 +110,10 @@
             if (move.flags === 'c') {
                 const capturedPiece = pieces.indexOf(move.captured) * 2 + opponentPlayer;
                 return encodeCapture(piece, parsePosition(move.from), piece, parsePosition(move.to), capturedPiece);
+            }
+            if (move.flags === 'nc') {
+                const capturedPiece = pieces.indexOf(move.captured) * 2 + opponentPlayer;
+                return encodeCapture(piece, parsePosition(move.from), QUEEN + player, parsePosition(move.to), capturedPiece);
             }
             if (move.flags === 'e') {
                 // TODO works only for white player
@@ -144,6 +154,18 @@
             let currentMove = 0;
 
             moveCallBack = (move) => {
+                if (move === 'WHITE_WINS') {
+                    alert('YOU WIN!');
+                    return;
+                }
+                if (move === 'BLACK_WINS') {
+                    alert('COMPUTER WINS!');
+                    return;
+                }
+                if (move === 'DRAW') {
+                    alert('GAME DRAW');
+                    return;
+                }
                 game.move(move, { sloppy: true });
                 console.log({ fen: game.fen() })
                 board.position(game.fen());
@@ -188,9 +210,7 @@
                 // illegal move
                 if (move === null) return 'snapback'
 
-
                 wasmWorker.postMessage(wasmMove(game, move));
-
             }
 
             function onMouseoverSquare(square, piece) {
@@ -234,12 +254,32 @@
 
             $('#undo').on('click', () => {
 
-                if (game.turn() !== currentPlayer) return false
+                if (game.game_over()) {
+                    console.log('undo game over');
+                    wasmWorker.postMessage('undo');
+                    game.undo();
+                    board.position(game.fen());
+                    return;
+                }
 
+                if (game.turn() !== currentPlayer) {
+                    return false;
+                }
+
+                wasmWorker.postMessage('undo');
                 wasmWorker.postMessage('undo');
                 game.undo();
                 game.undo();
                 board.position(game.fen());
+            });
+
+            $('#loadFEN').on('click', () => {
+                const fen = $('#fen')[0].value;
+                console.log(fen)
+                wasmWorker.postMessage('fen ' + fen);
+                game.load(fen);
+                board.position(fen);
+
             });
 
         }

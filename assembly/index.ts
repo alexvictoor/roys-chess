@@ -1,10 +1,18 @@
 // The entry file of your WebAssembly module.
 
 import { chooseBestMove } from "./alpha-beta-evaluation";
-import { BitBoard, BLACK, toNotation, WHITE } from "./bitboard";
+import {
+  BitBoard,
+  BLACK,
+  decodePlayer,
+  opponent,
+  toNotation,
+  WHITE,
+} from "./bitboard";
 import { parseFEN } from "./fen-parser";
 import { findAllBishopMagicNumbers, findAllRookMagicNumbers } from "./magic";
 import { perft, perft2 } from "./perft";
+import { isCheckMate, isDraw } from "./status";
 
 export function now(): f64 {
   return <f64>Date.now();
@@ -84,12 +92,25 @@ export class Game {
   chooseNextMove(player: f64): string {
     const move = chooseBestMove(<i8>player, this.board, 10);
     this.board.do(<u32>(move & 0xffffffff));
+    const nextPlayer = opponent(decodePlayer(<u32>(move & 0xffffffff)));
+    if (isCheckMate(nextPlayer, this.board)) {
+      return "CHECK_MATE";
+    }
+    if (isDraw(nextPlayer, this.board)) {
+      return "DRAW";
+    }
     return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
-    //return this.board.toFEN();
   }
 
   performMove(move: f64): string {
     this.board.do(<u32>move);
+    const nextPlayer = opponent(decodePlayer(<u32>move));
+    if (isCheckMate(nextPlayer, this.board)) {
+      return "CHECK_MATE";
+    }
+    if (isDraw(nextPlayer, this.board)) {
+      return "DRAW";
+    }
     return this.board.toFEN();
   }
 

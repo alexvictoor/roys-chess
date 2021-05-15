@@ -569,6 +569,11 @@ export function decodeSrcPiece(action: u32): i8 {
 }
 // @ts-ignore
 @inline
+export function decodePlayer(action: u32): i8 {
+  return <i8>(decodeSrcPiece(action & 1));
+}
+// @ts-ignore
+@inline
 export function decodeFromPosition(action: u32): i8 {
   return <i8>((action >> 4) & BIT_MASK_6);
 }

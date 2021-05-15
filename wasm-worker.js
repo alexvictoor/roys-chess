@@ -16,13 +16,38 @@ setup();
 
 onmessage = function (e) {
   if (e.data === "undo") {
-    iaGame.undo();
+    const fenAfterUndo = wasm.exports.__getString(iaGame.undo());
+    console.log({ fenAfterUndo });
+    return;
+  }
+  if (e.data.startsWith && e.data.startsWith("fen ")) {
+    console.log(e.data.substring(4));
+    iaGame.startFrom(wasm.exports.__newString(e.data.substring(4)));
     return;
   }
 
-  iaGame.performMove(e.data);
-  const move = wasm.exports.__getString(iaGame.chooseNextMove(BLACK));
-  console.log({ move });
+  const moveOutcome = wasm.exports.__getString(iaGame.performMove(e.data));
+  console.log({ moveOutcome });
+  if (moveOutcome === "CHECK_MATE") {
+    postMessage("WHITE_WINS");
+    return;
+  }
+  if (moveOutcome === "DRAW") {
+    postMessage("DRAW");
+    return;
+  }
+  const computerMoveOutcome = wasm.exports.__getString(
+    iaGame.chooseNextMove(BLACK)
+  );
+  console.log({ computerMoveOutcome });
+  if (computerMoveOutcome === "CHECK_MATE") {
+    postMessage("BLACK_WINS");
+    return;
+  }
+  if (computerMoveOutcome === "DRAW") {
+    postMessage("DRAW");
+    return;
+  }
 
-  postMessage(move.split(" ")[0]);
+  postMessage(computerMoveOutcome.split(" ")[0]);
 };

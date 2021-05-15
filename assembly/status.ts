@@ -1,5 +1,5 @@
 import { BitBoard, MaskIterator, opponent } from "./bitboard";
-import { legalMoves } from "./engine";
+import { canMove, legalMoves } from "./engine";
 import { kingMoves } from "./king-move-generation";
 import { knightMovesFromCache } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
@@ -8,8 +8,6 @@ import {
   queenMoves,
   rookMoves,
 } from "./sliding-pieces-move-generation";
-
-const positions = new MaskIterator();
 
 function isInCheckByRook(
   kingPosition: i8,
@@ -96,16 +94,15 @@ function isDrawByRepetition(board: BitBoard): boolean {
   }
   return repetitionCount > 1;
 }
-// TODO remove ?
+
 export function isDraw(player: i8, board: BitBoard): boolean {
   return (
     board.getHalfMoveClock() == 100 ||
-    legalMoves(board, player).length === 0 ||
+    !canMove(board, player) ||
     isDrawByRepetition(board)
   );
 }
 
-// TODO remove ?
 export function isCheckMate(player: i8, board: BitBoard): boolean {
-  return isInCheck(player, board) && legalMoves(board, player).length === 0;
+  return isInCheck(player, board) && !canMove(board, player);
 }
