@@ -1,13 +1,6 @@
-import {
-  BitBoard,
-  BLACK,
-  KNIGHT,
-  PAWN,
-  QUEEN,
-  WHITE,
-} from "../../fast/bitboard";
-import { getKnightMoves } from "../../fast/knight";
-import { addKnightPseudoLegalCaptures } from "../../fast/knight-move-generation";
+import { BitBoard, BLACK, KNIGHT, PAWN, QUEEN, WHITE } from "../bitboard";
+import { getKnightMoves } from "../knight";
+import { addKnightPseudoLegalCaptures } from "../knight-move-generation";
 
 describe("Knight move generation", () => {
   it("should get knight moves from the center of the board", () => {

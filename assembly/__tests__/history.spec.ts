@@ -1,6 +1,6 @@
-import { WHITE } from "../../fast/bitboard";
-import { BLACK, encodeMove, ROOK } from "../../fast/bitboard";
-import { History } from "../../fast/history";
+import { WHITE } from "../bitboard";
+import { BLACK, encodeMove, ROOK } from "../bitboard";
+import { History } from "../history";
 
 const h = new History();
 

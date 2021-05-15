@@ -1,14 +1,6 @@
-import { evaluate } from "../../fast/static-evaluation";
-import { parseFEN } from "../../fast/fen-parser";
-import {
-  BitBoard,
-  BLACK,
-  KING,
-  PAWN,
-  QUEEN,
-  ROOK,
-  WHITE,
-} from "../../fast/bitboard";
+import { evaluate } from "../static-evaluation";
+import { parseFEN } from "../fen-parser";
+import { BitBoard, BLACK, KING, PAWN, QUEEN, ROOK, WHITE } from "../bitboard";
 
 describe("Static evaluation", () => {
   it("should be 0 when the game begins", () => {

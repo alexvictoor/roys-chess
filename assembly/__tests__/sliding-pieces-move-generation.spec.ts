@@ -6,14 +6,14 @@ import {
   KNIGHT,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { bishopAttacks, rookAttacks } from "../../fast/magic";
+} from "../bitboard";
+import { bishopAttacks, rookAttacks } from "../magic";
 import {
   addBishopPseudoLegalMoves,
   addRookPseudoLegalMoves,
   bishopMoves,
   rookMoves,
-} from "../../fast/sliding-pieces-move-generation";
+} from "../sliding-pieces-move-generation";
 
 describe("Rook magic move generation", () => {
   it("should get rook moves", () => {

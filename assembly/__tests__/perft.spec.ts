@@ -10,10 +10,10 @@ import {
   ROOK,
   toNotation,
   WHITE,
-} from "../../fast/bitboard";
-import { legalMoves } from "../../fast/engine";
-import { parseFEN } from "../../fast/fen-parser";
-import { perft, perft2 } from "../../fast/perft";
+} from "../bitboard";
+import { legalMoves } from "../engine";
+import { parseFEN } from "../fen-parser";
+import { perft, perft2 } from "../perft";
 
 function perftDivide(depth: i8, board: BitBoard, player: i8): string {
   const boards = legalMoves(board, player);

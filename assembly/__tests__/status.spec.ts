@@ -10,8 +10,8 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { isCheckMate, isDraw, isInCheck } from "../../fast/status";
+} from "../bitboard";
+import { isCheckMate, isDraw, isInCheck } from "../status";
 
 describe("Status", () => {
   it("should be checked when attacked by opponent rook", () => {

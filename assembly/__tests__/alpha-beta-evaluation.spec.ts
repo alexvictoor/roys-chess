@@ -1,7 +1,4 @@
-import {
-  chooseBestMove,
-  evaluatePosition,
-} from "../../fast/alpha-beta-evaluation";
+import { chooseBestMove, evaluatePosition } from "../alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
@@ -11,11 +8,11 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { legalMoves } from "../../fast/engine";
-import { parseFEN } from "../../fast/fen-parser";
-import { evaluateQuiescence } from "../../fast/quiescence-evaluation";
-import { isCheckMate } from "../../fast/status";
+} from "../bitboard";
+import { legalMoves } from "../engine";
+import { parseFEN } from "../fen-parser";
+import { evaluateQuiescence } from "../quiescence-evaluation";
+import { isCheckMate } from "../status";
 
 function encodeScore(action: u64, score: i8): u64 {
   //log("encodeStore " + maskString(action));

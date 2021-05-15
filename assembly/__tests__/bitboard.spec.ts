@@ -14,8 +14,8 @@ import {
   ROOK,
   toNotation,
   WHITE,
-} from "../../fast/bitboard";
-import { parseFEN } from "../../fast/fen-parser";
+} from "../bitboard";
+import { parseFEN } from "../fen-parser";
 
 describe("Bit Board", () => {
   it("should put piece on board", () => {

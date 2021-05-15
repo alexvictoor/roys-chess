@@ -1,13 +1,6 @@
-import {
-  BitBoard,
-  BLACK,
-  KING,
-  maskString,
-  PAWN,
-  WHITE,
-} from "../../fast/bitboard";
-import { getKingMoves } from "../../fast/king";
-import { addKingPseudoLegalCaptures } from "../../fast/king-move-generation";
+import { BitBoard, BLACK, KING, maskString, PAWN, WHITE } from "../bitboard";
+import { getKingMoves } from "../king";
+import { addKingPseudoLegalCaptures } from "../king-move-generation";
 
 describe("King move generation", () => {
   it("should get king moves from the center of the board", () => {

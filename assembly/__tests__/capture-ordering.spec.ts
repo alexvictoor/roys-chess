@@ -7,8 +7,8 @@ import {
   PAWN,
   QUEEN,
   WHITE,
-} from "../../fast/bitboard";
-import { score, sortCaptures } from "../../fast/capture-ordering";
+} from "../bitboard";
+import { score, sortCaptures } from "../capture-ordering";
 
 describe('"Most valuable victim, least valuable attacker" capture comparison', () => {
   it("should score captures", () => {

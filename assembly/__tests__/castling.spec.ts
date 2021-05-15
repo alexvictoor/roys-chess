@@ -6,9 +6,9 @@ import {
   KING,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { addCastlingMoves } from "../../fast/castling";
-import { parseFEN } from "../../fast/fen-parser";
+} from "../bitboard";
+import { addCastlingMoves } from "../castling";
+import { parseFEN } from "../fen-parser";
 
 describe("Castling", () => {
   it("should be possible for white on king side", () => {

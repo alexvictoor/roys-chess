@@ -1,6 +1,6 @@
-import { WHITE } from "../../fast/bitboard";
-import { pseudoLegalMoves } from "../../fast/engine";
-import { parseFEN } from "../../fast/fen-parser";
+import { WHITE } from "../bitboard";
+import { pseudoLegalMoves } from "../engine";
+import { parseFEN } from "../fen-parser";
 import {
   ALPHA_SCORE,
   decodeDepthFromEntry,
@@ -8,7 +8,7 @@ import {
   decodeScoreFromEntry,
   decodeScoreTypeFromEntry,
   TranspositionTable,
-} from "../../fast/transposition-table";
+} from "../transposition-table";
 
 describe("Transposition table", () => {
   it("should store data", () => {

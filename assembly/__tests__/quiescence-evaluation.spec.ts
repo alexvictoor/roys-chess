@@ -1,15 +1,7 @@
-import {
-  BitBoard,
-  BLACK,
-  KING,
-  PAWN,
-  QUEEN,
-  ROOK,
-  WHITE,
-} from "../../fast/bitboard";
-import { parseFEN } from "../../fast/fen-parser";
-import { evaluateQuiescence } from "../../fast/quiescence-evaluation";
-import { evaluate } from "../../fast/static-evaluation";
+import { BitBoard, BLACK, KING, PAWN, QUEEN, ROOK, WHITE } from "../bitboard";
+import { parseFEN } from "../fen-parser";
+import { evaluateQuiescence } from "../quiescence-evaluation";
+import { evaluate } from "../static-evaluation";
 
 describe("Quiescence evaluation", () => {
   it("should be greather than static evaluation when opponent pieces are not protected", () => {

@@ -8,8 +8,8 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { parseFEN } from "../../fast/fen-parser";
+} from "../bitboard";
+import { parseFEN } from "../fen-parser";
 
 describe("FEN parser", () => {
   it("should parse piece positions", () => {
@@ -50,6 +50,14 @@ describe("FEN parser", () => {
     expect(board.kingSideCastlingRight(BLACK)).toBe(true);
     expect(board.queenSideCastlingRight(WHITE)).toBe(true);
     expect(board.queenSideCastlingRight(BLACK)).toBe(true);
+  });
+
+  it("should not crash", () => {
+    // given
+    const fen = "8/R3Bkp1/5p2/3Pp3/2r4P/5PK1/8/8 w - - 3 45";
+    // when
+    const board = parseFEN(fen);
+    // then
   });
 });
 

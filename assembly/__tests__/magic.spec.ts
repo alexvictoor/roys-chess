@@ -1,4 +1,4 @@
-import { maskString } from "../../fast/bitboard";
+import { maskString } from "../bitboard";
 import {
   bishopAttacks,
   bishopMaskAt,
@@ -8,7 +8,7 @@ import {
   generateBlockerMask,
   rookMaskAt,
   findAllBishopMagicNumbers,
-} from "../../fast/magic";
+} from "../magic";
 
 describe("Rook masks", () => {
   it("should get bits on horizontal & vertical lines", () => {

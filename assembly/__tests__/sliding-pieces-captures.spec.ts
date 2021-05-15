@@ -6,12 +6,12 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
+} from "../bitboard";
 import {
   addBishopPseudoLegalCaptures,
   addQueenPseudoLegalCaptures,
   addRookPseudoLegalCaptures,
-} from "../../fast/sliding-pieces-move-generation";
+} from "../sliding-pieces-move-generation";
 
 describe("Rook captures", () => {
   it("should get rook captures", () => {

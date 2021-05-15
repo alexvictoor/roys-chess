@@ -11,11 +11,8 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import {
-  addPawnPseudoLegalCaptures,
-  addPawnPseudoLegalMoves,
-} from "../../fast/pawn";
+} from "../bitboard";
+import { addPawnPseudoLegalCaptures, addPawnPseudoLegalMoves } from "../pawn";
 
 describe("Pawn move generation", () => {
   it("should get pawn move one square forward when nothing is in the way", () => {

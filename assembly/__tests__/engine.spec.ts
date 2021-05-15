@@ -8,10 +8,10 @@ import {
   QUEEN,
   ROOK,
   WHITE,
-} from "../../fast/bitboard";
-import { legalMoves } from "../../fast/engine";
-import { parseFEN } from "../../fast/fen-parser";
-import { legalCaptures } from "../../fast/quiescence-evaluation";
+} from "../bitboard";
+import { legalMoves } from "../engine";
+import { parseFEN } from "../fen-parser";
+import { legalCaptures } from "../quiescence-evaluation";
 
 describe("Engine move generation", () => {
   it("should get bishop legal moves", () => {

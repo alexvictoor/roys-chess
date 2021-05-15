@@ -1,13 +1,10 @@
 // The entry file of your WebAssembly module.
 
-import { chooseBestMove } from "./fast/alpha-beta-evaluation";
-import { BitBoard, BLACK, toNotation, WHITE } from "./fast/bitboard";
-import { parseFEN } from "./fast/fen-parser";
-import {
-  findAllBishopMagicNumbers,
-  findAllRookMagicNumbers,
-} from "./fast/magic";
-import { perft, perft2 } from "./fast/perft";
+import { chooseBestMove } from "./alpha-beta-evaluation";
+import { BitBoard, BLACK, toNotation, WHITE } from "./bitboard";
+import { parseFEN } from "./fen-parser";
+import { findAllBishopMagicNumbers, findAllRookMagicNumbers } from "./magic";
+import { perft, perft2 } from "./perft";
 
 export function now(): f64 {
   return <f64>Date.now();
@@ -97,7 +94,6 @@ export class Game {
   }
 
   undo(): string {
-    this.board.undo();
     this.board.undo();
     return this.board.toFEN();
   }
