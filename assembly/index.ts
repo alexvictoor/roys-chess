@@ -1,6 +1,6 @@
 // The entry file of your WebAssembly module.
 
-import { chooseBestMove } from "./alpha-beta-evaluation";
+import { analyseBestMove, chooseBestMove } from "./alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
@@ -45,7 +45,7 @@ export function benchPerftOptimized(): f64 {
 
 export function nextMove(fen: string, player: f64): string {
   const board = parseFEN(fen);
-  const move = chooseBestMove(<i8>player, board, 10);
+  const move = chooseBestMove(<i8>player, board, 9);
 
   return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
 }
@@ -100,6 +100,12 @@ export class Game {
       return "DRAW";
     }
     return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
+  }
+
+  analyse(): string {
+    return analyseBestMove(this.board)
+      .map<string>((m) => toNotation(m))
+      .join(" ");
   }
 
   performMove(move: f64): string {

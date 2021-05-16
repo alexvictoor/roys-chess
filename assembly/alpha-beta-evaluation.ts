@@ -67,8 +67,9 @@ export function evaluatePosition(
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
   //const playerInCheck = isInCheck(player, board);
+  const inPVSearch = beta - alpha > 1;
 
-  const nullMovePossible = !playerInCheck && !afterNullMove;
+  const nullMovePossible = !playerInCheck && !afterNullMove && inPVSearch;
   if (nullMovePossible) {
     board.doNullMove();
 
@@ -94,7 +95,7 @@ export function evaluatePosition(
     }
   }
 
-  let futilityPruningPossible = depth < 4 && !playerInCheck;
+  let futilityPruningPossible = depth < 4 && !playerInCheck && inPVSearch;
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
     const staticEvaluation = evaluate(player, board);
@@ -175,7 +176,9 @@ export function evaluatePosition(
         history.recordCutOffMove(player, ply, move);
       }
       // TODO record score   beta  / lower bound ?
-      transpositionTable.record(board, move, beta, BETA_SCORE, depth);
+      if (inPVSearch) {
+        transpositionTable.record(board, move, beta, BETA_SCORE, depth);
+      }
       return beta;
     }
     if (score > bestScore) {
@@ -188,7 +191,7 @@ export function evaluatePosition(
     }
   }
   // TODO pv ? record alphaUpdated pv si updated sinon alpha
-  if (bestMove > 0) {
+  if (bestMove > 0 && inPVSearch) {
     const scoreType = alphaUpdated != alpha ? EXACT_SCORE : ALPHA_SCORE;
     transpositionTable.record(board, bestMove, bestScore, scoreType, depth);
   }
@@ -201,9 +204,9 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
 
   const startTimestamp = Date.now();
 
-  let alpha: i16 = i16.MIN_VALUE >> 1;
   let bestMove: u32 = 0;
   const opponentPlayer = opponent(player);
+  let alpha: i16 = i16.MIN_VALUE >> 2;
 
   for (let depth: i8 = 1; depth <= maxDepth; depth++) {
     const startIterationTimestamp = Date.now();
@@ -242,4 +245,30 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     }
   }
   return <u64>bestMove + ((<u64>maxDepth) << 32);
+}
+
+export function analyseBestMove(board: BitBoard): u32[] {
+  const moves: u32[] = [];
+  let entry: u64 = 0;
+  do {
+    entry = transpositionTable.getEntry(board);
+    //log("entry " + entry.toString());
+    if (entry != 0) {
+      const move = decodeMoveFromEntry(entry);
+      /*log(
+        decodeScoreTypeFromEntry(entry).toString() +
+          " " +
+          decodeDepthFromEntry(entry).toString()
+      );*/
+      //log(decodeDepthFromEntry(entry));
+      moves.push(move);
+      board.do(move);
+    }
+  } while (entry != 0);
+
+  for (let index: i8 = 0; index < moves.length; index++) {
+    board.undo();
+  }
+
+  return moves;
 }

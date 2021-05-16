@@ -10,7 +10,7 @@
     "generate-zobrist": "node ./generate-zobrist-keys.js > assembly/fast/generated-zobrist-keys.ts",
     "astest": "asp --verbose",
     "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --debug --exportRuntime",
-    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --optimize --exportRuntime",
+    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat -O2 --exportRuntime",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
   },
   "author": "",

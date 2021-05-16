@@ -18,7 +18,7 @@ export class TranspositionTable {
   reset(sizeMagnitude: i32 = 24): void {
     const size: i32 = 1 << sizeMagnitude;
     if (this.size == size) {
-      for (let index = 0; index < size; index++) {
+      for (let index: i32 = 0; index < size; index++) {
         unchecked((this.verificationEntries[index] = 0));
         unchecked((this.moveEntries[index] = 0));
       }
@@ -37,14 +37,18 @@ export class TranspositionTable {
     depth: i8
   ): void {
     const hash = board.hashCode();
-    const verificationEntry: u64 = (<u64>depth) | ((hash >> 5) << 5);
     const index: i32 = <i32>(hash % this.size);
+    const existingEntry = this.moveEntries[index];
+    if (existingEntry != 0 && decodeDepthFromEntry(existingEntry) > depth) {
+      return;
+    }
+    const verificationEntry: u64 = (<u64>depth) | ((hash >> 5) << 5);
     unchecked((this.verificationEntries[index] = verificationEntry));
     unchecked(
       (this.moveEntries[index] =
         (<u64>scoreType) |
         ((<u64>move) << 2) |
-        ((<u64>score) << 32) |
+        (((<u64>score) & 0xffff) << 32) |
         ((<u64>depth) << 48))
     );
   }

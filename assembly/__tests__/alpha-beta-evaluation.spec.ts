@@ -1,7 +1,12 @@
-import { chooseBestMove, evaluatePosition } from "../alpha-beta-evaluation";
+import {
+  analyseBestMove,
+  chooseBestMove,
+  evaluatePosition,
+} from "../alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
+  decodeSrcPiece,
   KING,
   maskString,
   PAWN,
@@ -25,7 +30,7 @@ function decodeScore(action: u64): i8 {
 }
 
 describe("Alpha-Beta move chooser", () => {
-  it("should find check mate move", () => {
+  xit("should find check mate move", () => {
     // given
     const board = new BitBoard();
     board.putPiece(KING, WHITE, 6);
@@ -46,5 +51,13 @@ describe("Alpha-Beta move chooser", () => {
     // then
     const nextBoard = board.execute(<u32>(move & 0xffffffff));
     expect(isCheckMate(BLACK, nextBoard)).toBe(true);
+  });
+
+  it("should find best moves", () => {
+    const board = parseFEN("4k1r1/p4p2/6pp/4n3/4B3/6P1/P3KP1P/7R b  -");
+    const move = chooseBestMove(BLACK, board, 5);
+    expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KING);
+    const moves = analyseBestMove(board);
+    expect(moves[0]).toBe(<u32>move);
   });
 });

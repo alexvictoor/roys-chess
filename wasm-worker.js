@@ -4,30 +4,32 @@ importScripts(
 
 const BLACK = 1;
 
-let iaGame;
+let aiGame;
 let wasm;
 const setup = async () => {
   wasm = await loader.instantiate(fetch("build/optimized.wasm"));
   //const initWasm = async () => await loader.instantiate(fetch("build/optimized.wasm"));
-  iaGame = new wasm.exports.Game();
+  aiGame = new wasm.exports.Game();
   postMessage("READY");
 };
 setup();
 
 onmessage = function (e) {
   if (e.data === "undo") {
-    const fenAfterUndo = wasm.exports.__getString(iaGame.undo());
+    const fenAfterUndo = wasm.exports.__getString(aiGame.undo());
     console.log({ fenAfterUndo });
     return;
   }
   if (e.data.startsWith && e.data.startsWith("fen ")) {
     console.log(e.data.substring(4));
-    iaGame.startFrom(wasm.exports.__newString(e.data.substring(4)));
+    aiGame.startFrom(wasm.exports.__newString(e.data.substring(4)));
     return;
   }
 
-  const moveOutcome = wasm.exports.__getString(iaGame.performMove(e.data));
+  const moveOutcome = wasm.exports.__getString(aiGame.performMove(e.data));
+
   console.log({ moveOutcome });
+
   if (moveOutcome === "CHECK_MATE") {
     postMessage("WHITE_WINS");
     return;
@@ -37,9 +39,10 @@ onmessage = function (e) {
     return;
   }
   const computerMoveOutcome = wasm.exports.__getString(
-    iaGame.chooseNextMove(BLACK)
+    aiGame.chooseNextMove(BLACK)
   );
-  console.log({ computerMoveOutcome });
+  const analysis = wasm.exports.__getString(aiGame.analyse());
+  console.log({ computerMoveOutcome, analysis });
   if (computerMoveOutcome === "CHECK_MATE") {
     postMessage("BLACK_WINS");
     return;
