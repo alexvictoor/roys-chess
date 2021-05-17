@@ -132,16 +132,10 @@ export function evaluatePosition(
     }
     const isCapture = decodeCaptureFlag(move);
     const isOpponentInCheck = isInCheck(opponent(player), board);
-    const staticExchangeEvaluationScore = staticExchangeEvaluation(
-      board,
-      player,
-      move
-    );
+    const swapOffValue = staticExchangeEvaluation(board, player, move);
 
     const depthNeeded =
-      lateMoveReductionPossible && staticExchangeEvaluationScore < 0
-        ? depth - 2
-        : depth - 1;
+      lateMoveReductionPossible && swapOffValue < 0 ? depth - 2 : depth - 1;
 
     if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
       if (bestScore < futilityScore) {

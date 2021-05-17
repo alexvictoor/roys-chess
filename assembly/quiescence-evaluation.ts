@@ -10,6 +10,7 @@ import {
   addRookPseudoLegalCaptures,
 } from "./sliding-pieces-move-generation";
 import { evaluate } from "./static-evaluation";
+import { staticExchangeEvaluation } from "./static-exchange-evaluation";
 import { isInCheck } from "./status";
 
 const DELTA_PRUNING_THRESHOLD: i16 = 1000; // queen + pawn value
@@ -65,6 +66,13 @@ export function evaluateQuiescence(
       board.undo();
       continue;
     }
+
+    const swapOffValue = staticExchangeEvaluation(board, player, capture);
+    if (swapOffValue < 0) {
+      board.undo();
+      continue;
+    }
+
     const score = -evaluateQuiescence(
       opponent(player),
       board,

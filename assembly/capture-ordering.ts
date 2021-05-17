@@ -1,5 +1,6 @@
 import { decodeCapturedPiece, decodeSrcPiece } from "./bitboard";
-
+import { captureScore, score } from "./move-ordering";
+/*
 const SCORES: i8[] = [1, 1, 3, 3, 4, 4, 5, 5, 9, 9, 10, 10];
 
 export function score(capture: u32): i8 {
@@ -8,7 +9,7 @@ export function score(capture: u32): i8 {
     unchecked(SCORES[decodeSrcPiece(capture)])
   );
 }
-
+*/
 function encodeScore(capture: u64, score: i8): u64 {
   return capture | ((<u64>score) << 54);
 }
@@ -20,7 +21,7 @@ const scores: StaticArray<u32> = new StaticArray<u32>(256);
 export function sortCaptures(captures: u32[]): void {
   for (let index = 0; index < captures.length; index++) {
     const capture = unchecked(captures[index]);
-    unchecked((scores[index] = score(capture)));
+    unchecked((scores[index] = captureScore(capture)));
   }
   // in place insertion sort
   for (let i = 1; i < captures.length; i++) {

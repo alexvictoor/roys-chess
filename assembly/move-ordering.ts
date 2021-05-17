@@ -18,6 +18,12 @@ for (let i = 0; i < SCORES.length; i++) {
   }
 }
 
+export function captureScore(capture: u32): i16 {
+  const srcPiece: i8 = decodeSrcPiece(capture);
+  const capturedPiece: i8 = decodeCapturedPiece(capture);
+  return unchecked(captureScores[(capturedPiece << 2) + (srcPiece >> 1)]);
+}
+
 export function score(
   board: BitBoard,
   player: i8,
@@ -34,9 +40,7 @@ export function score(
     //return 4 * staticExchangeEvaluation(board, player, action);
 
     //return staticExchangeEvaluation(board, player, action);
-    const srcPiece: i8 = decodeSrcPiece(action);
-    const capturedPiece: i8 = decodeCapturedPiece(action);
-    return unchecked(captureScores[(capturedPiece << 2) + (srcPiece >> 1)]);
+    return captureScore(action);
   }
   return history.getMoveScore(player, ply, action);
 }
