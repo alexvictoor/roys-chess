@@ -45,7 +45,7 @@ export function benchPerftOptimized(): f64 {
 
 export function nextMove(fen: string, player: f64): string {
   const board = parseFEN(fen);
-  const move = chooseBestMove(<i8>player, board, 9);
+  const move = chooseBestMove(<i8>player, board, 10);
 
   return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
 }

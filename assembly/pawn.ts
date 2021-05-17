@@ -217,7 +217,8 @@ export function addPawnPseudoLegalCaptures(
       board.getPlayerPiecesMask(player);
     pawnCapturinEnPassantLeftPositions.reset(pawnCapturingEnPassantMaskOnLeft);
     while (pawnCapturinEnPassantLeftPositions.hasNext()) {
-      const pawnCapturinEnPassantLeftPosition = pawnCapturinEnPassantLeftPositions.next();
+      const pawnCapturinEnPassantLeftPosition =
+        pawnCapturinEnPassantLeftPositions.next();
       moves.push(
         encodeCapture(
           PAWN + player,
@@ -239,7 +240,8 @@ export function addPawnPseudoLegalCaptures(
       pawnCapturingEnPassantMaskOnRight
     );
     while (pawnCapturinEnPassantRightPositions.hasNext()) {
-      const pawnCapturinEnPassantRightPosition = pawnCapturinEnPassantRightPositions.next();
+      const pawnCapturinEnPassantRightPosition =
+        pawnCapturinEnPassantRightPositions.next();
       moves.push(
         encodeCapture(
           PAWN + player,

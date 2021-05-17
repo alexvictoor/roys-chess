@@ -28,13 +28,13 @@ export function removeCheckedBoardFrom(
 
 export function pseudoLegalMoves(board: BitBoard, player: i8): u32[] {
   const moves: u32[] = [];
-  addCastlingMoves(moves, board, player);
   addPawnPseudoLegalMoves(moves, board, player);
   addKnightPseudoLegalMoves(moves, board, player);
   addBishopPseudoLegalMoves(moves, board, player);
   addRookPseudoLegalMoves(moves, board, player);
   addQueenPseudoLegalMoves(moves, board, player);
   addKingPseudoLegalMoves(moves, board, player);
+  addCastlingMoves(moves, board, player);
 
   return moves;
 }

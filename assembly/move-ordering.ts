@@ -1,9 +1,11 @@
 import {
+  BitBoard,
   decodeCapturedPiece,
   decodeCaptureFlag,
   decodeSrcPiece,
 } from "./bitboard";
 import { history } from "./history";
+import { staticExchangeEvaluation } from "./static-exchange-evaluation";
 
 //const SCORES: i8[] = [1, 1, 3, 3, 4, 4, 5, 5, 9, 9, 10, 10];
 const SCORES: i8[] = [1, 3, 4, 5, 9, 10];
@@ -16,24 +18,32 @@ for (let i = 0; i < SCORES.length; i++) {
   }
 }
 
-export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
+export function score(
+  board: BitBoard,
+  player: i8,
+  ply: i8,
+  action: u32,
+  bestMove: u32
+): i16 {
   if (action == bestMove) {
     return i16.MAX_VALUE;
   }
 
   const isCapture: i8 = decodeCaptureFlag(action);
   if (isCapture) {
+    //return 4 * staticExchangeEvaluation(board, player, action);
+
+    //return staticExchangeEvaluation(board, player, action);
     const srcPiece: i8 = decodeSrcPiece(action);
     const capturedPiece: i8 = decodeCapturedPiece(action);
-    //return unchecked(SCORES[capturedPiece]) - unchecked(SCORES[srcPiece]);
     return unchecked(captureScores[(capturedPiece << 2) + (srcPiece >> 1)]);
   }
-  //return 0;
   return history.getMoveScore(player, ply, action);
 }
 
 const scores: StaticArray<u32> = new StaticArray<u32>(256);
 export function sortMoves(
+  board: BitBoard,
   player: i8,
   ply: i8,
   moves: u32[],
@@ -41,7 +51,7 @@ export function sortMoves(
 ): void {
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
-    unchecked((scores[index] = score(player, ply, move, bestMove)));
+    unchecked((scores[index] = score(board, player, ply, move, bestMove)));
   }
   // in place insertion sort
   for (let i = 1; i < moves.length; i++) {

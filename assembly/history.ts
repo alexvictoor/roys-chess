@@ -22,7 +22,7 @@ export class History {
     );
   }
   @inline
-  recordCutOffMove(player: i8, ply: i8, move: u32): void {
+  recordCutOffMove(player: i8, ply: i8, depth: i8, move: u32): void {
     //log(this.computeMoveIndex(player, move));
     //log(1 << ply);
     unchecked(
@@ -44,15 +44,15 @@ export class History {
     /*if (cutOff === 0) {
       return 0;
     }*/
-    let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
+    //let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
     /*if (unchecked(this.primaryKillers[ply]) === move) {
       result += 400;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
       result += 200;
     }*/
-    return result;
-    //return cutOff - unchecked(this.playedMoveCounters[index]);
+    //return cutOff;
+    return cutOff - unchecked(this.playedMoveCounters[index]);
   }
   resetHistory(): void {
     for (let index = 0; index < this.primaryKillers.length; index++) {

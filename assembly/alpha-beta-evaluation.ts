@@ -10,7 +10,13 @@ import { pseudoLegalMoves } from "./engine";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
 import { evaluateQuiescence } from "./quiescence-evaluation";
-import { evaluate, PIECE_VALUES } from "./static-evaluation";
+import {
+  evaluate,
+  isPastMiddleGame,
+  isPastStartGame,
+  PIECE_VALUES,
+} from "./static-evaluation";
+import { staticExchangeEvaluation } from "./static-exchange-evaluation";
 import { isInCheck } from "./status";
 import {
   ALPHA_SCORE,
@@ -62,7 +68,7 @@ export function evaluatePosition(
   let bestMove: u32 =
     scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
   const moves = pseudoLegalMoves(board, player);
-  sortMoves(player, ply, moves, bestMove);
+  sortMoves(board, player, ply, moves, bestMove);
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
@@ -87,11 +93,16 @@ export function evaluatePosition(
     );
     board.undoNullMove();
     if (nullMoveScore >= beta) {
+      if (!isPastStartGame(board)) {
+        // cutoff in case of fail-high
+        return nullMoveScore;
+      }
       // reduce the depth in case of fail-high
       depth -= NULL_MOVE_REDUCTION;
       if (depth <= 0) {
         return evaluateQuiescence(player, board, alpha, beta);
       }
+      return nullMoveScore;
     }
   }
 
@@ -121,6 +132,16 @@ export function evaluatePosition(
     }
     const isCapture = decodeCaptureFlag(move);
     const isOpponentInCheck = isInCheck(opponent(player), board);
+    const staticExchangeEvaluationScore = staticExchangeEvaluation(
+      board,
+      player,
+      move
+    );
+
+    const depthNeeded =
+      lateMoveReductionPossible && staticExchangeEvaluationScore < 0
+        ? depth - 2
+        : depth - 1;
 
     if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
       if (bestScore < futilityScore) {
@@ -134,13 +155,13 @@ export function evaluatePosition(
       lateMoveReductionPossible &&
       !isCapture &&
       !isOpponentInCheck &&
-      fullyEvaluatedMoves > 1
+      fullyEvaluatedMoves > 4
     ) {
       const reducedDepthScore = -evaluatePosition(
         opponent(player),
-        false,
+        isOpponentInCheck,
         board,
-        depth - 2,
+        depthNeeded - 1,
         -alphaUpdated - 1,
         -alphaUpdated,
         ply + 1,
@@ -156,7 +177,7 @@ export function evaluatePosition(
       opponent(player),
       isOpponentInCheck,
       board,
-      depth - 1,
+      depthNeeded,
       -beta,
       -alphaUpdated,
       ply + 1,
@@ -173,7 +194,7 @@ export function evaluatePosition(
       // TODO record cutoff
       // if (!capture) history.recordCutoff(player,ply, move)
       if (!isCapture) {
-        history.recordCutOffMove(player, ply, move);
+        history.recordCutOffMove(player, ply, depth, move);
       }
       // TODO record score   beta  / lower bound ?
       if (inPVSearch) {
@@ -213,7 +234,7 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     const transpositionEntry = transpositionTable.getEntry(board);
     bestMove = decodeMoveFromEntry(transpositionEntry);
     const moves = pseudoLegalMoves(board, player);
-    sortMoves(player, 1, moves, bestMove);
+    sortMoves(board, player, 1, moves, bestMove);
     while (moves.length > 0) {
       const move = moves.pop();
       board.do(move);
@@ -240,7 +261,7 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     transpositionTable.record(board, bestMove, alpha, EXACT_SCORE, depth);
     const iterationDuration = Date.now() - startIterationTimestamp;
     const totalDuration = Date.now() - startTimestamp;
-    if ((iterationDuration > 3000 && depth > 5) || totalDuration > 10000) {
+    if (/*(iterationDuration > 3000 && depth > 5) ||*/ totalDuration > 10000) {
       return <u64>bestMove + ((<u64>depth) << 32);
     }
   }
