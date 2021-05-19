@@ -31,11 +31,11 @@ onmessage = function (e) {
   console.log({ moveOutcome });
 
   if (moveOutcome === "CHECK_MATE") {
-    postMessage("WHITE_WINS");
+    postMessage('{ "endGame": "WHITE_WINS" }');
     return;
   }
   if (moveOutcome === "DRAW") {
-    postMessage("DRAW");
+    postMessage('{ "endGame": "DRAW" }');
     return;
   }
   const computerMoveOutcome = wasm.exports.__getString(
@@ -43,7 +43,7 @@ onmessage = function (e) {
   );
   const analysis = wasm.exports.__getString(aiGame.analyse());
   console.log({ computerMoveOutcome, analysis });
-  if (computerMoveOutcome === "CHECK_MATE") {
+  /*if (computerMoveOutcome.start === "CHECK_MATE") {
     postMessage("BLACK_WINS");
     return;
   }
@@ -52,5 +52,6 @@ onmessage = function (e) {
     return;
   }
 
-  postMessage(computerMoveOutcome.split(" ")[0]);
+  postMessage(computerMoveOutcome.split(" ")[0]);*/
+  postMessage(computerMoveOutcome);
 };

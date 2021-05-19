@@ -5,17 +5,13 @@ import {
   PAWN,
   QUEEN,
   ROOK,
+  toNotation,
 } from "./bitboard";
 import { pseudoLegalMoves } from "./engine";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
 import { evaluateQuiescence } from "./quiescence-evaluation";
-import {
-  evaluate,
-  isPastMiddleGame,
-  isPastStartGame,
-  PIECE_VALUES,
-} from "./static-evaluation";
+import { evaluate, isPastStartGame, PIECE_VALUES } from "./static-evaluation";
 import { staticExchangeEvaluation } from "./static-exchange-evaluation";
 import { isInCheck } from "./status";
 import {
@@ -221,7 +217,7 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
 
   let bestMove: u32 = 0;
   const opponentPlayer = opponent(player);
-  let alpha: i16 = i16.MIN_VALUE >> 2;
+  let alpha: i16 = i16.MIN_VALUE >> 1;
 
   for (let depth: i8 = 1; depth <= maxDepth; depth++) {
     const startIterationTimestamp = Date.now();
@@ -255,31 +251,27 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     transpositionTable.record(board, bestMove, alpha, EXACT_SCORE, depth);
     const iterationDuration = Date.now() - startIterationTimestamp;
     const totalDuration = Date.now() - startTimestamp;
-    if (/*(iterationDuration > 3000 && depth > 5) ||*/ totalDuration > 10000) {
+    trace("depth " + depth.toString() + " " + toNotation(bestMove));
+    if ((iterationDuration > 3000 && depth > 6) || totalDuration > 10000) {
       return <u64>bestMove + ((<u64>depth) << 32);
     }
   }
   return <u64>bestMove + ((<u64>maxDepth) << 32);
 }
 
-export function analyseBestMove(board: BitBoard): u32[] {
+export function analyseBestMove(board: BitBoard, maxDepth: i8): u32[] {
   const moves: u32[] = [];
   let entry: u64 = 0;
+  let depth: i8 = 0;
   do {
     entry = transpositionTable.getEntry(board);
-    //log("entry " + entry.toString());
     if (entry != 0) {
       const move = decodeMoveFromEntry(entry);
-      /*log(
-        decodeScoreTypeFromEntry(entry).toString() +
-          " " +
-          decodeDepthFromEntry(entry).toString()
-      );*/
-      //log(decodeDepthFromEntry(entry));
       moves.push(move);
       board.do(move);
     }
-  } while (entry != 0);
+    depth++;
+  } while (entry != 0 && depth < maxDepth);
 
   for (let index: i8 = 0; index < moves.length; index++) {
     board.undo();

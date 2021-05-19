@@ -90,20 +90,22 @@ export class Game {
   }
 
   chooseNextMove(player: f64): string {
-    const move = chooseBestMove(<i8>player, this.board, 10);
+    const move = chooseBestMove(<i8>player, this.board, 12);
     this.board.do(<u32>(move & 0xffffffff));
     const nextPlayer = opponent(decodePlayer(<u32>(move & 0xffffffff)));
+    const moveCode = toNotation(<u32>(move & 0xffffffff));
+    const depth = (move >> 32).toString();
     if (isCheckMate(nextPlayer, this.board)) {
-      return "CHECK_MATE";
+      return '{ "endGame": "BLACK_WINS", "move": "' + moveCode + '" }';
     }
     if (isDraw(nextPlayer, this.board)) {
-      return "DRAW";
+      return '{ "endGame": "DRAW", "move": "' + moveCode + '" }';
     }
-    return toNotation(<u32>(move & 0xffffffff)) + " " + (move >> 32).toString();
+    return '{ "move": "' + moveCode + '", "depth": ' + depth + " }";
   }
 
   analyse(): string {
-    return analyseBestMove(this.board)
+    return analyseBestMove(this.board, 12)
       .map<string>((m) => toNotation(m))
       .join(" ");
   }

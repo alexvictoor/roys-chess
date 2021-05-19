@@ -131,7 +131,8 @@
             if (e.data === 'READY') {
                 resolveWorkerReadyFn();
             } else {
-                moveCallBack && moveCallBack(e.data);
+                console.log('e.data ', JSON.parse(e.data))
+                moveCallBack && moveCallBack(JSON.parse(e.data));
             }
         }
 
@@ -153,16 +154,16 @@
 
             let currentMove = 0;
 
-            moveCallBack = (move) => {
-                if (move === 'WHITE_WINS') {
+            moveCallBack = (computerOutcome) => {
+                const { move, endGame } = computerOutcome;
+                if (endGame === 'WHITE_WINS') {
                     alert('YOU WIN!');
                     return;
                 }
-                if (move === 'BLACK_WINS') {
-                    alert('COMPUTER WINS!');
-                    return;
+                if (endGame === 'BLACK_WINS') {
+                    setTimeout(() => alert('COMPUTER WINS!'), 1000);
                 }
-                if (move === 'DRAW') {
+                if (endGame === 'DRAW') {
                     alert('GAME DRAW');
                     return;
                 }
