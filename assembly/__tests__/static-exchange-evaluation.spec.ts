@@ -82,4 +82,20 @@ describe("Static exchange evaluation", () => {
       staticExchangeEvaluation(board, BLACK, queenCapture)
     ).toBeGreaterThan(0);
   });
+  it("should be negative when player could loose a queen", () => {
+    const board = parseFEN(
+      "r1bqkb1r/ppp1pppp/2P2n2/8/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 4"
+    );
+    const queenCapture = encodeCapture(
+      BLACK + QUEEN,
+      59,
+      BLACK + QUEEN,
+      27,
+      WHITE + PAWN,
+      27
+    );
+    expect(staticExchangeEvaluation(board, BLACK, queenCapture)).toBeLessThan(
+      600
+    );
+  });
 });

@@ -112,14 +112,12 @@ export function staticExchangeEvaluation(
   let score: i16 = isCapture
     ? unchecked(PIECE_VALUES[decodeCapturedPiece(move)]) * scoreFactor
     : 0;
-
   let blockerMask =
     board.getAllPiecesMask() & ~((<u64>1) << decodeToPosition(move));
   const opponentPlayer = opponent(player);
   const targetPosition = decodeToPosition(move);
-  let previousAttackerCaptureScore = unchecked(
-    PIECE_VALUES[decodeSrcPiece(move)]
-  );
+  let previousAttackerCaptureScore =
+    unchecked(PIECE_VALUES[decodeSrcPiece(move)]) * -scoreFactor;
   do {
     const opponentPosition = findSmallerAttackerPosition(
       board,
@@ -149,7 +147,7 @@ export function staticExchangeEvaluation(
     if (position < 0) {
       return score;
     }
-    score += previousAttackerCaptureScore;
+    score += previousAttackerCaptureScore * -scoreFactor;
     previousAttackerCaptureScore = board.getPieceAt(position);
     if (score - previousAttackerCaptureScore > 0) {
       return score;
