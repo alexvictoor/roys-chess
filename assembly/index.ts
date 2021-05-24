@@ -90,7 +90,7 @@ export class Game {
   }
 
   chooseNextMove(player: f64): string {
-    const move = chooseBestMove(<i8>player, this.board, 12);
+    const move = chooseBestMove(<i8>player, this.board, 20);
     this.board.do(<u32>(move & 0xffffffff));
     const nextPlayer = opponent(decodePlayer(<u32>(move & 0xffffffff)));
     const moveCode = toNotation(<u32>(move & 0xffffffff));

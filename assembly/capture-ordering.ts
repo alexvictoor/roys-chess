@@ -1,5 +1,5 @@
 import { decodeCapturedPiece, decodeSrcPiece } from "./bitboard";
-import { captureScore, score } from "./move-ordering";
+import { captureScore } from "./move-ordering";
 /*
 const SCORES: i8[] = [1, 1, 3, 3, 4, 4, 5, 5, 9, 9, 10, 10];
 

@@ -8,7 +8,8 @@ import {
   QUEEN,
   WHITE,
 } from "../bitboard";
-import { score, sortCaptures } from "../capture-ordering";
+import { sortCaptures } from "../capture-ordering";
+import { captureScore, sortMoves } from "../move-ordering";
 
 describe('"Most valuable victim, least valuable attacker" capture comparison', () => {
   it("should score captures", () => {
@@ -28,9 +29,31 @@ describe('"Most valuable victim, least valuable attacker" capture comparison', (
       QUEEN + BLACK,
       1
     );
-    expect(score(highValueCaptureAction)).toBeGreaterThan(
-      score(lowValueCaptureAction)
+    //log(captureScore(highValueCaptureAction));
+    //log(captureScore(lowValueCaptureAction));
+    expect(captureScore(highValueCaptureAction)).toBeGreaterThan(
+      captureScore(lowValueCaptureAction)
     );
+  });
+  it("should score captures the same way for black & white", () => {
+    const whiteCapture = encodeCapture(
+      BISHOP + WHITE,
+      8,
+      BISHOP + WHITE,
+      1,
+      BISHOP + BLACK,
+      1
+    );
+    const blackCapture = encodeCapture(
+      BISHOP + WHITE,
+      8,
+      BISHOP + WHITE,
+      1,
+      BISHOP + BLACK,
+      1
+    );
+
+    expect(captureScore(whiteCapture)).toBe(captureScore(blackCapture));
   });
 
   it("should sort captures, high value first", () => {
@@ -75,6 +98,56 @@ describe('"Most valuable victim, least valuable attacker" capture comparison', (
     ];
     // when
     sortCaptures(captures);
+    // then
+    const mask: u64 = ((<u64>1) << 54) - 1;
+    expect(captures[0] & mask).toBe(highestValueCapture);
+    expect(captures[1] & mask).toBe(highValueCapture);
+    expect(captures[2] & mask).toBe(mediumValueCapture);
+    expect(captures[3] & mask).toBe(lowValueCapture);
+  });
+
+  it("should sort captures, high value first (bis)", () => {
+    // given
+    const lowValueCapture = encodeCapture(
+      BISHOP + BLACK,
+      8,
+      BISHOP + BLACK,
+      1,
+      BISHOP + WHITE,
+      1
+    );
+    const mediumValueCapture = encodeCapture(
+      PAWN + BLACK,
+      8,
+      PAWN + BLACK,
+      17,
+      KNIGHT + WHITE,
+      17
+    );
+    const highValueCapture = encodeCapture(
+      BISHOP + BLACK,
+      8,
+      BISHOP + BLACK,
+      1,
+      QUEEN + WHITE,
+      1
+    );
+    const highestValueCapture = encodeCapture(
+      PAWN + BLACK,
+      8,
+      PAWN + BLACK,
+      17,
+      QUEEN + WHITE,
+      17
+    );
+    const captures: u32[] = [
+      lowValueCapture,
+      highestValueCapture,
+      mediumValueCapture,
+      highValueCapture,
+    ];
+    // when
+    sortMoves(BLACK, 42, captures, 0);
     // then
     const mask: u64 = ((<u64>1) << 54) - 1;
     expect(captures[0] & mask).toBe(highestValueCapture);

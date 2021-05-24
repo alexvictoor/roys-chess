@@ -26,10 +26,15 @@ import {
 } from "./transposition-table";
 
 let transpositionTable: TranspositionTable = new TranspositionTable(1);
+let nodeVisited: u32 = 0;
+let startTimestamp: i64 = 0;
 
 const NULL_MOVE_MAX_REDUCTION: i8 = 4;
 const NULL_MOVE_MIN_REDUCTION: i8 = 3;
 const NULL_MOVE_REDUCTION: i8 = 4;
+
+const TIMEOUT_IN_MS: i64 = 10000;
+const TIMEOUT_SCORE = (i16.MIN_VALUE >> 2) + 42;
 
 export function evaluatePosition(
   player: i8,
@@ -41,6 +46,15 @@ export function evaluatePosition(
   ply: i8 = 2,
   afterNullMove: boolean = false
 ): i16 {
+  if (
+    (nodeVisited & 16383) == 0 &&
+    Date.now() - startTimestamp > TIMEOUT_IN_MS
+  ) {
+    return TIMEOUT_SCORE;
+  }
+
+  nodeVisited++;
+
   if (depth <= 0) {
     return evaluateQuiescence(player, board, alpha, beta);
   }
@@ -64,7 +78,7 @@ export function evaluatePosition(
   let bestMove: u32 =
     scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
   const moves = pseudoLegalMoves(board, player);
-  sortMoves(board, player, ply, moves, bestMove);
+  sortMoves(player, ply, moves, bestMove);
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
@@ -88,6 +102,9 @@ export function evaluatePosition(
       false
     );
     board.undoNullMove();
+    if (nullMoveScore == -TIMEOUT_SCORE) {
+      return TIMEOUT_SCORE;
+    }
     if (nullMoveScore >= beta) {
       if (!isPastStartGame(board)) {
         // cutoff in case of fail-high
@@ -116,11 +133,11 @@ export function evaluatePosition(
     }
     futilityPruningPossible = futilityScore <= alpha;
   }
-  let lateMoveReductionPossible = depth > 2 && !playerInCheck;
+  let lateMoveReductionPossible = depth > 2 && !playerInCheck && inPVSearch;
 
   let fullyEvaluatedMoves: i8 = 0;
-  while (moves.length > 0) {
-    const move = moves.pop();
+  for (let index = 0; index < moves.length; index++) {
+    const move = unchecked(moves[index]);
     board.do(move);
     if (isInCheck(player, board)) {
       board.undo();
@@ -131,7 +148,7 @@ export function evaluatePosition(
     const swapOffValue = staticExchangeEvaluation(board, player, move);
 
     const depthNeeded =
-      lateMoveReductionPossible && swapOffValue < 0 ? depth - 2 : depth - 1;
+      lateMoveReductionPossible && swapOffValue < 900 ? depth - 2 : depth - 1;
 
     if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
       if (bestScore < futilityScore) {
@@ -157,6 +174,12 @@ export function evaluatePosition(
         ply + 1,
         false
       );
+
+      if (reducedDepthScore == -TIMEOUT_SCORE) {
+        board.undo();
+        return TIMEOUT_SCORE;
+      }
+
       if (reducedDepthScore <= alpha) {
         board.undo();
         continue;
@@ -167,15 +190,18 @@ export function evaluatePosition(
       opponent(player),
       isOpponentInCheck,
       board,
-      depthNeeded,
+      depth - 1,
       -beta,
       -alphaUpdated,
       ply + 1,
       false
     );
     board.undo();
+    if (score == -TIMEOUT_SCORE) {
+      return TIMEOUT_SCORE;
+    }
     fullyEvaluatedMoves++;
-    if (!isCapture) {
+    if (!isCapture && inPVSearch) {
       history.recordPlayedMove(player, ply, move);
     }
     // if (!capture) history.recordMovePlayed(player,ply, move)
@@ -183,7 +209,7 @@ export function evaluatePosition(
       // pruning
       // TODO record cutoff
       // if (!capture) history.recordCutoff(player,ply, move)
-      if (!isCapture) {
+      if (!isCapture && inPVSearch) {
         history.recordCutOffMove(player, ply, depth, move);
       }
       // TODO record score   beta  / lower bound ?
@@ -213,20 +239,23 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
   history.resetHistory();
   transpositionTable.reset();
 
-  const startTimestamp = Date.now();
+  startTimestamp = Date.now();
+  nodeVisited = 0;
 
   let bestMove: u32 = 0;
   const opponentPlayer = opponent(player);
-  let alpha: i16 = i16.MIN_VALUE >> 1;
+  const moves = pseudoLegalMoves(board, player);
 
   for (let depth: i8 = 1; depth <= maxDepth; depth++) {
+    let alpha: i16 = i16.MIN_VALUE >> 1;
+    nodeVisited = 0;
     const startIterationTimestamp = Date.now();
-    const transpositionEntry = transpositionTable.getEntry(board);
-    bestMove = decodeMoveFromEntry(transpositionEntry);
-    const moves = pseudoLegalMoves(board, player);
-    sortMoves(board, player, 1, moves, bestMove);
-    while (moves.length > 0) {
-      const move = moves.pop();
+
+    sortMoves(player, 1, moves, bestMove);
+    //trace(moves.map<string>((m) => toNotation(m)).join(" , "));
+    let iterationBestMove: u32 = bestMove;
+    for (let index = 0; index < moves.length; index++) {
+      const move = unchecked(moves[index]);
       board.do(move);
       if (isInCheck(player, board)) {
         board.undo();
@@ -243,19 +272,36 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
         2
       );
       board.undo();
+      if (score == -TIMEOUT_SCORE && depth > 1) {
+        trace(
+          toNotation(move) +
+            " " +
+            score.toString() +
+            " " +
+            TIMEOUT_SCORE.toString()
+        );
+        return <u64>bestMove + ((<u64>depth) << 32);
+      }
+      //log(toNotation(move) + " " + score.toString());
       if (score > alpha) {
         alpha = score;
-        bestMove = move;
+        iterationBestMove = move;
       }
     }
-    transpositionTable.record(board, bestMove, alpha, EXACT_SCORE, depth);
+    bestMove = iterationBestMove;
     const iterationDuration = Date.now() - startIterationTimestamp;
-    const totalDuration = Date.now() - startTimestamp;
-    trace("depth " + depth.toString() + " " + toNotation(bestMove));
-    if ((iterationDuration > 3000 && depth > 6) || totalDuration > 10000) {
-      return <u64>bestMove + ((<u64>depth) << 32);
-    }
+    trace(
+      "depth " +
+        depth.toString() +
+        " " +
+        nodeVisited.toString() +
+        " " +
+        iterationDuration.toString() +
+        "ms " +
+        toNotation(bestMove)
+    );
   }
+
   return <u64>bestMove + ((<u64>maxDepth) << 32);
 }
 

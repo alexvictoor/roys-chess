@@ -3,12 +3,15 @@ import { analyseBestMove, chooseBestMove } from "../alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
+  decodeCapturedPiece,
   decodeSrcPiece,
   encodeMove,
   KING,
+  KNIGHT,
   PAWN,
   QUEEN,
   ROOK,
+  toNotation,
   WHITE,
 } from "../bitboard";
 import { parseFEN } from "../fen-parser";
@@ -51,10 +54,20 @@ describe("Alpha-Beta move chooser", () => {
     expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KING);
   });
 
-  it("bug", () => {
-    const aiGame = new Game();
-    aiGame.startFrom("8/2R3pp/8/1k6/4Q3/8/8/5K2 w - - 2 2");
-    aiGame.performMove(encodeMove(WHITE + QUEEN, 28, WHITE + QUEEN, 26));
-    log(aiGame.chooseNextMove(BLACK));
+  it("should move piece that would be captured", () => {
+    const board = parseFEN(
+      "r1bqkbnr/ppp1pppp/2n5/3P4/4p3/2N5/PPP2PPP/R1BQKBNR b KQkq - 0 4"
+    );
+    const move = chooseBestMove(BLACK, board, 1);
+    log(toNotation(<u32>move));
+    expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KNIGHT);
+  });
+
+  xit("should capture knight with a pawn", () => {
+    const board = parseFEN(
+      "r1bqkbnr/ppp2ppp/2n1p3/3P4/4p3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4"
+    );
+    const move = chooseBestMove(WHITE, board, 1);
+    expect(decodeCapturedPiece(<u32>move)).toBe(BLACK + KNIGHT);
   });
 });

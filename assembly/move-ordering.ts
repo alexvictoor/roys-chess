@@ -13,24 +13,17 @@ const SCORES: i8[] = [1, 3, 4, 5, 9, 10];
 const captureScores = new StaticArray<i16>(256);
 for (let i = 0; i < SCORES.length; i++) {
   for (let j = 0; j < SCORES.length; j++) {
-    captureScores[(i << 3) + j] =
-      (SCORES[i] - SCORES[j]) * <i16>100 + <i16>4096;
+    captureScores[(i << 3) + j] = (SCORES[i] - SCORES[j]) * <i16>100; // + <i16>4096;
   }
 }
 
 export function captureScore(capture: u32): i16 {
-  const srcPiece: i8 = decodeSrcPiece(capture);
-  const capturedPiece: i8 = decodeCapturedPiece(capture);
-  return unchecked(captureScores[(capturedPiece << 2) + (srcPiece >> 1)]);
+  const srcPiece: i8 = decodeSrcPiece(capture) >> 1;
+  const capturedPiece: i8 = decodeCapturedPiece(capture) >> 1;
+  return unchecked(captureScores[(capturedPiece << 3) + srcPiece]);
 }
 
-export function score(
-  board: BitBoard,
-  player: i8,
-  ply: i8,
-  action: u32,
-  bestMove: u32
-): i16 {
+export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
   if (action == bestMove) {
     return i16.MAX_VALUE;
   }
@@ -47,7 +40,6 @@ export function score(
 
 const scores: StaticArray<u32> = new StaticArray<u32>(256);
 export function sortMoves(
-  board: BitBoard,
   player: i8,
   ply: i8,
   moves: u32[],
@@ -55,7 +47,7 @@ export function sortMoves(
 ): void {
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
-    unchecked((scores[index] = score(board, player, ply, move, bestMove)));
+    unchecked((scores[index] = score(player, ply, move, bestMove)));
   }
   // in place insertion sort
   for (let i = 1; i < moves.length; i++) {
