@@ -44,15 +44,15 @@ export class History {
     /*if (cutOff === 0) {
       return 0;
     }*/
-    //let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
-    /*if (unchecked(this.primaryKillers[ply]) === move) {
+    let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
+    if (unchecked(this.primaryKillers[ply]) === move) {
       result += 400;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
       result += 200;
-    }*/
+    }
     //return cutOff;
-    return cutOff - unchecked(this.playedMoveCounters[index]);
+    return result;
   }
   resetHistory(): void {
     for (let index = 0; index < this.primaryKillers.length; index++) {

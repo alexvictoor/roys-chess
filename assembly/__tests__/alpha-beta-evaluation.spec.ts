@@ -4,6 +4,7 @@ import {
   BitBoard,
   BLACK,
   decodeCapturedPiece,
+  decodeFromPosition,
   decodeSrcPiece,
   encodeMove,
   KING,
@@ -61,6 +62,15 @@ describe("Alpha-Beta move chooser", () => {
     const move = chooseBestMove(BLACK, board, 1);
     log(toNotation(<u32>move));
     expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KNIGHT);
+  });
+  it("should move piece that would be captured", () => {
+    const board = parseFEN(
+      "rnbqkb1r/pppppppp/4n3/3P4/4P3/8/PPP2PPP/RNBQKBNR b KQkq - 1 4"
+    );
+    const move = chooseBestMove(BLACK, board, 1);
+    log(toNotation(<u32>move));
+    expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KNIGHT);
+    expect(decodeFromPosition(<u32>move)).toBe(44);
   });
 
   xit("should capture knight with a pawn", () => {

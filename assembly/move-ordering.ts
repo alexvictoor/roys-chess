@@ -3,6 +3,7 @@ import {
   decodeCapturedPiece,
   decodeCaptureFlag,
   decodeSrcPiece,
+  toNotation,
 } from "./bitboard";
 import { history } from "./history";
 import { staticExchangeEvaluation } from "./static-exchange-evaluation";
@@ -38,7 +39,7 @@ export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
   return history.getMoveScore(player, ply, action);
 }
 
-const scores: StaticArray<u32> = new StaticArray<u32>(256);
+const scores: StaticArray<i16> = new StaticArray<i16>(256);
 export function sortMoves(
   player: i8,
   ply: i8,

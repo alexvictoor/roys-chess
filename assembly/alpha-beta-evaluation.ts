@@ -29,11 +29,14 @@ let transpositionTable: TranspositionTable = new TranspositionTable(1);
 let nodeVisited: u32 = 0;
 let startTimestamp: i64 = 0;
 
+const FUTILITY_FLAG = true;
+const LMR_FLAG = true;
+const NULL_FLAG = true;
 const NULL_MOVE_MAX_REDUCTION: i8 = 4;
 const NULL_MOVE_MIN_REDUCTION: i8 = 3;
 const NULL_MOVE_REDUCTION: i8 = 4;
 
-const TIMEOUT_IN_MS: i64 = 10000;
+const TIMEOUT_IN_MS: i64 = 20000;
 const TIMEOUT_SCORE = (i16.MIN_VALUE >> 2) + 42;
 
 export function evaluatePosition(
@@ -79,13 +82,15 @@ export function evaluatePosition(
     scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
   const moves = pseudoLegalMoves(board, player);
   sortMoves(player, ply, moves, bestMove);
+  //trace("moves " + moves.map<string>((m) => toNotation(m)).join(" , "));
   let alphaUpdated: i16 = alpha;
   let bestScore: i16 = i16.MIN_VALUE >> 1;
 
   //const playerInCheck = isInCheck(player, board);
   const inPVSearch = beta - alpha > 1;
 
-  const nullMovePossible = !playerInCheck && !afterNullMove && inPVSearch;
+  const nullMovePossible =
+    !playerInCheck && !afterNullMove && inPVSearch && NULL_FLAG;
   if (nullMovePossible) {
     board.doNullMove();
 
@@ -99,7 +104,7 @@ export function evaluatePosition(
       -beta,
       -beta + 1,
       ply + 1,
-      false
+      true
     );
     board.undoNullMove();
     if (nullMoveScore == -TIMEOUT_SCORE) {
@@ -115,11 +120,11 @@ export function evaluatePosition(
       if (depth <= 0) {
         return evaluateQuiescence(player, board, alpha, beta);
       }
-      return nullMoveScore;
     }
   }
 
-  let futilityPruningPossible = depth < 4 && !playerInCheck && inPVSearch;
+  let futilityPruningPossible: boolean =
+    depth < 4 && !playerInCheck && inPVSearch && FUTILITY_FLAG;
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
     const staticEvaluation = evaluate(player, board);
@@ -148,7 +153,7 @@ export function evaluatePosition(
     const swapOffValue = staticExchangeEvaluation(board, player, move);
 
     const depthNeeded =
-      lateMoveReductionPossible && swapOffValue < 900 ? depth - 2 : depth - 1;
+      lateMoveReductionPossible && swapOffValue < 0 ? depth - 2 : depth - 1;
 
     if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
       if (bestScore < futilityScore) {
@@ -162,7 +167,8 @@ export function evaluatePosition(
       lateMoveReductionPossible &&
       !isCapture &&
       !isOpponentInCheck &&
-      fullyEvaluatedMoves > 4
+      fullyEvaluatedMoves > 4 &&
+      LMR_FLAG
     ) {
       const reducedDepthScore = -evaluatePosition(
         opponent(player),
@@ -196,6 +202,29 @@ export function evaluatePosition(
       ply + 1,
       false
     );
+    /*if (isCapture) {
+      trace(
+        "capture " +
+          toNotation(move) +
+          " " +
+          score.toString() +
+          " " +
+          alphaUpdated.toString() +
+          " " +
+          h.toString()
+      );
+    } else {
+      trace(
+        "move " +
+          toNotation(move) +
+          " " +
+          score.toString() +
+          " " +
+          alphaUpdated.toString() +
+          " " +
+          h.toString()
+      );
+    }*/
     board.undo();
     if (score == -TIMEOUT_SCORE) {
       return TIMEOUT_SCORE;
@@ -232,7 +261,7 @@ export function evaluatePosition(
     const scoreType = alphaUpdated != alpha ? EXACT_SCORE : ALPHA_SCORE;
     transpositionTable.record(board, bestMove, bestScore, scoreType, depth);
   }
-  return alphaUpdated;
+  return bestScore;
 }
 
 export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
@@ -253,6 +282,11 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
 
     sortMoves(player, 1, moves, bestMove);
     //trace(moves.map<string>((m) => toNotation(m)).join(" , "));
+    /*for (let index = 0; index < moves.length; index++) {
+      const move = unchecked(moves[index]);
+
+    }*/
+
     let iterationBestMove: u32 = bestMove;
     for (let index = 0; index < moves.length; index++) {
       const move = unchecked(moves[index]);
@@ -286,7 +320,9 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
       if (score > alpha) {
         alpha = score;
         iterationBestMove = move;
+        //log(toNotation(move) + " " + score.toString());
       }
+      //trace(toNotation(move) + " " + score.toString());
     }
     bestMove = iterationBestMove;
     const iterationDuration = Date.now() - startIterationTimestamp;

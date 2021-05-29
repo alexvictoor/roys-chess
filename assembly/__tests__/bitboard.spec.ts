@@ -118,6 +118,33 @@ describe("Bit Board hash", () => {
     expect(hash1).toBe(hash2);
     expect(board1.equals(board2)).toBe(true);
   });
+
+  it("should be different when pieces are on same squares but current player is different", () => {
+    // given
+    const board1 = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    const board2 = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    board1.do(encodeMove(PAWN + WHITE, 12, PAWN + WHITE, 28));
+    board2.do(encodeMove(PAWN + WHITE, 12, PAWN + WHITE, 28));
+    board1.do(encodeMove(PAWN + BLACK, 52, PAWN + BLACK, 36));
+    board2.do(encodeMove(PAWN + BLACK, 52, PAWN + BLACK, 36));
+
+    // when
+    board1.do(encodeMove(BISHOP + WHITE, 5, BISHOP + WHITE, 19));
+    board1.do(encodeMove(BISHOP + BLACK, 61, BISHOP + WHITE, 43));
+    board1.do(encodeMove(BISHOP + WHITE, 19, BISHOP + WHITE, 18));
+
+    board2.do(encodeMove(BISHOP + WHITE, 5, BISHOP + WHITE, 18));
+    board2.do(encodeMove(BISHOP + BLACK, 61, BISHOP + WHITE, 43));
+
+    const hash1 = board1.hashCode();
+    const hash2 = board2.hashCode();
+    // then
+    expect(hash1).not.toBe(hash2);
+  });
 });
 
 describe("Mask iterator", () => {
@@ -246,7 +273,7 @@ describe("Action do/undo", () => {
     // when
     board.undo();
     // then
-    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
   });
   it("should get the original board when a pawn double move is undone", () => {
     // given
@@ -258,7 +285,7 @@ describe("Action do/undo", () => {
     // when
     board.undo();
     // then
-    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
     expect(board.getEnPassantFile()).toBe(-1);
   });
   it("should get back en passant file when an action is undone", () => {

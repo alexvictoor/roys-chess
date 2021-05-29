@@ -4,6 +4,8 @@ export const EXACT_SCORE: i8 = 0;
 export const ALPHA_SCORE: i8 = 1;
 export const BETA_SCORE: i8 = 2;
 
+const debugMap = new Map<u64, string>();
+
 export class TranspositionTable {
   verificationEntries: StaticArray<u64>;
   moveEntries: StaticArray<u64>;
@@ -37,11 +39,22 @@ export class TranspositionTable {
     depth: i8
   ): void {
     const hash = board.hashCode();
+    /*if (debugMap.has(hash)) {
+      const fenAlreadySeen = debugMap.get(hash);
+      if (fenAlreadySeen != board.toFEN()) {
+        trace("Same HASH " + fenAlreadySeen + " " + board.toFEN());
+      }
+    } else {
+      debugMap.set(hash, board.toFEN());
+    }*/
     const index: i32 = <i32>(hash % this.size);
     const existingEntry = this.moveEntries[index];
     if (existingEntry != 0 && decodeDepthFromEntry(existingEntry) > depth) {
       return;
     }
+    /*if (existingEntry != 0 && decodeDepthFromEntry(existingEntry) >= depth) {
+      trace(board.toFEN());
+    }*/
     const verificationEntry: u64 = (<u64>depth) | ((hash >> 5) << 5);
     unchecked((this.verificationEntries[index] = verificationEntry));
     unchecked(
@@ -55,6 +68,10 @@ export class TranspositionTable {
 
   getEntry(board: BitBoard): u64 {
     const hash = board.hashCode();
+    /*if (debugMap.has(hash)) {
+      const fenAlreadySeen = debugMap.get(hash);
+      trace("Same HASH " + fenAlreadySeen + " " + board.toFEN());
+    }*/
     const index = <i32>(hash % this.size);
     const verificationEntry = unchecked(this.verificationEntries[index]);
     const hashVerified = verificationEntry >> 5 == hash >> 5;

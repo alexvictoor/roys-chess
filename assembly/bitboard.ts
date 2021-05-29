@@ -61,10 +61,11 @@ const BIT_MASK_50: u64 = ((<u64>1) << 50) - 1;
 
 export const opponent = (player: i8): i8 => (player == WHITE ? BLACK : WHITE);
 export class BitBoard {
-  public previousBoard: BitBoard | null;
 
   private stateHistory: u64[] = [];
   public hashHistory: u64[] = [];
+
+  public currentPlayer: i8 = WHITE;
 
   constructor(public bits: StaticArray<u64> = new StaticArray<u64>(19)) {}
 
@@ -190,6 +191,7 @@ export class BitBoard {
   }
 
   do(action: u32): void {
+    this.currentPlayer = opponent(this.currentPlayer);
     this.hashHistory.push(this.hashCode());
     this.storeState(action);
     const srcPiece: i8 = decodeSrcPiece(action);
@@ -281,6 +283,7 @@ export class BitBoard {
   }
 
   undo(): void {
+    this.currentPlayer = opponent(this.currentPlayer);
     this.hashHistory.pop();
     const state = this.stateHistory.pop();
     const castlingRights = decodeCastlingRights(state);
@@ -422,6 +425,13 @@ export class BitBoard {
         result += "/";
       }
     }
+
+    if (this.currentPlayer == WHITE) {
+      result += ' w';
+    } else {
+      result += ' b';
+    }
+
     return result;
   }
 
@@ -443,7 +453,7 @@ export class BitBoard {
       hash = this.computehashCode();
       this.bits[HASH] = hash;
     }
-    return hash;
+    return hash ^ this.currentPlayer;
   }
 
   equals(board: BitBoard): boolean {
