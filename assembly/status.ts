@@ -1,5 +1,5 @@
-import { BitBoard, MaskIterator, opponent } from "./bitboard";
-import { canMove, legalMoves } from "./engine";
+import { BitBoard, opponent } from "./bitboard";
+import { canMove } from "./engine";
 import { kingMoves } from "./king-move-generation";
 import { knightMovesFromCache } from "./knight-move-generation";
 import { pawnAttacks } from "./pawn";
