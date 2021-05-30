@@ -27,19 +27,17 @@ export function addCastlingMoves(
   const isKingSidePathClear = !((allPiecesMask >> (lane + 5)) & 3);
   const isQueenSidePathClear = !((allPiecesMask >> (lane + 1)) & 7);
   if (allowedOnKingSide && kingSideRook && isKingSidePathClear) {
-    const intermediateBoard = board.execute(
-      encodeMove(KING + player, 4 + lane, KING + player, 5 + lane)
-    );
-    if (!isInCheck(player, intermediateBoard)) {
+    board.do(encodeMove(KING + player, 4 + lane, KING + player, 5 + lane));
+    if (!isInCheck(player, board)) {
       moves.push(encodeMove(KING + player, 4 + lane, KING + player, 6 + lane));
     }
+    board.undo();
   }
   if (allowedOnQueenSide && queenSideRook && isQueenSidePathClear) {
-    const intermediateBoard = board.execute(
-      encodeMove(KING + player, 4 + lane, KING + player, 3 + lane)
-    );
-    if (!isInCheck(player, intermediateBoard)) {
+    board.do(encodeMove(KING + player, 4 + lane, KING + player, 3 + lane));
+    if (!isInCheck(player, board)) {
       moves.push(encodeMove(KING + player, 4 + lane, KING + player, 2 + lane));
     }
+    board.undo();
   }
 }
