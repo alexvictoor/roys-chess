@@ -631,6 +631,12 @@ export function decodeCastlingRights(state: u64): u64 {
   return (state >> 50) & BIT_MASK_4;
 }
 
+// @ts-ignore
+@inline
+export function toMask(x: i8, y: i8): u64 {
+  return (<u64>1) << (x + (y << 3));
+}
+
 const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
 function getCodeFromPosition(position: i8): string {
   const y = (position >> 3) + 1;

@@ -7,6 +7,7 @@ import {
   doubledIsolated,
   isolated,
   opposed,
+  pawnsMg,
   phalanx,
   supported,
   weakUnopposedPawn,
@@ -33,6 +34,14 @@ describe("Stockfish pawn evaluation", () => {
       "rnbqkbnr/pppppppp/8/3P4/8/P4P2/PP3PPP/RNBQKBNR b KQkq d3 0 1"
     );
     expect(backward(board, WHITE, 35)).toBe(true);
+  });
+
+  it("should find backward pawn bis", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
+    );
+    expect(backward(board, WHITE, 16)).toBe(true);
+    expect(backward(board, WHITE, 12)).toBe(true);
   });
 
   it("should find doubled pawn", () => {
@@ -88,5 +97,12 @@ describe("Stockfish pawn evaluation", () => {
       "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
     );
     expect(blocked(board, BLACK, 20)).toBe(2);
+  });
+
+  it("should evaluate pawns at middle game", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
+    );
+    expect(pawnsMg(board)).toBe(-58);
   });
 });

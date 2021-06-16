@@ -1,4 +1,13 @@
-import { BitBoard, BLACK, leftBorderMask, MaskIterator, opponent, rightBorderMask, WHITE } from "../bitboard";
+import {
+  BitBoard,
+  BLACK,
+  leftBorderMask,
+  MaskIterator,
+  opponent,
+  rightBorderMask,
+  toMask,
+  WHITE,
+} from "../bitboard";
 /*
 function pawnsMg(board: BitBoard, player: i8) {
   if (square == null) return sum(pos, pawns_mg);
@@ -14,13 +23,6 @@ function pawnsMg(board: BitBoard, player: i8) {
 }
 */
 
-// @ts-ignore
-@inline
-function toMask(x: i8, y: i8): u64 {
-  return (<u64>1) << (x + (y << 3));
-}
-
-
 export function doubled(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
   const posX: i8 = pos % 8;
@@ -29,7 +31,7 @@ export function doubled(board: BitBoard, player: i8, pos: i8): boolean {
   if (!(pawnMask & toMask(posX, posY - forwardDirection))) {
     return false;
   }
-  if (pawnMask & toMask(posX -1, posY - forwardDirection)) {
+  if (pawnMask & toMask(posX - 1, posY - forwardDirection)) {
     return false;
   }
   if (pawnMask & toMask(posX + 1, posY - forwardDirection)) {
@@ -44,7 +46,7 @@ export function backward(board: BitBoard, player: i8, pos: i8): boolean {
   const posX: i8 = pos % 8;
   const posY: i8 = pos >> 3;
   const forwardDirection: i8 = player === WHITE ? 1 : -1;
-  for (let y: i8 = 0; y < 8; y++) {
+  for (let y: i8 = posY; y < 8 && y >= 0; y -= forwardDirection) {
     if (pawnMask & toMask(posX - 1, y) || pawnMask & toMask(posX + 1, y)) {
       return false;
     }
@@ -148,10 +150,10 @@ export function isolated(board: BitBoard, player: i8, pos: i8): boolean {
 }*/
 export function phalanx(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
-  const posMask = <u64>(1 << pos)
+  const posMask = <u64>(1 << pos);
   return (
-    !!((pawnMask >> 1) & rightBorderMask & posMask) 
-    || !!((pawnMask << 1) & leftBorderMask & posMask)
+    !!((pawnMask >> 1) & rightBorderMask & posMask) ||
+    !!((pawnMask << 1) & leftBorderMask & posMask)
   );
 }
 export function supported(board: BitBoard, player: i8, pos: i8): i8 {
@@ -159,11 +161,11 @@ export function supported(board: BitBoard, player: i8, pos: i8): i8 {
   const posMask = <u64>(1 << pos);
   let result: i8 = 0;
   if (player === WHITE) {
-    result += ((posMask >> 7) & pawnMask & leftBorderMask) ? 1 : 0; 
-    result += ((posMask >> 9) & pawnMask & rightBorderMask) ? 1 : 0; 
+    result += (posMask >> 7) & pawnMask & leftBorderMask ? 1 : 0;
+    result += (posMask >> 9) & pawnMask & rightBorderMask ? 1 : 0;
   } else {
-    result += ((posMask << 7) & pawnMask & rightBorderMask) ? 1 : 0; 
-    result += ((posMask << 9) & pawnMask & leftBorderMask) ? 1 : 0; 
+    result += (posMask << 7) & pawnMask & rightBorderMask ? 1 : 0;
+    result += (posMask << 9) & pawnMask & leftBorderMask ? 1 : 0;
   }
   return result;
 }
@@ -188,7 +190,7 @@ export function connectedBonus(board: BitBoard, player: i8, pos: i8): i16 {
   const seed: i16[] = [0, 7, 8, 12, 29, 48, 86];
   //const opponentPawnMask = board.getPawnMask(opponent(player));
   //const forwardDirection: i8 = player === WHITE ? 8 : -8;
-  const r: i8 = player === WHITE ? ((pos >> 3) + 1) : (8 - (pos >> 3));
+  const r: i8 = player === WHITE ? (pos >> 3) + 1 : 8 - (pos >> 3);
   const op: i16 = opposed(board, player, pos) ? 1 : 0;
   const ph: i16 = phalanx(board, player, pos) ? 1 : 0;
   const su: i16 = supported(board, player, pos);
@@ -198,20 +200,23 @@ export function connectedBonus(board: BitBoard, player: i8, pos: i8): i16 {
   return seed[r - 1] * (2 + ph - op) + 21 * su;
 }
 
-export function weakUnopposedPawn(board: BitBoard, player: i8, pos: i8): boolean {
+export function weakUnopposedPawn(
+  board: BitBoard,
+  player: i8,
+  pos: i8
+): boolean {
   if (opposed(board, player, pos)) {
     return false;
   }
-  return isolated(board, player, pos) || backward(board, player, pos)
+  return isolated(board, player, pos) || backward(board, player, pos);
 }
 
- 
 export function blocked(board: BitBoard, player: i8, pos: i8): i16 {
   const posMask = <u64>(1 << pos);
-  if (player === WHITE && (pos < 32 || pos > 47))  {
+  if (player === WHITE && (pos < 32 || pos > 47)) {
     return 0;
   }
-  if (player === BLACK && (pos < 16 || pos > 31))  {
+  if (player === BLACK && (pos < 16 || pos > 31)) {
     return 0;
   }
   const forwardDirection: i8 = player === WHITE ? 8 : -8;
@@ -219,8 +224,48 @@ export function blocked(board: BitBoard, player: i8, pos: i8): i16 {
   if (!(opponentPawnMask & ((<u64>1) << (pos + forwardDirection)))) {
     return 0;
   }
-  if ((player === WHITE && pos > 39) || (player === BLACK && pos < 24))  {
+  if ((player === WHITE && pos > 39) || (player === BLACK && pos < 24)) {
     return 2;
   }
   return 1;
+}
+
+const pawnsPositions = new MaskIterator();
+export function pawnsMgFor(player: i8, board: BitBoard): i16 {
+  const pawnMask = board.getPawnMask(player);
+  const playerFactor: i16 = player === WHITE ? 1 : -1;
+  pawnsPositions.reset(pawnMask);
+  let result: i16 = 0;
+  while (pawnsPositions.hasNext()) {
+    const pos = pawnsPositions.next();
+    if (doubledIsolated(board, player, pos)) {
+      result -= 11;
+    } else if (isolated(board, player, pos)) {
+      result -= 5;
+    } else if (backward(board, player, pos)) {
+      result -= 9;
+    }
+    if (doubled(board, player, pos)) {
+      result -= 11;
+    }
+    if (connected(board, player, pos)) {
+      result += connectedBonus(board, player, pos);
+    }
+    if (weakUnopposedPawn(board, player, pos)) {
+      result -= 13;
+    }
+    switch (blocked(board, player, pos)) {
+      case 2:
+        result -= 3;
+      case 2:
+        result -= 11;
+      default:
+        0;
+    }
+    log("XXX " + pos.toString() + " " + result.toString());
+  }
+  return result * playerFactor;
+}
+export function pawnsMg(board: BitBoard): i16 {
+  return pawnsMgFor(WHITE, board) + pawnsMgFor(BLACK, board);
 }
