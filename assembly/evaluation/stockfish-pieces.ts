@@ -13,6 +13,7 @@ import {
 import { parseFEN } from "../fen-parser";
 import { knightMovesFromCache } from "../knight-move-generation";
 import { bishopMoves } from "../sliding-pieces-move-generation";
+import { bishopXRayAttack, knightAttack } from "./stockfish-attacks";
 
 export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): i16 {
   const pawnMask = board.getPawnMask(player);
@@ -80,31 +81,6 @@ export function outpost(board: BitBoard, player: i8, pos: i8): i16 {
   }
 
   return 0;
-}
-
-export function bishopXRayAttack(
-  board: BitBoard,
-  player: i8,
-  pos: i8,
-  targetMask: u64
-): boolean {
-  //const posMask = <u64>(1 << pos);
-  //const targetMask = <u64>(1 << target);
-  //const bishopMask = board.getBishopMask(player);
-  //const knightMask = board.getKnightMask(player);
-  const queensMask = board.getQueenMask(BLACK) | board.getQueenMask(WHITE);
-  const boardMask = board.getAllPiecesMask() ^ queensMask;
-  return !!(bishopMoves(boardMask, pos) & targetMask);
-}
-
-export function knightAttack(
-  board: BitBoard,
-  player: i8,
-  pos: i8,
-  targetMask: u64
-): boolean {
-  //const targetMask = <u64>(1 << target);
-  return !!(knightMovesFromCache(pos) & targetMask);
 }
 
 export function reachableOutpost(board: BitBoard, player: i8, pos: i8): i16 {

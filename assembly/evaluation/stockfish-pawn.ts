@@ -262,7 +262,6 @@ export function pawnsMgFor(player: i8, board: BitBoard): i16 {
       default:
         0;
     }
-    log("XXX " + pos.toString() + " " + result.toString());
   }
   return result * playerFactor;
 }
