@@ -5,7 +5,7 @@ export const noBorderMask: u64 =
   ((1 << 8) | (1 << 16) | (1 << 24) | (1 << 32) | (1 << 40) | (1 << 48)) ^
   ((1 << 15) | (1 << 23) | (1 << 31) | (1 << 39) | (1 << 47) | (1 << 55));
 
-export const leftBorderMask: u64 = ~(
+export const firstColMask: u64 = (
   1 |
   (1 << 8) |
   (1 << 16) |
@@ -15,17 +15,21 @@ export const leftBorderMask: u64 = ~(
   (1 << 48) |
   (1 << 56)
 );
-
-export const rightBorderMask: u64 = ~(
-  (1 << 7) |
-  (1 << 15) |
-  (1 << 23) |
-  (1 << 31) |
-  (1 << 39) |
-  (1 << 47) |
-  (1 << 55) |
-  (1 << 63)
+export const firstRowMask: u64 = (
+  1 |
+  2 |
+  (1 << 2) |
+  (1 << 3) |
+  (1 << 4) |
+  (1 << 5) |
+  (1 << 6) |
+  (1 << 7)
 );
+
+export const leftBorderMask: u64 = ~firstColMask;
+
+export const rightBorderMask: u64 = ~(firstColMask << 7);
+
 export function maskString(mask: u64): string {
   let result: string = "\n";
   for (let i: i8 = 7; i >= 0; i--) {

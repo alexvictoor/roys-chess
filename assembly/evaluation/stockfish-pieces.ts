@@ -2,6 +2,7 @@ import { backward } from "./stockfish-pawn";
 import {
   BitBoard,
   BLACK,
+  firstColMask,
   leftBorderMask,
   MaskIterator,
   maskString,
@@ -201,10 +202,10 @@ export function buildCheckerMask(): u64 {
 const checkerMask: u64 = buildCheckerMask();
 
 const centerFilesMask: u64 =
-  (leftBorderMask << 2) |
-  (leftBorderMask << 3) |
-  (leftBorderMask << 4) |
-  (leftBorderMask << 5);
+  (firstColMask << 2) |
+  (firstColMask << 3) |
+  (firstColMask << 4) |
+  (firstColMask << 5);
 
 export function countBishopPawns(board: BitBoard, player: i8): i16 {
   const bishopMask = board.getBishopMask(player);
@@ -247,9 +248,23 @@ export function countRooksOnQueenFiles(board: BitBoard, player: i8): i16 {
   while (positions.hasNext()) {
     const pos = positions.next();
     const rookFile = pos % 8;
-    if ((leftBorderMask << rookFile) & queenMask) {
+    if ((firstColMask << rookFile) & queenMask) {
       result++;
     }
   }
   return result;
+}
+
+export function rookOnFile(board: BitBoard, player: i8, pos: i8): i16 {
+  const pawnMask = board.getPawnMask(player);
+  const opponentPawnMask = board.getPawnMask(opponent(player));
+  const rookFile = pos % 8;
+  const rookFileMask = firstColMask << rookFile;
+  if (rookFileMask & pawnMask) {
+    return 0;
+  }
+  if (rookFileMask & opponentPawnMask) {
+    return 1;
+  }
+  return 2;
 }

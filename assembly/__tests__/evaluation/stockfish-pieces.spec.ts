@@ -9,6 +9,7 @@ import {
   outpostTotal,
   pawnAttacksSpan,
   reachableOutpost,
+  rookOnFile,
 } from "../../evaluation/stockfish-pieces";
 import { parseFEN } from "../../fen-parser";
 
@@ -100,9 +101,17 @@ describe("Stockfish pieces evaluation", () => {
 
   it("should count rooks on queens files", () => {
     const board = parseFEN(
-      "3q3r/1ppppppp/1bnrkn2/p5R1/3NP3/2BR4/PPP1PPPP/3QK1N1 b KQkq - 1 3"
+      "3q3r/1ppppppp/1bnrkn2/p5R1/3NP3/2BR3Q/PPP1PPPP/4K1N1 b KQkq - 1 3"
     );
     expect(countRooksOnQueenFiles(board, WHITE)).toBe(1);
-    expect(countRooksOnQueenFiles(board, BLACK)).toBe(1);
+    expect(countRooksOnQueenFiles(board, BLACK)).toBe(2);
+  });
+
+  it("should evaluate rook on file", () => {
+    const board = parseFEN(
+      "rnbqkbn1/pppppp1p/6r1/8/8/1P3P2/1PPPPP1P/RNBQKBNR w KQkq - 0 1"
+    );
+    expect(rookOnFile(board, WHITE, 0)).toBe(1);
+    expect(rookOnFile(board, BLACK, 46)).toBe(2);
   });
 });

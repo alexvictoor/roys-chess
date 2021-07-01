@@ -1,5 +1,6 @@
-import { BitBoard, MaskIterator, opponent } from "../bitboard";
+import { BitBoard, BLACK, MaskIterator, opponent, WHITE } from "../bitboard";
 import { pawnAttacksOnLeft, pawnAttacksOnRight } from "../pawn";
+import { bishopMoves, rookMoves } from "../sliding-pieces-move-generation";
 import {
   queenAttack,
   rookXRayAttack,
@@ -108,4 +109,35 @@ export function kingAttackersCount(board: BitBoard, player: i8): i16 {
   count += <i16>popcnt(pawnAttacksOnRight(player, pawnMask) & kingRing);
 
   return count;
+}
+
+export function rooksOnKingRing(board: BitBoard, player: i8): i16 {
+  const kingRing = kingRingMask(board, opponent(player), false);
+  const rookMask = board.getRookMask(player);
+  positions.reset(rookMask);
+  let result: i16 = 0;
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (
+      rookMoves(0, pos) & kingRing &&
+      !rookXRayAttack(board, player, pos, kingRing)
+    ) {
+      result++;
+    }
+  }
+  return result;
+}
+export function bishopsOnKingRing(board: BitBoard, player: i8): i16 {
+  const kingRing = kingRingMask(board, opponent(player), false);
+  const bishopMask = board.getBishopMask(player);
+  const pawnMask = board.getPawnMask(WHITE) | board.getPawnMask(BLACK);
+  positions.reset(bishopMask);
+  let result: i16 = 0;
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (bishopMoves(pawnMask, pos) & kingRing) {
+      result++;
+    }
+  }
+  return result;
 }

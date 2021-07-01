@@ -1,6 +1,7 @@
 import {
   BitBoard,
   BLACK,
+  firstColMask,
   leftBorderMask,
   MaskIterator,
   opponent,
@@ -91,20 +92,11 @@ export function doubledIsolated(board: BitBoard, player: i8, pos: i8): boolean {
   return pawnBellow && pawnUpper;
 }
 
-const firstRowMask: u64 =
-  1 +
-  (1 << 8) +
-  (1 << 16) +
-  (1 << 24) +
-  (1 << 32) +
-  (1 << 40) +
-  (1 << 48) +
-  (1 << 56);
 function getRowMask(row: i8): u64 {
   if (row < 0 || row > 7) {
     return 0;
   }
-  return firstRowMask << (<u64>row);
+  return firstColMask << (<u64>row);
 }
 
 const positions = new MaskIterator();
@@ -177,7 +169,7 @@ export function connected(board: BitBoard, player: i8, pos: i8): boolean {
 export function opposed(board: BitBoard, player: i8, pos: i8): boolean {
   const opponentPawnMask = board.getPawnMask(opponent(player));
   const row = pos % 8;
-  if ((firstRowMask << (<u64>row)) & opponentPawnMask) {
+  if ((firstColMask << (<u64>row)) & opponentPawnMask) {
     return true;
   }
   return false;
