@@ -13,8 +13,9 @@ import {
 } from "../bitboard";
 import { parseFEN } from "../fen-parser";
 import { knightMovesFromCache } from "../knight-move-generation";
-import { bishopMoves } from "../sliding-pieces-move-generation";
-import { bishopXRayAttack, knightAttack } from "./stockfish-attacks";
+import { bishopMoves, queenMoves, rookMoves } from "../sliding-pieces-move-generation";
+import { bishopXRayAttack, bishopXRayAttackMask, knightAttack } from "./stockfish-attacks";
+import { mobility } from "./stockfish-mobility";
 
 export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): i16 {
   const pawnMask = board.getPawnMask(player);
@@ -267,4 +268,50 @@ export function rookOnFile(board: BitBoard, player: i8, pos: i8): i16 {
     return 1;
   }
   return 2;
+}
+
+
+export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
+  if (rookOnFile(board, player, pos) || mobility(board, player, pos) > 3) {
+    return 0;
+  }
+  const kingPos = <i8>ctz(board.getKingMask(player));
+  const kingPosX = kingPos % 8;
+  const posX = pos % 8;
+  if ((kingPosX < 4) !== (posX < kingPosX)) {
+    return 0;
+  }
+  return 1;
+}
+
+const bishopPositions = new MaskIterator();
+const rookPositions = new MaskIterator();
+
+export function weakQueen(board: BitBoard, player: i8): i16 {
+  const boardMask = board.getAllPiecesMask();
+  const queenMask = board.getQueenMask(player);
+  const opponentPlayer = opponent(player);
+  const opponentBishopMask = board.getBishopMask(opponentPlayer);
+  const opponentRookMask = board.getRookMask(opponentPlayer);
+  positions.reset(queenMask);
+  let result: i16 = 0;
+  while(positions.hasNext()) {
+    const queenPosition = positions.next();
+    const queenMoveMask = queenMoves(boardMask, queenPosition);
+    bishopPositions.reset(opponentBishopMask);
+    while(bishopPositions.hasNext()) {
+      const bishopPosition = bishopPositions.next();
+      if ((bishopMoves(0, bishopPosition) & (<u64>1 << queenPosition)) && popcnt(bishopMoves(boardMask, bishopPosition) & queenMoveMask) == 1) {
+        result += 1;
+      }
+    }
+    rookPositions.reset(opponentRookMask);
+    while(rookPositions.hasNext()) {
+      const rookPosition = rookPositions.next();
+      if ((rookMoves(0, rookPosition) & (<u64>1 << queenPosition)) && popcnt(rookMoves(boardMask, rookPosition) & queenMoveMask) == 1) {
+        result += 1;
+      }
+    }
+  }
+  return result;
 }

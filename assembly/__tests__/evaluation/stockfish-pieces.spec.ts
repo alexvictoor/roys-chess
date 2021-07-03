@@ -10,6 +10,8 @@ import {
   pawnAttacksSpan,
   reachableOutpost,
   rookOnFile,
+  trappedRooks,
+  weakQueen,
 } from "../../evaluation/stockfish-pieces";
 import { parseFEN } from "../../fen-parser";
 
@@ -113,5 +115,35 @@ describe("Stockfish pieces evaluation", () => {
     );
     expect(rookOnFile(board, WHITE, 0)).toBe(1);
     expect(rookOnFile(board, BLACK, 46)).toBe(2);
+  });
+
+  it("should count trapped rooks", () => {
+    const board = parseFEN(
+      "rnbqkbn1/pppppp1p/6r1/8/8/1P3P2/1PPPPP1P/RNBQKBNR w KQkq - 0 1"
+    );
+    expect(trappedRooks(board, WHITE, 7)).toBe(1);
+    expect(trappedRooks(board, WHITE, 0)).toBe(0);
+  });
+
+  it("should detect weak queens (rook threat)", () => {
+    const board = parseFEN(
+      "rnbqkb1r/ppppppp1/8/4n2P/7Q/8/PPPPPP1P/RNB1KBNR w KQkq - 2 3"
+    );
+    expect(weakQueen(board, WHITE)).toBe(1);
+    expect(weakQueen(board, BLACK)).toBe(0);
+  });
+  it("should detect weak queens (bishop threat)", () => {
+    const board = parseFEN(
+      "rnbqkbr1/ppppppp1/8/B3n2P/8/7Q/PPPPPP1P/RNB1K1NR w KQkq - 0 4"
+    );
+    expect(weakQueen(board, WHITE)).toBe(1);
+    expect(weakQueen(board, BLACK)).toBe(1);
+  });
+  it("should detect no weak queens", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppppppp1/6p1/8/8/4NP2/PPPPPPPR/RNB1KBQ1 b KQkq - 1 1"
+    );
+    expect(weakQueen(board, WHITE)).toBe(0);
+    expect(weakQueen(board, BLACK)).toBe(0);
   });
 });
