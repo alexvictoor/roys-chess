@@ -8,6 +8,7 @@ import {
   outpostSquare,
   outpostTotal,
   pawnAttacksSpan,
+  queenInfiltration,
   reachableOutpost,
   rookOnFile,
   trappedRooks,
@@ -146,4 +147,11 @@ describe("Stockfish pieces evaluation", () => {
     expect(weakQueen(board, WHITE)).toBe(0);
     expect(weakQueen(board, BLACK)).toBe(0);
   });
+  it('should detect queen infiltration', () => {
+    const board = parseFEN(
+      "rnbqkbnr/4pppp/Qp1p4/1p1Q4/2p5/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1"
+    );
+    expect(queenInfiltration(board, WHITE)).toBe(1);
+    expect(queenInfiltration(board, BLACK)).toBe(0);
+  })
 });

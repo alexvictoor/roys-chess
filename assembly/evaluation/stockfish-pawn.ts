@@ -4,6 +4,7 @@ import {
   firstColMask,
   leftBorderMask,
   MaskIterator,
+  maskString,
   opponent,
   rightBorderMask,
   toMask,
@@ -259,4 +260,24 @@ export function pawnsMgFor(player: i8, board: BitBoard): i16 {
 }
 export function pawnsMg(board: BitBoard): i16 {
   return pawnsMgFor(WHITE, board) + pawnsMgFor(BLACK, board);
+}
+
+export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): boolean {
+  const pawnDirection: i8 = player == WHITE ? 1 : -1;
+  const opponentPlayer = opponent(player);
+  const pawnMask = board.getPawnMask(player);
+  const opponentPawnMask = board.getPawnMask(opponentPlayer);
+  let y: i8 = player == WHITE ? 7 : 0;
+  const posX: i8 = pos % 8;
+  const posY: i8 = pos >> 3;
+  while (y != posY) {
+    if (posX > 0 && (toMask(posX - 1, y) & opponentPawnMask) && ((y == posY + pawnDirection) || (!(toMask(posX - 1, y - pawnDirection) & pawnMask) && !backward(board, opponentPlayer, pos - 1))  )) {
+      return true;
+    }
+    if (posX < 7 && (toMask(posX + 1, y) & opponentPawnMask) && ((y == posY + pawnDirection) || (!(toMask(posX + 1, y - pawnDirection) & pawnMask) && !backward(board, opponentPlayer, pos + 1))  )) {
+      return true;
+    }
+    y -= pawnDirection;
+  }
+  return false;
 }

@@ -7,6 +7,7 @@ import {
   doubledIsolated,
   isolated,
   opposed,
+  pawnAttacksSpan,
   pawnsMg,
   phalanx,
   supported,
@@ -105,4 +106,17 @@ describe("Stockfish pawn evaluation", () => {
     );
     expect(pawnsMg(board)).toBe(-58);
   });
+
+  // r1bqkbnr/p2n4/4p3/1pP2p1p/p2pp1P1/P1P1NP2/3PPP1R/RNB1KBQ1 w KQkq - 1 4
+  it("should evaluate pawns attack spans", () => {
+    const board = parseFEN(
+      "r1bqkbnr/p2n4/4p3/1pP2p1p/p2pp1P1/P1P1NP2/3PPP1R/RNB1KBQ1 w KQkq - 1 4"
+    );
+    expect(pawnAttacksSpan(board, WHITE, 24)).toBe(true);
+    expect(pawnAttacksSpan(board, WHITE, 32)).toBe(false);
+    expect(pawnAttacksSpan(board, WHITE, 33)).toBe(true);
+    expect(pawnAttacksSpan(board, BLACK, 17)).toBe(false);
+    expect(pawnAttacksSpan(board, BLACK, 18)).toBe(true);
+  });
+  
 });

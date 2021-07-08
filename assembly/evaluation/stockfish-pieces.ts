@@ -315,3 +315,31 @@ export function weakQueen(board: BitBoard, player: i8): i16 {
   }
   return result;
 }
+
+export function queenInfiltration(board: BitBoard, player: i8): i16 {
+  const queenMask = board.getQueenMask(player);
+  const opponentPlayer = opponent(player);
+  const opponentPawnMask = board.getPawnMask(opponentPlayer);
+  const pawnDirection: i8 = player == WHITE ? 1 : -1;
+  positions.reset(queenMask);
+  let result: i16 = 0;
+  while(positions.hasNext()) {
+    const queenPosition = positions.next();
+    const posX: i8 = queenPosition % 8;
+    const posY: i8 = queenPosition >> 3;
+    if ((player === WHITE && posY < 4) || (player === BLACK && posY > 3))  {
+      continue;
+    }
+    if (posX > 0 && (toMask(posX - 1, posY + pawnDirection) & opponentPawnMask)) {
+      continue;
+    }
+    if (posX < 7 && (toMask(posX + 1, posY + pawnDirection) & opponentPawnMask)) {
+      continue;
+    }
+    if (pawnAttacksSpan(board, player, queenPosition)) {
+      continue;
+    }
+    result++;
+  }
+  return result;
+}
