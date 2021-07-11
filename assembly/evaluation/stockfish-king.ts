@@ -135,7 +135,7 @@ export function bishopsOnKingRing(board: BitBoard, player: i8): i16 {
   let result: i16 = 0;
   while (positions.hasNext()) {
     const pos = positions.next();
-    if (bishopMoves(pawnMask, pos) & kingRing) {
+    if (!bishopXRayAttack(board, player, pos, kingRing) && (bishopMoves(pawnMask, pos) & kingRing)) {
       result++;
     }
   }

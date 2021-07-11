@@ -6,6 +6,7 @@ import {
   opponent,
   WHITE,
 } from "../bitboard";
+import { pawnsMg } from "./stockfish-pawn";
 
 export function mainEvaluation(board: BitBoard): i16 {
   const mg = middleGameEvaluation(board);
@@ -25,8 +26,8 @@ function middleGameEvaluation(board: BitBoard): i16 {
   v += pieceValues(board, true);
   v += psqtBonus(board, true);
   v += imbalance(board);
-  /*v += pawns_mg(board) - pawns_mg(colorflip(board));
-  v += pieces_mg(board) - pieces_mg(colorflip(board));
+  v += pawnsMg(board);
+  /*v += pieces_mg(board) - pieces_mg(colorflip(board));
   v += mobility_mg(board) - mobility_mg(colorflip(board));
   v += threats_mg(board) - threats_mg(colorflip(board));
   v += passed_mg(board) - passed_mg(colorflip(board));

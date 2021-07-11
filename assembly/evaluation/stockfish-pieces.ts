@@ -13,9 +13,18 @@ import {
 } from "../bitboard";
 import { parseFEN } from "../fen-parser";
 import { knightMovesFromCache } from "../knight-move-generation";
-import { bishopMoves, queenMoves, rookMoves } from "../sliding-pieces-move-generation";
-import { bishopXRayAttack, bishopXRayAttackMask, knightAttack } from "./stockfish-attacks";
+import {
+  bishopMoves,
+  queenMoves,
+  rookMoves,
+} from "../sliding-pieces-move-generation";
+import {
+  bishopXRayAttack,
+  bishopXRayAttackMask,
+  knightAttack,
+} from "./stockfish-attacks";
 import { mobility } from "./stockfish-mobility";
+import { bishopsOnKingRing, rooksOnKingRing } from "./stockfish-king";
 
 export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): i16 {
   const pawnMask = board.getPawnMask(player);
@@ -131,7 +140,11 @@ export function reachableOutpost(board: BitBoard, player: i8, pos: i8): i16 {
 }
 
 const positions = new MaskIterator();
-export function outpostTotal(board: BitBoard, player: i8): i16 {
+const mgScores = StaticArray.fromArray<i16>([0, 31, -7, 30, 56]);
+const egScores = StaticArray.fromArray<i16>([0, 22, 36, 23, 36]);
+
+export function outpostTotal(board: BitBoard, player: i8, mg: boolean): i16 {
+  const scores = mg ? mgScores : egScores;
   let result: i16 = 0;
   const bishopMask = board.getBishopMask(player);
   const knightMask = board.getKnightMask(player);
@@ -140,7 +153,7 @@ export function outpostTotal(board: BitBoard, player: i8): i16 {
   while (positions.hasNext()) {
     const pos = positions.next();
     if (outpost(board, player, pos)) {
-      result += 3;
+      result += scores[3];
     }
   }
   positions.reset(knightMask);
@@ -171,13 +184,13 @@ export function outpostTotal(board: BitBoard, player: i8): i16 {
           }
         }
         if (!ea && cnt <= 1) {
-          result -= 2;
+          result -= scores[2];
         }
       }
 
-      result += 4;
+      result += scores[4];
     } else if (!!reachableOutpost(board, player, pos)) {
-      result += 1;
+      result += scores[1];
     }
   }
   return result;
@@ -211,7 +224,9 @@ const centerFilesMask: u64 =
 export function countBishopPawns(board: BitBoard, player: i8): i16 {
   const bishopMask = board.getBishopMask(player);
   const pawnMask = board.getPawnMask(player);
-  const playerPiecesMask = board.getPlayerPiecesMask(player);
+  const allPiecesMask = board.getAllPiecesMask();
+  const blockerMask =
+    player === WHITE ? allPiecesMask >> 8 : allPiecesMask << 8;
   let result: i16 = 0;
   const firstBishop = bishopMask & checkerMask;
   if (firstBishop) {
@@ -221,11 +236,7 @@ export function countBishopPawns(board: BitBoard, player: i8): i16 {
   if (secondBishop) {
     result += <i16>popcnt(pawnMask & ~checkerMask);
   }
-  const blockerMask =
-    player === WHITE ? playerPiecesMask >> 8 : playerPiecesMask << 8;
-  const blockedPawnsOnCenterFiles = <i16>(
-    popcnt(pawnMask & centerFilesMask & blockerMask)
-  );
+  const blockedPawnsOnCenterFiles =  <i16>popcnt(pawnMask & centerFilesMask & blockerMask);
   return result * (1 + blockedPawnsOnCenterFiles);
 }
 
@@ -270,6 +281,31 @@ export function rookOnFile(board: BitBoard, player: i8, pos: i8): i16 {
   return 2;
 }
 
+const mgRooksOnFileScores = StaticArray.fromArray<i16>([0, 19, 48]);
+const egRooksOnFileScores = StaticArray.fromArray<i16>([0, 7, 29]);
+
+export function rooksOnFile(board: BitBoard, player: i8, mg: boolean): i16 {
+  const scores = mg ? mgRooksOnFileScores : egRooksOnFileScores;
+  const rookMask = board.getRookMask(player);
+  const pawnMask = board.getPawnMask(player);
+  const opponentPawnMask = board.getPawnMask(opponent(player));
+  positions.reset(rookMask);
+  let result: i16 = 0;
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    const rookFile = pos % 8;
+    const rookFileMask = firstColMask << rookFile;
+    if (rookFileMask & pawnMask) {
+      continue;
+    }
+    if (rookFileMask & opponentPawnMask) {
+      result += scores[1];
+    } else {
+      result += scores[2];
+    }
+  }
+  return result;
+}
 
 export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
   if (rookOnFile(board, player, pos) || mobility(board, player, pos) > 3) {
@@ -278,7 +314,7 @@ export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
   const kingPos = <i8>ctz(board.getKingMask(player));
   const kingPosX = kingPos % 8;
   const posX = pos % 8;
-  if ((kingPosX < 4) !== (posX < kingPosX)) {
+  if (kingPosX < 4 !== posX < kingPosX) {
     return 0;
   }
   return 1;
@@ -286,6 +322,16 @@ export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
 
 const bishopPositions = new MaskIterator();
 const rookPositions = new MaskIterator();
+
+export function countTrappedRooks(board: BitBoard, player: i8): i16 {
+  rookPositions.reset(board.getRookMask(player));
+  let result: i16 = 0;
+  while (rookPositions.hasNext()) {
+    const pos = rookPositions.next();
+    result += trappedRooks(board, player, pos);
+  }
+  return result;
+}
 
 export function weakQueen(board: BitBoard, player: i8): i16 {
   const boardMask = board.getAllPiecesMask();
@@ -295,20 +341,26 @@ export function weakQueen(board: BitBoard, player: i8): i16 {
   const opponentRookMask = board.getRookMask(opponentPlayer);
   positions.reset(queenMask);
   let result: i16 = 0;
-  while(positions.hasNext()) {
+  while (positions.hasNext()) {
     const queenPosition = positions.next();
     const queenMoveMask = queenMoves(boardMask, queenPosition);
     bishopPositions.reset(opponentBishopMask);
-    while(bishopPositions.hasNext()) {
+    while (bishopPositions.hasNext()) {
       const bishopPosition = bishopPositions.next();
-      if ((bishopMoves(0, bishopPosition) & (<u64>1 << queenPosition)) && popcnt(bishopMoves(boardMask, bishopPosition) & queenMoveMask) == 1) {
+      if (
+        bishopMoves(0, bishopPosition) & ((<u64>1) << queenPosition) &&
+        popcnt(bishopMoves(boardMask, bishopPosition) & queenMoveMask) == 1
+      ) {
         result += 1;
       }
     }
     rookPositions.reset(opponentRookMask);
-    while(rookPositions.hasNext()) {
+    while (rookPositions.hasNext()) {
       const rookPosition = rookPositions.next();
-      if ((rookMoves(0, rookPosition) & (<u64>1 << queenPosition)) && popcnt(rookMoves(boardMask, rookPosition) & queenMoveMask) == 1) {
+      if (
+        rookMoves(0, rookPosition) & ((<u64>1) << queenPosition) &&
+        popcnt(rookMoves(boardMask, rookPosition) & queenMoveMask) == 1
+      ) {
         result += 1;
       }
     }
@@ -323,17 +375,17 @@ export function queenInfiltration(board: BitBoard, player: i8): i16 {
   const pawnDirection: i8 = player == WHITE ? 1 : -1;
   positions.reset(queenMask);
   let result: i16 = 0;
-  while(positions.hasNext()) {
+  while (positions.hasNext()) {
     const queenPosition = positions.next();
     const posX: i8 = queenPosition % 8;
     const posY: i8 = queenPosition >> 3;
-    if ((player === WHITE && posY < 4) || (player === BLACK && posY > 3))  {
+    if ((player === WHITE && posY < 4) || (player === BLACK && posY > 3)) {
       continue;
     }
-    if (posX > 0 && (toMask(posX - 1, posY + pawnDirection) & opponentPawnMask)) {
+    if (posX > 0 && toMask(posX - 1, posY + pawnDirection) & opponentPawnMask) {
       continue;
     }
-    if (posX < 7 && (toMask(posX + 1, posY + pawnDirection) & opponentPawnMask)) {
+    if (posX < 7 && toMask(posX + 1, posY + pawnDirection) & opponentPawnMask) {
       continue;
     }
     if (pawnAttacksSpan(board, player, queenPosition)) {
@@ -342,4 +394,85 @@ export function queenInfiltration(board: BitBoard, player: i8): i16 {
     result++;
   }
   return result;
+}
+
+export function kingDistance(board: BitBoard, player: i8, position: i8): i16 {
+  const kingMask = board.getKingMask(player);
+  const kingPosition = <i8>ctz(kingMask);
+  const posX: i8 = position % 8;
+  const posY: i8 = position >> 3;
+  const kingPosX: i8 = kingPosition % 8;
+  const kingPosY: i8 = kingPosition >> 3;
+  return <i16>Math.max(Math.abs(posX - kingPosX), Math.abs(posY - kingPosY));
+}
+
+export function kingProtectorMg(board: BitBoard, player: i8): i16 {
+  let result: i16 = 0;
+  positions.reset(board.getKnightMask(player));
+  while (positions.hasNext()) {
+    const knightPos = positions.next();
+    result += 8 * kingDistance(board, player, knightPos);
+  }
+  positions.reset(board.getBishopMask(player));
+  while (positions.hasNext()) {
+    const bishopPos = positions.next();
+    result += 6 * kingDistance(board, player, bishopPos);
+  }
+  return result;
+}
+
+const centerMask: u64 = (1 << 27) | (1 << 28) | (1 << 35) | (1 << 36);
+
+export function longDiagonalBishop(
+  board: BitBoard,
+  player: i8
+): i16 {
+  const bishopMask = board.getBishopMask(player);
+  const pawnMask = board.getPawnMask(WHITE) | board.getPawnMask(BLACK);
+  positions.reset(bishopMask);
+  let result: i16 = 0;
+  while(positions.hasNext()) {
+    const position = positions.next();
+    const movesMask = bishopMoves(pawnMask, position);
+    if (popcnt(centerMask & movesMask) == 2) {
+      result++;
+    }
+  }
+ return result;
+}
+
+function trappedRooksBonus(board: BitBoard, player: i8): i16 {
+  return (
+    countTrappedRooks(board, player) *
+    55 *
+    (board.kingSideCastlingRight(player) || board.queenSideCastlingRight(player)
+      ? 1
+      : 2)
+  );
+}
+
+export function piecesMg(board: BitBoard): i16 {
+  let v: i16 = 0;
+  v += outpostTotal(board, WHITE, true) - outpostTotal(board, BLACK, true);
+  v +=
+    18 *
+    (countMinorBehindPawn(board, WHITE) - countMinorBehindPawn(board, BLACK));
+  v -= 3 * (countBishopPawns(board, WHITE) - countBishopPawns(board, BLACK));
+  v -=
+    4 *
+    (countBishopXrayPawns(board, WHITE) - countBishopXrayPawns(board, BLACK));
+  v +=
+    6 *
+    (countRooksOnQueenFiles(board, WHITE) -
+      countRooksOnQueenFiles(board, BLACK));
+  v += 16 * (rooksOnKingRing(board, WHITE) - rooksOnKingRing(board, BLACK));
+  v += 24 * (bishopsOnKingRing(board, WHITE) - bishopsOnKingRing(board, BLACK));
+  v += rooksOnFile(board, WHITE, true) - rooksOnFile(board, BLACK, true);
+  v -= trappedRooksBonus(board, WHITE) - trappedRooksBonus(board, BLACK);
+  v -= 56 * (weakQueen(board, WHITE) - weakQueen(board, BLACK));
+  v -= 2 * (queenInfiltration(board, WHITE) - queenInfiltration(board, BLACK));
+  v -= kingProtectorMg(board, WHITE) - kingProtectorMg(board, BLACK);
+  v += 45 * (longDiagonalBishop(board, WHITE) - longDiagonalBishop(board, BLACK));
+
+  return v;
 }

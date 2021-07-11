@@ -4,13 +4,17 @@ import {
   countBishopXrayPawns,
   countMinorBehindPawn,
   countRooksOnQueenFiles,
+  kingDistance,
+  longDiagonalBishop,
   outpost,
   outpostSquare,
   outpostTotal,
   pawnAttacksSpan,
+  piecesMg,
   queenInfiltration,
   reachableOutpost,
   rookOnFile,
+  rooksOnFile,
   trappedRooks,
   weakQueen,
 } from "../../evaluation/stockfish-pieces";
@@ -65,16 +69,16 @@ describe("Stockfish pieces evaluation", () => {
     const board = parseFEN(
       "rnbqkb1r/ppp3pp/2np2P1/3P4/p1P3B1/P1P1p1PP/4P3/RN1QKBNR b KQkq - 1 2"
     );
-    expect(outpostTotal(board, WHITE)).toBe(0);
-    expect(outpostTotal(board, BLACK)).toBe(1);
+    expect(outpostTotal(board, WHITE, true)).toBe(0);
+    expect(outpostTotal(board, BLACK, true)).toBe(31);
   });
   // rnbqk2r/ppp3pp/2np2P1/3Pb3/p1P3B1/P1P1p1PP/4P3/RN1QKBNR w KQkq - 2 3
   it("should evaluate outpost total (bis)", () => {
     const board = parseFEN(
       "rnbqk2r/ppp3pp/2np2P1/3Pb3/p1P3B1/P1P1p1PP/4P3/RN1QKBNR w KQkq - 2 3"
     );
-    expect(outpostTotal(board, WHITE)).toBe(0);
-    expect(outpostTotal(board, BLACK)).toBe(3);
+    expect(outpostTotal(board, WHITE, true)).toBe(0);
+    expect(outpostTotal(board, BLACK, true)).toBe(30);
   });
 
   it("should count minor pieces behind pawns", () => {
@@ -92,8 +96,7 @@ describe("Stockfish pieces evaluation", () => {
     expect(countBishopPawns(board, WHITE)).toBe(8);
     expect(countBishopPawns(board, BLACK)).toBe(12);
   });
-  // r2qk2r/pppppppp/1bn2n2/8/3N4/2B1P3/PPP1PPPP/R2QK1NR w KQkq - 0 3
-
+  
   it("should count bishop xray pawns", () => {
     const board = parseFEN(
       "r2qk2r/pppppppp/1bn2n2/8/3N4/2B1P3/PPP1PPPP/R2QK1NR w KQkq - 0 3"
@@ -114,8 +117,8 @@ describe("Stockfish pieces evaluation", () => {
     const board = parseFEN(
       "rnbqkbn1/pppppp1p/6r1/8/8/1P3P2/1PPPPP1P/RNBQKBNR w KQkq - 0 1"
     );
-    expect(rookOnFile(board, WHITE, 0)).toBe(1);
-    expect(rookOnFile(board, BLACK, 46)).toBe(2);
+    expect(rooksOnFile(board, WHITE, true)).toBe(19);
+    expect(rooksOnFile(board, BLACK, true)).toBe(48);
   });
 
   it("should count trapped rooks", () => {
@@ -153,5 +156,29 @@ describe("Stockfish pieces evaluation", () => {
     );
     expect(queenInfiltration(board, WHITE)).toBe(1);
     expect(queenInfiltration(board, BLACK)).toBe(0);
+  });
+
+  it('should compute king distance', () => {
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/4P3/5NB1/PPPP1PPP/RNBQ1RK1 b kq - 1 1"
+    );
+    expect(kingDistance(board, WHITE, 0)).toBe(6);
+    expect(kingDistance(board, BLACK, 0)).toBe(7);
+  });
+
+  // rn1qk1nr/pbpp1ppp/4pb2/Np2P3/2P1N3/2B3B1/1PP2PPP/RN1Q1RK1 b kq - 1 3
+  it('should detect long diagonal bishops', () => {
+    const board = parseFEN(
+      "rn1qk1nr/pbpp1ppp/4pb2/Np2P3/2P1N3/2B3B1/1PP2PPP/RN1Q1RK1 b kq - 1 3"
+    );
+    expect(longDiagonalBishop(board, WHITE)).toBe(1);
+    expect(longDiagonalBishop(board, BLACK)).toBe(1);
+  });
+
+
+  it('should compute pieces mg', () => {
+    const board = parseFEN('rnbqkbnr/pppppppp/8/8/4P1B1/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 1');
+    expect(piecesMg(board)).toBe(-49)
   })
+
 });
