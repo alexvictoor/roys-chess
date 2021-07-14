@@ -1,5 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
-import { mobility, mobilityArea } from "../../evaluation/stockfish-mobility";
+import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish mobility evaluation", () => {
@@ -32,5 +32,13 @@ describe("Stockfish mobility evaluation", () => {
     expect(mobility(board, BLACK, 59)).toBe(1);
    
   });
+
+  it("should evaluate mobility at middle game", () => {
+    const board = parseFEN(
+      "rnbqkb1r/ppp3pp/2np2P1/3P4/p1P3B1/P1P1p1PP/4P3/RN1QKBNR b KQkq - 1 2"
+    );
+
+    expect(mobilityMg(board)).toBe(-45);
+  })
  
 });
