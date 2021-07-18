@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, pawnPushThreatMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
+import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
 import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
@@ -117,7 +117,7 @@ describe("Stockfish attacks", () => {
     expect(blackMask).toBe(0);
   });
 
-  it("should detect safe slider attacks by slider on queen", () => {
+  it("should detect safe attacks by slider on queen", () => {
     const board = parseFEN(
       "rnbqk3/ppp1N1pp/3p2P1/2PP1n2/p1br2P1/1P2p2P/5P2/RN1QKB1R w KQkq - 1 5"
     );
@@ -129,14 +129,14 @@ describe("Stockfish attacks", () => {
     expect(blackMask).toBe(1 << 17 | 1 << 11 | 1 << 19);
   });
 
-  it("should detect safe slider attacks by slider on queen taking in account pawn defense", () => {
+  it("should detect safe attacks by slider on queen taking in account pawn defense", () => {
     const board = parseFEN(
       "r1bqk3/ppp1N1pp/3p2P1/1nPP4/1pbrn1P1/5p1P/1NP2P2/B1RQK2R b KQkq - 2 5"
     );
 
     const whiteMask = sliderOnQueenMask(board, WHITE);
     const blackMask = sliderOnQueenMask(board, BLACK);
-    
+
     expect(whiteMask).toBe(0);
     expect(blackMask).toBe(1 << 11 | 1 << 12);
   });
@@ -161,8 +161,19 @@ describe("Stockfish attacks", () => {
 
     const black = sliderOnQueen(board, BLACK);
 
-
     expect(black).toBe(6);
+  });
+
+  it("should detect safe attacks by knigh on queen", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp1N1pp/3p2P1/1nPPN3/1pbrn1P1/5p1P/2P2P2/B1RQKR2 b KQkq - 2 5"
+    );
+
+    const whiteMask = knightOnQueenMask(board, WHITE);
+    const blackMask = knightOnQueenMask(board, BLACK);
+
+    expect(whiteMask).toBe(1 << 53);
+    expect(blackMask).toBe(1 << 18);
   });
 
  

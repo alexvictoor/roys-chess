@@ -308,7 +308,10 @@ export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
   }
 
   const attackTwiceMask = attackMask(board, player, true);
-  const opponentPawnDefenseMask = pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer))
+  const opponentPawnDefenseMask = pawnAttacks(
+    opponentPlayer,
+    board.getPawnMask(opponentPlayer)
+  );
 
   return (
     attackTwiceMask &
@@ -321,4 +324,38 @@ export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
 export function sliderOnQueen(board: BitBoard, player: i8): i16 {
   const lostQueenFactor: i16 = popcnt(board.getQueenMask(player)) === 0 ? 2 : 1;
   return lostQueenFactor * <i16>popcnt(sliderOnQueenMask(board, player));
+}
+
+export function knightOnQueenMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
+  let mask: u64 = 0;
+
+  const knightMask = board.getKnightMask(player);
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    mask |= knightAttackMask(board, player, position, ~0);
+  }
+
+  let queenDangerMask: u64 = 0;
+  const opponentQueenMask = board.getQueenMask(opponentPlayer);
+  positions.reset(opponentQueenMask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    queenDangerMask |= knightAttackMask(board, player, position, ~0);
+  }
+
+  const attackTwiceMask = attackMask(board, player, true);
+  const opponentPawnDefenseMask = pawnAttacks(
+    opponentPlayer,
+    board.getPawnMask(opponentPlayer)
+  );
+  const opponentAttackTwiceMask = attackMask(board, opponentPlayer, true);
+
+  return (
+    mask &
+    queenDangerMask &
+    ~opponentPawnDefenseMask &
+    (attackTwiceMask | ~opponentAttackTwiceMask)
+  );
 }
