@@ -96,6 +96,14 @@ describe("Stockfish pieces evaluation", () => {
     expect(countBishopPawns(board, WHITE)).toBe(8);
     expect(countBishopPawns(board, BLACK)).toBe(12);
   });
+
+  it("should count bishop pawns (bis)", () => {
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/2PNB1P1/PPP1P1PP/R2K1BNR w KQkq - 0 1"
+    );
+    expect(countBishopPawns(board, WHITE)).toBe(24);
+    expect(countBishopPawns(board, BLACK)).toBe(8);
+  });
   
   it("should count bishop xray pawns", () => {
     const board = parseFEN(
