@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
+import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, restricted, restrictedMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
 import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
@@ -176,5 +176,15 @@ describe("Stockfish attacks", () => {
     expect(blackMask).toBe(1 << 18);
   });
 
- 
+  it("should count restricted moves", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp1NNpp/3p2P1/2PPn3/1pbrn1P1/5p1P/2P2P2/B1RQKR2 b KQkq - 2 5"
+    );
+
+    const white = restricted(board, WHITE);
+    const black = restricted(board, BLACK);
+
+    expect(white).toBe(12);
+    expect(black).toBe(12);
+  });
 });

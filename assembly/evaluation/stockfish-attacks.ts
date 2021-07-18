@@ -359,3 +359,17 @@ export function knightOnQueenMask(board: BitBoard, player: i8): u64 {
     (attackTwiceMask | ~opponentAttackTwiceMask)
   );
 }
+
+export function restrictedMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
+  return (
+    attackMask(board, player, false) &
+    attackMask(board, opponentPlayer, false) &
+    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)) &
+    (~attackMask(board, opponentPlayer, true) | attackMask(board, player, true))
+  );
+}
+
+export function restricted(board: BitBoard, player: i8): i16 {
+  return <i16>popcnt(restrictedMask(board, player));
+}
