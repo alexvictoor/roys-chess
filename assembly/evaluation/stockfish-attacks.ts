@@ -271,6 +271,7 @@ export function threatSafePawnMask(board: BitBoard, player: i8): u64 {
 }
 
 export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
   let bishopAttackMask: u64 = 0;
   let rookAttackMask: u64 = 0;
   const bishopMask = board.getBishopMask(player);
@@ -288,7 +289,7 @@ export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
 
   let opponentQueenRookLikeAttackMask: u64 = 0;
   let opponentQueenBishopLikeAttackMask: u64 = 0;
-  const opponentQueenMask = board.getQueenMask(opponent(player));
+  const opponentQueenMask = board.getQueenMask(opponentPlayer);
   positions.reset(opponentQueenMask);
   while (positions.hasNext()) {
     const position = positions.next();
@@ -307,9 +308,11 @@ export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
   }
 
   const attackTwiceMask = attackMask(board, player, true);
+  const opponentPawnDefenseMask = pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer))
 
   return (
     attackTwiceMask &
+    ~opponentPawnDefenseMask &
     ((bishopAttackMask & opponentQueenBishopLikeAttackMask) |
       (rookAttackMask & opponentQueenRookLikeAttackMask))
   );
