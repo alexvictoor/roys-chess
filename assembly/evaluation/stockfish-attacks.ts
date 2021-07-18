@@ -261,10 +261,61 @@ export function safePawnMask(board: BitBoard, player: i8): u64 {
 }
 
 export function threatSafePawnMask(board: BitBoard, player: i8): u64 {
-  //const pawnMask = board.getPawnMask(player);
   const opponentPawnMask = board.getPawnMask(opponent(player));
-  //const allPiecesMask = board.getAllPiecesMask();
-  const opponentNonPawnPiecesMask = board.getPlayerPiecesMask(opponent(player)) & ~opponentPawnMask;
-  
-  return pawnAttacks(player, safePawnMask(board, player)) & opponentNonPawnPiecesMask;
+  const opponentNonPawnPiecesMask =
+    board.getPlayerPiecesMask(opponent(player)) & ~opponentPawnMask;
+
+  return (
+    pawnAttacks(player, safePawnMask(board, player)) & opponentNonPawnPiecesMask
+  );
+}
+
+export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
+  let bishopAttackMask: u64 = 0;
+  let rookAttackMask: u64 = 0;
+  const bishopMask = board.getBishopMask(player);
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    bishopAttackMask |= bishopXRayAttackMask(board, player, position, ~0);
+  }
+  const rookMask = board.getRookMask(player);
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    rookAttackMask |= rookXRayAttackMask(board, player, position, ~0);
+  }
+
+  let opponentQueenRookLikeAttackMask: u64 = 0;
+  let opponentQueenBishopLikeAttackMask: u64 = 0;
+  const opponentQueenMask = board.getQueenMask(opponent(player));
+  positions.reset(opponentQueenMask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    opponentQueenBishopLikeAttackMask |= bishopXRayAttackMask(
+      board,
+      player,
+      position,
+      ~0
+    );
+    opponentQueenRookLikeAttackMask |= rookXRayAttackMask(
+      board,
+      player,
+      position,
+      ~0
+    );
+  }
+
+  const attackTwiceMask = attackMask(board, player, true);
+
+  return (
+    attackTwiceMask &
+    ((bishopAttackMask & opponentQueenBishopLikeAttackMask) |
+      (rookAttackMask & opponentQueenRookLikeAttackMask))
+  );
+}
+
+export function sliderOnQueen(board: BitBoard, player: i8): i16 {
+  const lostQueenFactor: i16 = popcnt(board.getQueenMask(player)) === 0 ? 2 : 1;
+  return lostQueenFactor * <i16>popcnt(sliderOnQueenMask(board, player));
 }

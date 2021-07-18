@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, pawnPushThreatMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
+import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, pawnPushThreatMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
 import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
@@ -104,10 +104,7 @@ describe("Stockfish attacks", () => {
     expect(whiteMask).toBe(1 << 37);
     expect(blackMask).toBe(0);
   });
-//rnbqkb1r/ppp1N1pp/3p2P1/3P1n2/p1P2p1B/P1P4P/3P2P1/RN1QK2R b KQkq - 0 4
 
-
-  //rnbqkb1r/ppp1N1pp/3p2P1/3P1n2/p1P3PB/P1P1p2P/4P3/RN1QK2R b KQkq - 0 4
   it("should detect threats by safe pawns", () => {
     const board = parseFEN(
       "rnbqkb1r/ppp1N1pp/3p2P1/3P1n2/p1P3PB/P1P1p2P/4P3/RN1QK2R b KQkq - 0 4"
@@ -116,10 +113,44 @@ describe("Stockfish attacks", () => {
     const whiteMask = threatSafePawnMask(board, WHITE);
     const blackMask = threatSafePawnMask(board, BLACK);
 
-    log(maskString(whiteMask));
-
     expect(whiteMask).toBe(1 << 37);
     expect(blackMask).toBe(0);
+  });
+
+  it("should detect safe slider attacks by slider on queen", () => {
+    const board = parseFEN(
+      "rnbqk3/ppp1N1pp/3p2P1/2PP1n2/p1br2P1/1P2p2P/5P2/RN1QKB1R w KQkq - 1 5"
+    );
+
+    const whiteMask = sliderOnQueenMask(board, WHITE);
+    const blackMask = sliderOnQueenMask(board, BLACK);
+
+    expect(whiteMask).toBe(0);
+    expect(blackMask).toBe(1 << 17 | 1 << 11 | 1 << 19);
+  });
+
+  it("should count safe slider attacks on queen", () => {
+    const board = parseFEN(
+      "rnbqk3/ppp1N1pp/3p2P1/2PP1n2/p1br2P1/1P2p2P/5P2/RN1QKB1R w KQkq - 1 5"
+    );
+
+    const white = sliderOnQueen(board, WHITE);
+    const black = sliderOnQueen(board, BLACK);
+
+
+    expect(white).toBe(0);
+    expect(black).toBe(3);
+  });
+
+  it("should count twice safe slider attacks on queen when player has lost her queen", () => {
+    const board = parseFEN(
+      "rnb1k3/ppp1N1pp/3p2P1/2PP1n2/p1br2P1/1P2p2P/5P2/RN1QKB1R w KQkq - 1 5"
+    );
+
+    const black = sliderOnQueen(board, BLACK);
+
+
+    expect(black).toBe(6);
   });
 
  
