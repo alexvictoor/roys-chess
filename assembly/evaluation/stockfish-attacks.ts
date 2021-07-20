@@ -100,38 +100,67 @@ export function knightAttack(
 }
 
 const positions = new MaskIterator();
-export function attackOnceMask(board: BitBoard, player: i8): u64 {
-  let resultMask: u64 = pawnAttacks(player, board.getPawnMask(player));
+
+function attackByKnightsMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = 0;
   const knightMask = board.getKnightMask(player);
   positions.reset(knightMask);
   while (positions.hasNext()) {
     const position = positions.next();
     resultMask |= knightAttackMask(board, player, position, ~0);
   }
+  return resultMask;
+}
+
+function attackByBishopsMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = 0;
   const bishopMask = board.getBishopMask(player);
   positions.reset(bishopMask);
   while (positions.hasNext()) {
     const position = positions.next();
     resultMask |= bishopXRayAttackMask(board, player, position, ~0);
   }
+  return resultMask;
+}
+
+function attackByRooksMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = 0;
   const rookMask = board.getRookMask(player);
   positions.reset(rookMask);
   while (positions.hasNext()) {
     const position = positions.next();
     resultMask |= rookXRayAttackMask(board, player, position, ~0);
   }
+  return resultMask;
+}
+function attackByQueensMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = 0;
   const queenMask = board.getQueenMask(player);
   positions.reset(queenMask);
   while (positions.hasNext()) {
     const position = positions.next();
     resultMask |= queenAttackMask(board, player, position, ~0);
   }
+  return resultMask;
+}
+function attackByKingsMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = 0;
   const kingMask = board.getKingMask(player);
   positions.reset(kingMask);
   while (positions.hasNext()) {
     const position = positions.next();
     resultMask |= kingMoves(position);
   }
+  return resultMask;
+}
+
+export function attackOnceMask(board: BitBoard, player: i8): u64 {
+  let resultMask: u64 = pawnAttacks(player, board.getPawnMask(player));
+  resultMask |= attackByKnightsMask(board, player);
+  resultMask |= attackByBishopsMask(board, player);
+  resultMask |= attackByRooksMask(board, player);
+  resultMask |= attackByQueensMask(board, player);
+  resultMask |= attackByKingsMask(board, player);
 
   return resultMask;
 }
@@ -194,10 +223,11 @@ export function attackMask(
 }
 
 export function weakEnemiesMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
   return (
-    board.getPlayerPiecesMask(player) &
-    attackMask(board, opponent(player), false) &
-    ~pawnAttacks(player, board.getPawnMask(player))
+    board.getPlayerPiecesMask(opponentPlayer) &
+    attackMask(board, player, false) &
+    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer))
   );
 }
 export function hangingMask(board: BitBoard, player: i8): u64 {
@@ -369,7 +399,21 @@ export function restrictedMask(board: BitBoard, player: i8): u64 {
     (~attackMask(board, opponentPlayer, true) | attackMask(board, player, true))
   );
 }
+export function weakQueenProtectionMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
+  return (
+    weakEnemiesMask(board, player) &
+    ~attackByKnightsMask(board, opponentPlayer) &
+    ~attackByBishopsMask(board, opponentPlayer) &
+    ~attackByRooksMask(board, opponentPlayer) &
+    ~attackByKingsMask(board, opponentPlayer) &
+    attackByQueensMask(board, opponentPlayer)
+  );
+}
 
 export function restricted(board: BitBoard, player: i8): i16 {
   return <i16>popcnt(restrictedMask(board, player));
+}
+export function weakQueenProtection(board: BitBoard, player: i8): i16 {
+  return <i16>popcnt(weakQueenProtectionMask(board, player));
 }

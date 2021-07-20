@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, restricted, restrictedMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask } from "../../evaluation/stockfish-attacks";
+import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, restricted, restrictedMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-attacks";
 import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
@@ -37,8 +37,8 @@ describe("Stockfish attacks", () => {
 
     const whiteMask = weakEnemiesMask(board, WHITE);
     const blackMask = weakEnemiesMask(board, BLACK);
-    expect(whiteMask).toBe(1 << 46);
-    expect(blackMask).toBe((1 << 24) | (1 << 55) | (1 << 58));
+    expect(blackMask).toBe(1 << 46);
+    expect(whiteMask).toBe((1 << 24) | (1 << 55) | (1 << 58));
   });
   it("should detect hanging pieces when pieces are not defended", () => {
     const board = parseFEN(
@@ -186,5 +186,17 @@ describe("Stockfish attacks", () => {
 
     expect(white).toBe(12);
     expect(black).toBe(12);
+  });
+  
+  it("should count weak queen protection", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp2N1p/2Np1nP1/2PP1R1Q/1pbr2p1/3n1pPP/2P2P2/B1R1K3 b KQkq - 2 5"
+    );
+
+    const white = weakQueenProtection(board, WHITE);
+    const black = weakQueenProtection(board, BLACK);
+
+    expect(white).toBe(1);
+    expect(black).toBe(3);
   });
 });
