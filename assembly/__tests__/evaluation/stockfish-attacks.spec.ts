@@ -1,5 +1,5 @@
-import { BLACK, maskString, WHITE } from "../../bitboard";
-import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, pawnPushThreatMask, restricted, restrictedMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-attacks";
+import { BISHOP, BLACK, KING, KNIGHT, maskString, PAWN, QUEEN, ROOK, WHITE } from "../../bitboard";
+import { attackMask, attackOnceMask, attackTwiceMask, hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, restrictedMask, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-attacks";
 import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
@@ -40,6 +40,19 @@ describe("Stockfish attacks", () => {
     expect(blackMask).toBe(1 << 46);
     expect(whiteMask).toBe((1 << 24) | (1 << 55) | (1 << 58));
   });
+  it("should detect weak enemies (bis)", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp2N1p/2Np1nP1/2PP1R2/1pbr2p1/3n1pPP/1BP2P2/1R3QK1 b KQkq - 2 5"
+    );
+
+    const blackMask = weakEnemiesMask(board, BLACK);
+    log(maskString(blackMask));
+    expect(blackMask).toBe(1 << 9 | 1 << 23 | 1 << 34 | 1 << 35 | 1 << 37 | 1 << 46);
+  });
+
+
+  
+
   it("should detect hanging pieces when pieces are not defended", () => {
     const board = parseFEN(
       "rnbqkb1r/ppp3pp/2np2P1/3P4/p1P3B1/P1P1p1PP/4P3/RN1QKBNR b KQkq - 1 2"
@@ -198,5 +211,28 @@ describe("Stockfish attacks", () => {
 
     expect(white).toBe(1);
     expect(black).toBe(3);
+  });
+
+  it("should evaluate minor threats", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp2N1p/2Np1nP1/2PP1R1Q/1pbr2p1/3n1pPP/2P2P2/B1R1K3 b KQkq - 2 5"
+    );
+
+    const whiteThreats = minorThreats(board, WHITE, true);
+    const blackThreats = minorThreats(board, BLACK, true);
+
+    expect(whiteThreats).toBe(177);
+    expect(blackThreats).toBe(270);
+
+  });
+  it("should evaluate minor threats (bis)", () => {
+    const board = parseFEN(
+      "r1bqk3/ppp2N1p/2Np1nP1/2PP1R2/1pbr2p1/3n1pPP/1BP2P2/1R3QK1 b KQkq - 2 5"
+    );
+
+    const blackThreats = minorThreats(board, BLACK, true);
+
+    expect(blackThreats).toBe(175);
+
   });
 });

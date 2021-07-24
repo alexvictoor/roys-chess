@@ -2,10 +2,12 @@ import {
   BISHOP,
   BitBoard,
   BLACK,
+  KING,
   KNIGHT,
   MaskIterator,
   maskString,
   opponent,
+  PAWN,
   QUEEN,
   ROOK,
   WHITE,
@@ -226,8 +228,9 @@ export function weakEnemiesMask(board: BitBoard, player: i8): u64 {
   const opponentPlayer = opponent(player);
   return (
     board.getPlayerPiecesMask(opponentPlayer) &
-    attackMask(board, player, false) &
-    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer))
+    attackOnceMask(board, player) &
+    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)) &
+    ~(~attackTwiceMask(board, player) & attackTwiceMask(board, opponentPlayer))
   );
 }
 export function hangingMask(board: BitBoard, player: i8): u64 {
@@ -416,4 +419,40 @@ export function restricted(board: BitBoard, player: i8): i16 {
 }
 export function weakQueenProtection(board: BitBoard, player: i8): i16 {
   return <i16>popcnt(weakQueenProtectionMask(board, player));
+}
+
+const mgMinorThreatScores = StaticArray.fromArray<i16>([
+  5, 5, 57, 57, 77, 77, 88, 88, 79, 79,
+]);
+const egMinorThreatScores = StaticArray.fromArray<i16>([
+  32, 32, 41, 41, 56, 56, 119, 119, 161, 161,
+]);
+
+export function minorThreats(board: BitBoard, player: i8, mg: boolean): i16 {
+  const scores = mg ? mgMinorThreatScores : egMinorThreatScores;
+  const opponentPlayer = opponent(player);
+  const opponentPawnMask = board.getPawnMask(opponentPlayer);
+  const opponentProtectedPieceMask =
+    (opponentPawnMask |
+      ~(
+        pawnAttacks(opponentPlayer, opponentPawnMask) /*|
+        (~attackTwiceMask(board, player) &
+          attackTwiceMask(board, opponentPlayer))*/
+      )) &
+    ~weakEnemiesMask(board, player);
+  const attackByKnights = attackByKnightsMask(board, player)
+  const attackByBishops = attackByBishopsMask(board, player)
+  let result: i16 = 0;
+  for (let piece: i8 = PAWN; piece < KING; piece += 2) {
+    const targetMask = board.bits[piece + opponentPlayer];
+    const piecesAttackedByBishopsOrKnightsMask =
+      (attackByKnights & targetMask) |
+      (attackByBishops & targetMask);
+    const minotThreatMask =
+      piecesAttackedByBishopsOrKnightsMask & ~opponentProtectedPieceMask;
+   
+    result += <i16>popcnt(minotThreatMask) * scores[piece];
+  }
+
+  return result;
 }
