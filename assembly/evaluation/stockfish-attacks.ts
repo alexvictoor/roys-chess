@@ -1,29 +1,18 @@
 import {
-  BISHOP,
   BitBoard,
-  BLACK,
-  KING,
-  KNIGHT,
-  MaskIterator,
-  maskString,
-  opponent,
-  PAWN,
-  QUEEN,
-  ROOK,
-  WHITE,
+  BLACK, MaskIterator, WHITE
 } from "../bitboard";
 import { kingMoves } from "../king-move-generation";
 import { knightMovesFromCache } from "../knight-move-generation";
 import {
   pawnAttacks,
   pawnAttacksOnLeft,
-  pawnAttacksOnRight,
-  pawnInitialRowMask,
+  pawnAttacksOnRight
 } from "../pawn";
 import {
   bishopMoves,
   queenMoves,
-  rookMoves,
+  rookMoves
 } from "../sliding-pieces-move-generation";
 
 export function bishopXRayAttackMask(
@@ -103,7 +92,7 @@ export function knightAttack(
 
 const positions = new MaskIterator();
 
-function attackByKnightsMask(board: BitBoard, player: i8): u64 {
+export function attackByKnightsMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = 0;
   const knightMask = board.getKnightMask(player);
   positions.reset(knightMask);
@@ -114,7 +103,7 @@ function attackByKnightsMask(board: BitBoard, player: i8): u64 {
   return resultMask;
 }
 
-function attackByBishopsMask(board: BitBoard, player: i8): u64 {
+export function attackByBishopsMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = 0;
   const bishopMask = board.getBishopMask(player);
   positions.reset(bishopMask);
@@ -125,7 +114,7 @@ function attackByBishopsMask(board: BitBoard, player: i8): u64 {
   return resultMask;
 }
 
-function attackByRooksMask(board: BitBoard, player: i8): u64 {
+export function attackByRooksMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = 0;
   const rookMask = board.getRookMask(player);
   positions.reset(rookMask);
@@ -135,7 +124,7 @@ function attackByRooksMask(board: BitBoard, player: i8): u64 {
   }
   return resultMask;
 }
-function attackByQueensMask(board: BitBoard, player: i8): u64 {
+export function attackByQueensMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = 0;
   const queenMask = board.getQueenMask(player);
   positions.reset(queenMask);
@@ -145,7 +134,7 @@ function attackByQueensMask(board: BitBoard, player: i8): u64 {
   }
   return resultMask;
 }
-function attackByKingsMask(board: BitBoard, player: i8): u64 {
+export function attackByKingsMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = 0;
   const kingMask = board.getKingMask(player);
   positions.reset(kingMask);
@@ -222,237 +211,4 @@ export function attackMask(
   return atLeastTwice
     ? attackTwiceMask(board, player)
     : attackOnceMask(board, player);
-}
-
-export function weakEnemiesMask(board: BitBoard, player: i8): u64 {
-  const opponentPlayer = opponent(player);
-  return (
-    board.getPlayerPiecesMask(opponentPlayer) &
-    attackOnceMask(board, player) &
-    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)) &
-    ~(~attackTwiceMask(board, player) & attackTwiceMask(board, opponentPlayer))
-  );
-}
-export function hangingMask(board: BitBoard, player: i8): u64 {
-  const piecesMask = board.getPlayerPiecesMask(player);
-  return (
-    (piecesMask &
-      attackMask(board, opponent(player), false) &
-      ~attackMask(board, player, false)) |
-    (piecesMask &
-      attackMask(board, opponent(player), true) &
-      ~board.getPawnMask(player) &
-      ~pawnAttacks(player, board.getPawnMask(player)))
-  );
-}
-
-export function kingThreatMask(board: BitBoard, player: i8): u64 {
-  const kingMask = board.getKingMask(player);
-  const kingPosition = <i8>ctz(kingMask);
-  return (
-    board.getPlayerPiecesMask(opponent(player)) &
-    kingMoves(kingPosition) &
-    ~pawnAttacks(player, board.getPawnMask(opponent(player)))
-  );
-}
-
-export function pawnPushThreatMask(board: BitBoard, player: i8): u64 {
-  const pawnMask = board.getPawnMask(player);
-  const opponentPawnMask = board.getPawnMask(opponent(player));
-  const allPiecesMask = board.getAllPiecesMask();
-  const opponentPiecesMask = board.getPlayerPiecesMask(opponent(player));
-  const initialRowMask = pawnInitialRowMask(player) & pawnMask;
-
-  const pawnOneSquareForwardMask: u64 =
-    (player === WHITE ? pawnMask << 8 : pawnMask >> 8) &
-    ~allPiecesMask &
-    ~pawnAttacks(opponent(player), opponentPawnMask);
-
-  const pawnOneSquareForwardFromInitialRowMask: u64 =
-    (player === WHITE ? initialRowMask << 8 : initialRowMask >> 8) &
-    ~allPiecesMask;
-  const pawnTwoSquaresForwardFromInitialRowMask: u64 =
-    (player === WHITE
-      ? pawnOneSquareForwardFromInitialRowMask << 8
-      : pawnOneSquareForwardFromInitialRowMask >> 8) &
-    ~allPiecesMask &
-    ~pawnAttacks(opponent(player), opponentPawnMask);
-
-  return (
-    (pawnAttacks(player, pawnOneSquareForwardMask) & opponentPiecesMask) |
-    (pawnAttacks(player, pawnTwoSquaresForwardFromInitialRowMask) &
-      opponentPiecesMask)
-  );
-}
-
-export function safePawnMask(board: BitBoard, player: i8): u64 {
-  const pawnMask = board.getPawnMask(player);
-  return (
-    (pawnMask & attackMask(board, player, false)) |
-    (pawnMask & ~attackMask(board, opponent(player), false))
-  );
-}
-
-export function threatSafePawnMask(board: BitBoard, player: i8): u64 {
-  const opponentPawnMask = board.getPawnMask(opponent(player));
-  const opponentNonPawnPiecesMask =
-    board.getPlayerPiecesMask(opponent(player)) & ~opponentPawnMask;
-
-  return (
-    pawnAttacks(player, safePawnMask(board, player)) & opponentNonPawnPiecesMask
-  );
-}
-
-export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
-  const opponentPlayer = opponent(player);
-  let bishopAttackMask: u64 = 0;
-  let rookAttackMask: u64 = 0;
-  const bishopMask = board.getBishopMask(player);
-  positions.reset(bishopMask);
-  while (positions.hasNext()) {
-    const position = positions.next();
-    bishopAttackMask |= bishopXRayAttackMask(board, player, position, ~0);
-  }
-  const rookMask = board.getRookMask(player);
-  positions.reset(rookMask);
-  while (positions.hasNext()) {
-    const position = positions.next();
-    rookAttackMask |= rookXRayAttackMask(board, player, position, ~0);
-  }
-
-  let opponentQueenRookLikeAttackMask: u64 = 0;
-  let opponentQueenBishopLikeAttackMask: u64 = 0;
-  const opponentQueenMask = board.getQueenMask(opponentPlayer);
-  positions.reset(opponentQueenMask);
-  while (positions.hasNext()) {
-    const position = positions.next();
-    opponentQueenBishopLikeAttackMask |= bishopXRayAttackMask(
-      board,
-      player,
-      position,
-      ~0
-    );
-    opponentQueenRookLikeAttackMask |= rookXRayAttackMask(
-      board,
-      player,
-      position,
-      ~0
-    );
-  }
-
-  const attackTwiceMask = attackMask(board, player, true);
-  const opponentPawnDefenseMask = pawnAttacks(
-    opponentPlayer,
-    board.getPawnMask(opponentPlayer)
-  );
-
-  return (
-    attackTwiceMask &
-    ~opponentPawnDefenseMask &
-    ((bishopAttackMask & opponentQueenBishopLikeAttackMask) |
-      (rookAttackMask & opponentQueenRookLikeAttackMask))
-  );
-}
-
-export function sliderOnQueen(board: BitBoard, player: i8): i16 {
-  const lostQueenFactor: i16 = popcnt(board.getQueenMask(player)) === 0 ? 2 : 1;
-  return lostQueenFactor * <i16>popcnt(sliderOnQueenMask(board, player));
-}
-
-export function knightOnQueenMask(board: BitBoard, player: i8): u64 {
-  const opponentPlayer = opponent(player);
-  let mask: u64 = 0;
-
-  const knightMask = board.getKnightMask(player);
-  positions.reset(knightMask);
-  while (positions.hasNext()) {
-    const position = positions.next();
-    mask |= knightAttackMask(board, player, position, ~0);
-  }
-
-  let queenDangerMask: u64 = 0;
-  const opponentQueenMask = board.getQueenMask(opponentPlayer);
-  positions.reset(opponentQueenMask);
-  while (positions.hasNext()) {
-    const position = positions.next();
-    queenDangerMask |= knightAttackMask(board, player, position, ~0);
-  }
-
-  const attackTwiceMask = attackMask(board, player, true);
-  const opponentPawnDefenseMask = pawnAttacks(
-    opponentPlayer,
-    board.getPawnMask(opponentPlayer)
-  );
-  const opponentAttackTwiceMask = attackMask(board, opponentPlayer, true);
-
-  return (
-    mask &
-    queenDangerMask &
-    ~opponentPawnDefenseMask &
-    (attackTwiceMask | ~opponentAttackTwiceMask)
-  );
-}
-
-export function restrictedMask(board: BitBoard, player: i8): u64 {
-  const opponentPlayer = opponent(player);
-  return (
-    attackMask(board, player, false) &
-    attackMask(board, opponentPlayer, false) &
-    ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)) &
-    (~attackMask(board, opponentPlayer, true) | attackMask(board, player, true))
-  );
-}
-export function weakQueenProtectionMask(board: BitBoard, player: i8): u64 {
-  const opponentPlayer = opponent(player);
-  return (
-    weakEnemiesMask(board, player) &
-    ~attackByKnightsMask(board, opponentPlayer) &
-    ~attackByBishopsMask(board, opponentPlayer) &
-    ~attackByRooksMask(board, opponentPlayer) &
-    ~attackByKingsMask(board, opponentPlayer) &
-    attackByQueensMask(board, opponentPlayer)
-  );
-}
-
-export function restricted(board: BitBoard, player: i8): i16 {
-  return <i16>popcnt(restrictedMask(board, player));
-}
-export function weakQueenProtection(board: BitBoard, player: i8): i16 {
-  return <i16>popcnt(weakQueenProtectionMask(board, player));
-}
-
-const mgMinorThreatScores = StaticArray.fromArray<i16>([
-  5, 5, 57, 57, 77, 77, 88, 88, 79, 79,
-]);
-const egMinorThreatScores = StaticArray.fromArray<i16>([
-  32, 32, 41, 41, 56, 56, 119, 119, 161, 161,
-]);
-
-export function minorThreats(board: BitBoard, player: i8, mg: boolean): i16 {
-  const scores = mg ? mgMinorThreatScores : egMinorThreatScores;
-  const opponentPlayer = opponent(player);
-  const opponentPawnMask = board.getPawnMask(opponentPlayer);
-  const opponentProtectedPieceMask =
-    (opponentPawnMask |
-      ~(
-        pawnAttacks(opponentPlayer, opponentPawnMask) /*|
-        (~attackTwiceMask(board, player) &
-          attackTwiceMask(board, opponentPlayer))*/
-      )) &
-    ~weakEnemiesMask(board, player);
-  const attackByKnights = attackByKnightsMask(board, player)
-  const attackByBishops = attackByBishopsMask(board, player)
-  let result: i16 = 0;
-  for (let piece: i8 = PAWN; piece < KING; piece += 2) {
-    const targetMask = board.bits[piece + opponentPlayer];
-    const piecesAttackedByBishopsOrKnightsMask =
-      (attackByKnights & targetMask) |
-      (attackByBishops & targetMask);
-    const minotThreatMask =
-      piecesAttackedByBishopsOrKnightsMask & ~opponentProtectedPieceMask;
-   
-    result += <i16>popcnt(minotThreatMask) * scores[piece];
-  }
-
-  return result;
 }
