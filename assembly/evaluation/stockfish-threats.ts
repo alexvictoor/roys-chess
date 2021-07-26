@@ -1,5 +1,5 @@
 import {
-  BitBoard, KING, MaskIterator, opponent,
+  BitBoard, BLACK, KING, MaskIterator, maskString, opponent,
   PAWN, WHITE
 } from "../bitboard";
 import { kingMoves } from "../king-move-generation";
@@ -37,7 +37,8 @@ export function kingThreatMask(board: BitBoard, player: i8): u64 {
   return (
     board.getPlayerPiecesMask(opponent(player)) &
     kingMoves(kingPosition) &
-    ~pawnAttacks(player, board.getPawnMask(opponent(player)))
+    weakEnemiesMask(board, player)
+    //~pawnAttacks(player, board.getPawnMask(opponent(player)))
   );
 }
 
@@ -264,3 +265,24 @@ export function rookThreats(board: BitBoard, player: i8, mg: boolean): i16 {
   }
   return result;
 }
+
+export function threatsMg(board: BitBoard): i16 {
+  /*log(weakQueenProtection(board, WHITE) - weakQueenProtection(board, BLACK));
+  log(restricted(board, WHITE) - restricted(board, BLACK));
+  log(<i16>popcnt(knightOnQueenMask(board, WHITE)) - <i16>popcnt(knightOnQueenMask(board, BLACK)));
+  log(sliderOnQueen(board, WHITE) - sliderOnQueen(board, BLACK));*/
+  log(<i16>popcnt(kingThreatMask(board, WHITE)) - <i16>popcnt(kingThreatMask(board, BLACK)));
+  return (
+    69 * (<i16>popcnt(hangingMask(board, WHITE)) - <i16>popcnt(hangingMask(board, BLACK))) +
+    24 * (<i16>popcnt(kingThreatMask(board, WHITE)) - <i16>popcnt(kingThreatMask(board, BLACK))) +
+    48 * (<i16>popcnt(pawnPushThreatMask(board, WHITE)) - <i16>popcnt(pawnPushThreatMask(board, BLACK))) +
+    173 * (<i16>popcnt(threatSafePawnMask(board, WHITE)) - <i16>popcnt(threatSafePawnMask(board, BLACK))) +
+    60 * (sliderOnQueen(board, WHITE) - sliderOnQueen(board, BLACK)) +
+    16 * (<i16>popcnt(knightOnQueenMask(board, WHITE)) - <i16>popcnt(knightOnQueenMask(board, BLACK))) +
+    7 * (restricted(board, WHITE) - restricted(board, BLACK)) +
+    14 * (weakQueenProtection(board, WHITE) - weakQueenProtection(board, BLACK)) +
+    (minorThreats(board, WHITE, true) - minorThreats(board, BLACK, true)) +
+    (rookThreats(board, WHITE, true) - rookThreats(board, BLACK, true)) 
+  ) ;
+}
+ 

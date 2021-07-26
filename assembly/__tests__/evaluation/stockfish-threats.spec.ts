@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, rookThreats, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-threats";
+import { hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, rookThreats, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, threatsMg, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-threats";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish threats", () => {
@@ -20,12 +20,17 @@ describe("Stockfish threats", () => {
     );
 
     const blackMask = weakEnemiesMask(board, BLACK);
-    log(maskString(blackMask));
     expect(blackMask).toBe(1 << 9 | 1 << 23 | 1 << 34 | 1 << 35 | 1 << 37 | 1 << 46);
   });
 
+  it("should detect weak enemies (ter)", () => {
+    const board = parseFEN(
+      "rnbqkb1r/ppp1N1pp/2np2P1/3P4/p1P4B/P1P1p1PP/4P3/RN1QK2R w KQkq - 2 3"
+    );
 
-  
+    const blackMask = weakEnemiesMask(board, BLACK);
+    expect(blackMask).toBe(1 << 23 | 1 << 46 | 1 << 52);
+  });
 
   it("should detect hanging pieces when pieces are not defended", () => {
     const board = parseFEN(
@@ -58,16 +63,15 @@ describe("Stockfish threats", () => {
     expect(whiteMask).toBe(0);
     expect(blackMask).toBe((1 << 52));
   });
+
   it("should detect pawn push threats", () => {
     const board = parseFEN(
       "rnbqkb1r/ppp1N1pp/3p2P1/3P1n2/p1P4B/P1P1p1PP/4P3/RN1QK2R b KQkq - 0 3"
     );
 
     const whiteMask = pawnPushThreatMask(board, WHITE);
-    //const blackMask = pawnPushThreatMask(board, BLACK);
 
     expect(whiteMask).toBe(1 << 37);
-    //expect(blackMask).toBe(0);
   });
   it("should detect pawn push threats when pawn will attack after moving 2 square ahead from initial position", () => {
     const board = parseFEN(
@@ -220,6 +224,17 @@ describe("Stockfish threats", () => {
 
     expect(whiteThreats).toBe(40);
     expect(blackThreats).toBe(6);
+
+  });
+
+  it("should evaluate middle game threats", () => {
+    const board = parseFEN(
+      "2bqk3/ppp2Nrp/2Np1nP1/2PP1R2/1pbr2p1/3n1pPP/1BP2P2/R4QK1 b KQkq - 2 5"
+    );
+
+    const score = threatsMg(board);
+
+    expect(score).toBe(36);
 
   });
 });
