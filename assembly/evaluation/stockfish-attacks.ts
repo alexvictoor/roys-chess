@@ -145,8 +145,12 @@ export function attackByKingsMask(board: BitBoard, player: i8): u64 {
   return resultMask;
 }
 
+export function attackByPawnsMask(board: BitBoard, player: i8): u64 {
+  return pawnAttacks(player, board.getPawnMask(player));
+}
+
 export function attackOnceMask(board: BitBoard, player: i8): u64 {
-  let resultMask: u64 = pawnAttacks(player, board.getPawnMask(player));
+  let resultMask: u64 = attackByPawnsMask(board, player);
   resultMask |= attackByKnightsMask(board, player);
   resultMask |= attackByBishopsMask(board, player);
   resultMask |= attackByRooksMask(board, player);
