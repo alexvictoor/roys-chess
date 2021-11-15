@@ -9,6 +9,7 @@ import {
 import { mobilityMg } from "./stockfish-mobility";
 import { pawnsMg } from "./stockfish-pawn";
 import { piecesMg } from "./stockfish-pieces";
+import { threatsMg } from "./stockfish-threats";
 
 export function mainEvaluation(board: BitBoard): i16 {
   const mg = middleGameEvaluation(board);
@@ -31,8 +32,8 @@ function middleGameEvaluation(board: BitBoard): i16 {
   v += pawnsMg(board);
   v += piecesMg(board);
   v += mobilityMg(board);
-  /*v += threats_mg(board) - threats_mg(colorflip(board));
-  v += passed_mg(board) - passed_mg(colorflip(board));
+  v += threatsMg(board);
+  /*v += passed_mg(board) - passed_mg(colorflip(board));
   v += space(board) - space(colorflip(board));
   v += king_mg(board) - king_mg(colorflip(board));*/
   //if (!nowinnable) v += winnable_total_mg(pos, v);
@@ -47,15 +48,15 @@ function piece_value_mg(pos, square) {
 
 const positions = new MaskIterator();
 const positions2 = new MaskIterator();
-function pieceValues(board: BitBoard, mg: boolean): i16 {
+export function pieceValues(board: BitBoard, mg: boolean): i16 {
   const bonus: i16[] = mg
     ? [124, -124, 781, -781, 825, -825, 1276, -1276, 2538, -2538]
     : [206, -206, 854, -854, 915, -915, 1380, -1380, 2682, -2682];
   let result: i16 = 0;
   for (let piece = 0; piece < 10; piece++) {
     const pieceMask = unchecked(board.bits[piece]);
-    positions.reset(pieceMask);
-    result += unchecked(bonus[piece]);
+    
+    result += <i16>popcnt(pieceMask) * unchecked(bonus[piece]);
   }
   return result;
 }
