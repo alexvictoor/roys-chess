@@ -9,6 +9,7 @@ import {
 import { mobilityMg } from "./stockfish-mobility";
 import { pawnsMg } from "./stockfish-pawn";
 import { piecesMg } from "./stockfish-pieces";
+import { space } from "./stockfish-space";
 import { threatsMg } from "./stockfish-threats";
 
 export function mainEvaluation(board: BitBoard): i16 {
@@ -33,9 +34,9 @@ function middleGameEvaluation(board: BitBoard): i16 {
   v += piecesMg(board);
   v += mobilityMg(board);
   v += threatsMg(board);
-  /*v += passed_mg(board) - passed_mg(colorflip(board));
-  v += space(board) - space(colorflip(board));
-  v += king_mg(board) - king_mg(colorflip(board));*/
+  /*v += passed_mg(board) - passed_mg(colorflip(board));*/
+  v += space(board, WHITE) - space(board, BLACK);
+  /*v += king_mg(board) - king_mg(colorflip(board));*/
   //if (!nowinnable) v += winnable_total_mg(pos, v);
   return v;
 }
