@@ -141,3 +141,44 @@ export function bishopsOnKingRing(board: BitBoard, player: i8): i16 {
   }
   return result;
 }
+
+
+export function kingAttackersWeight(board: BitBoard, player: i8): i16 {
+  const kingRing = kingRingMask(board, opponent(player), false);
+  const queenMask = board.getQueenMask(player);
+  const rookMask = board.getRookMask(player);
+  const bishopMask = board.getBishopMask(player);
+  const knightMask = board.getKnightMask(player);
+  let weight: i16 = 0;
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (queenAttack(board, player, pos, kingRing)) {
+      weight += 10;
+    }
+  }
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (rookXRayAttack(board, player, pos, kingRing)) {
+      weight += 44;
+    }
+  }
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (bishopXRayAttack(board, player, pos, kingRing)) {
+      weight += 52;
+    }
+  }
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    if (knightAttack(board, player, pos, kingRing)) {
+      weight += 81;
+    }
+  }
+
+
+  return weight;
+}
