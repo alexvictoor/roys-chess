@@ -4,6 +4,7 @@ import {
   isInKingRing,
   kingAttackersCount,
   kingAttackersWeight,
+  kingAttacks,
   rooksOnKingRing,
 } from "../../evaluation/stockfish-king";
 import { parseFEN } from "../../fen-parser";
@@ -52,5 +53,13 @@ describe("Stockfish king evaluation", () => {
     //log(maskString(kingRingCache[61]));
     expect(kingAttackersWeight(board, BLACK)).toBe(81);
     expect(kingAttackersWeight(board, WHITE)).toBe(62);
+  });
+  it("should evaluate king attacks", () => {
+    const board = parseFEN(
+      "1nb1kbn1/5ppp/5p2/p3p3/PQB3n1/3P1P2/PB2P1PP/RN2K1NR b KQkq - 1 6"
+    );
+    //log(maskString(kingRingCache[61]));
+    expect(kingAttacks(board, BLACK)).toBe(1);
+    expect(kingAttacks(board, WHITE)).toBe(3);
   });
 });

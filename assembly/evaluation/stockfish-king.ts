@@ -1,4 +1,4 @@
-import { BitBoard, BLACK, MaskIterator, opponent, WHITE } from "../bitboard";
+import { BitBoard, BLACK, firstRowMask, leftBorderMask, MaskIterator, opponent, rightBorderMask, WHITE } from "../bitboard";
 import { pawnAttacksOnLeft, pawnAttacksOnRight } from "../pawn";
 import { bishopMoves, rookMoves } from "../sliding-pieces-move-generation";
 import {
@@ -6,6 +6,10 @@ import {
   rookXRayAttack,
   bishopXRayAttack,
   knightAttack,
+  queenAttackMask,
+  rookXRayAttackMask,
+  bishopXRayAttackMask,
+  knightAttackMask,
 } from "./stockfish-attacks";
 
 const kingRingCache = new StaticArray<u64>(64);
@@ -46,6 +50,37 @@ function initKingRingCache(): void {
   kingRingCache[63] = kingRingCache[54];
 }
 initKingRingCache();
+
+const kingNeighborsCache = new StaticArray<u64>(64);
+function initKingNeighborsCache(): void {
+  for (let y: i8 = 0; y < 8; y++) {
+    for (let x: i8 = 0; x < 8; x++) {
+      const index: u64 = ((<u64>y) << 3) + <u64>x;
+      const mask = ((<u64>1) << (index - 1)) |
+        ((<u64>1) << (index + 1)) |
+        ((<u64>1) << (index - 8)) |
+        ((<u64>1) << (index - 9)) |
+        ((<u64>1) << (index - 7)) |
+        ((<u64>1) << (index + 8)) |
+        ((<u64>1) << (index + 9)) |
+        ((<u64>1) << (index + 7));
+      kingNeighborsCache[<i8>index] = mask;
+    }
+  }
+  for (let y: i8 = 0; y < 8; y++) {
+    const borderLeftIndex = y << 3;
+    const borderRightIndex = (y << 3) + 7;
+    kingNeighborsCache[borderLeftIndex] &= rightBorderMask;
+    kingNeighborsCache[borderRightIndex] &= leftBorderMask;
+  }
+  for (let x: i8 = 0; x < 8; x++) {
+    const borderBottomIndex = x;
+    const borderTopIndex = 56 + x;
+    kingNeighborsCache[borderBottomIndex] &= ~(firstRowMask << 56);
+    kingNeighborsCache[borderTopIndex] &= ~firstRowMask;
+  }
+}
+initKingNeighborsCache();
 
 function kingRingMask(board: BitBoard, player: i8, full: boolean): u64 {
   const pawnMask = board.getPawnMask(player);
@@ -181,4 +216,36 @@ export function kingAttackersWeight(board: BitBoard, player: i8): i16 {
 
 
   return weight;
+}
+
+export function kingAttacks(board: BitBoard, player: i8): i16 {
+  const opponentKingPos = <i8>ctz(board.getKingMask(opponent(player)));
+  const opponentKingNeighbors = kingNeighborsCache[opponentKingPos];
+  const queenMask = board.getQueenMask(player);
+  const rookMask = board.getRookMask(player);
+  const bishopMask = board.getBishopMask(player);
+  const knightMask = board.getKnightMask(player);
+  let attacks: i16 = 0;
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    attacks += <i16>popcnt(queenAttackMask(board, player, pos, opponentKingNeighbors));
+  }
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    attacks += <i16>popcnt(rookXRayAttackMask(board, player, pos, opponentKingNeighbors));
+  }
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    attacks += <i16>popcnt(bishopXRayAttackMask(board, player, pos, opponentKingNeighbors));
+  }
+  positions.reset(knightMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    attacks += <i16>popcnt(knightAttackMask(board, player, pos, opponentKingNeighbors));
+  }
+
+  return attacks;
 }
