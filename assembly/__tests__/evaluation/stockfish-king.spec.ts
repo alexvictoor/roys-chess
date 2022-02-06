@@ -1,6 +1,7 @@
 import { BISHOP, BitBoard, BLACK, KNIGHT, maskString, QUEEN, ROOK, WHITE } from "../../bitboard";
 import {
   bishopsOnKingRing,
+  blockersForKingMask,
   isInKingRing,
   kingAttackersCount,
   kingAttackersWeight,
@@ -14,11 +15,10 @@ import {
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish king evaluation", () => {
-  /*it("should evaluate king ring", () => {
+  it("should evaluate king ring", () => {
     const board = parseFEN(
       "3q4/1ppppppp/1bnrkn2/p2r2R1/3NP3/2BR4/PPP1PPPP/2KQ2N1 b KQkq - 1 3"
     );
-    //log(maskString(kingRingCache[61]));
     expect(isInKingRing(board, WHITE, 1, true)).toBe(true);
     expect(isInKingRing(board, WHITE, 18, true)).toBe(true);
     expect(isInKingRing(board, WHITE, 19, true)).toBe(true);
@@ -65,7 +65,7 @@ describe("Stockfish king evaluation", () => {
     //log(maskString(kingRingCache[61]));
     expect(kingAttacks(board, BLACK)).toBe(1);
     expect(kingAttacks(board, WHITE)).toBe(3);
-  });*/
+  });
 
   it("should evaluate weak squares mask", () => {
     const board = parseFEN(
@@ -82,22 +82,7 @@ describe("Stockfish king evaluation", () => {
     );
     expect(possibleChecksMask(board, BLACK, BISHOP) & (1 << 25)).not.toBe(0);
     expect(possibleChecksMask(board, BLACK, BISHOP) & ~(1 << 25)).toBe(0);
-    /*log(maskString(possibleChecksMask(board, WHITE, QUEEN)));
-    log(maskString(possibleChecksMask(board, WHITE, ROOK)));
-    log(maskString(possibleChecksMask(board, WHITE, BISHOP)));*/
     expect(possibleChecksMask(board, WHITE, QUEEN) & (1 << 24)).not.toBe(0);
-/**
- * 
- * 
- 
-if (
-  (!attack(pos2, {x:square.x,y:7-square.y}) || (weak_squares(pos, square) && attack(pos, square) > 1))
-  && (type != 3 || !queen_attack(pos2, {x:square.x,y:7-square.y}))
-  ) 
-    
-    return 1;
-  return 0;
- */
   });
 
   it("should evaluate safe checks", () => {
@@ -118,8 +103,14 @@ if (
     const board = parseFEN(
       "1nb1k1n1/3q1ppp/P4p2/p1P1p1bN/2BQ4/1N2nP2/PB2P1PP/2R1K2R b kq - 9 10"
     );
-    log(maskString(unsafeChecksMask(board, WHITE)));
     expect(unsafeChecksMask(board, WHITE)).toBe((1 << 33) | (1 << 45) | (1 << 53));
-    
+  });
+
+  it("should evaluate blockers for kings", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(blockersForKingMask(board, WHITE)).toBe(1 << 42);
+    expect(blockersForKingMask(board, BLACK)).toBe(1 << 13);
   });
 });

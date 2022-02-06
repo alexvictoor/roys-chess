@@ -446,3 +446,45 @@ export function unsafeChecksMask(board: BitBoard, player: i8): u64 {
     unsafeChecksMaskByType(board, player, ROOK)
   );
 }
+
+export function blockersForKingMask(board: BitBoard, player: i8): u64 {
+  const opponentPlayer = opponent(player);
+  const opponentKingMask = board.getKingMask(opponentPlayer);
+  const opponentKingPos = <i8>ctz(opponentKingMask);
+  const potentialBlockersMask =
+    queenMoves(board.getAllPiecesMask(), opponentKingPos) &
+    board.getPlayerPiecesMask(opponentPlayer);
+  const allPiecesMaskButPotentialBlockers = potentialBlockersMask ^ board.getAllPiecesMask();
+
+  let blockers: u64 = 0;
+
+  const queenMask = board.getQueenMask(player);
+  positions.reset(queenMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    const moves = queenMoves(allPiecesMaskButPotentialBlockers, pos);
+    if (moves & opponentKingMask) {
+      blockers |= (moves & potentialBlockersMask);
+    }
+  }
+  const rookMask = board.getRookMask(player);
+  positions.reset(rookMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    const moves = rookMoves(allPiecesMaskButPotentialBlockers, pos);
+    if (moves & opponentKingMask) {
+      blockers |= (moves & potentialBlockersMask);
+    }
+  }
+  const bishopMask = board.getBishopMask(player);
+  positions.reset(bishopMask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    const moves = bishopMoves(allPiecesMaskButPotentialBlockers, pos);
+    if (moves & opponentKingMask) {
+      blockers |= (moves & potentialBlockersMask);
+    }
+  }
+
+  return blockers;
+}

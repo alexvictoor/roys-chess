@@ -1,5 +1,5 @@
-import { BLACK, WHITE } from "../../bitboard";
-import { mobility, mobilityArea, mobilityMg } from "../../evaluation/stockfish-mobility";
+import { BLACK, maskString, WHITE } from "../../bitboard";
+import { mobility, mobilityArea, mobilityAreaMask, mobilityMg } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish mobility evaluation", () => {
@@ -17,6 +17,14 @@ describe("Stockfish mobility evaluation", () => {
     expect(mobilityArea(board, WHITE, 37)).toBe(true);
     expect(mobilityArea(board, WHITE, 26)).toBe(false);
     expect(mobilityArea(board, BLACK, 34)).toBe(false);
+  });
+
+  it("should evaluate mobility areas bis", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b2P1/1Nn3P1/PB3RPP/3R2K1 b kq - 17 14"
+    );
+    log(maskString(mobilityAreaMask(board, WHITE)));
+    expect(mobilityArea(board, WHITE, 13)).toBe(false);
   });
 
   it("should evaluate mobility", () => {

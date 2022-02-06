@@ -9,6 +9,7 @@ import {
   leftBorderMask,
   MaskIterator,
   maskString,
+  opponent,
   PAWN,
   QUEEN,
   rightBorderMask,
@@ -16,6 +17,7 @@ import {
   WHITE,
 } from "../bitboard";
 import { bishopXRayAttack, bishopXRayAttackMask, knightAttack, knightAttackMask, queenAttack, queenAttackMask, rookXRayAttack, rookXRayAttackMask } from "./stockfish-attacks";
+import { blockersForKingMask } from "./stockfish-king";
 
 export function mobilityAreaMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = ~(<u64>0);
@@ -44,6 +46,7 @@ export function mobilityAreaMask(board: BitBoard, player: i8): u64 {
       ((opponentPawnMask << 9) & leftBorderMask);
     resultMask &= ~opponentPawnDefenseMask;
   }
+  resultMask &= ~blockersForKingMask(board, opponent(player));
   return resultMask;
 }
 
