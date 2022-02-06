@@ -68,7 +68,7 @@ export function queenAttack(
   pos: i8,
   targetMask: u64
 ): boolean {
-  const boardMask = board.getAllPiecesMask();
+  
   return !!queenAttackMask(board, player, pos, targetMask);
 }
 

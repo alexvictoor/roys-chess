@@ -267,11 +267,6 @@ export function rookThreats(board: BitBoard, player: i8, mg: boolean): i16 {
 }
 
 export function threatsMg(board: BitBoard): i16 {
-  /*log(weakQueenProtection(board, WHITE) - weakQueenProtection(board, BLACK));
-  log(restricted(board, WHITE) - restricted(board, BLACK));
-  log(<i16>popcnt(knightOnQueenMask(board, WHITE)) - <i16>popcnt(knightOnQueenMask(board, BLACK)));
-  log(sliderOnQueen(board, WHITE) - sliderOnQueen(board, BLACK));*/
-  log(<i16>popcnt(kingThreatMask(board, WHITE)) - <i16>popcnt(kingThreatMask(board, BLACK)));
   return (
     69 * (<i16>popcnt(hangingMask(board, WHITE)) - <i16>popcnt(hangingMask(board, BLACK))) +
     24 * (<i16>popcnt(kingThreatMask(board, WHITE)) - <i16>popcnt(kingThreatMask(board, BLACK))) +
