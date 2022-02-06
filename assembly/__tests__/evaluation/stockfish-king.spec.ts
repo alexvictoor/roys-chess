@@ -1,16 +1,20 @@
-import { BitBoard, BLACK, WHITE } from "../../bitboard";
+import { BISHOP, BitBoard, BLACK, KNIGHT, maskString, QUEEN, ROOK, WHITE } from "../../bitboard";
 import {
   bishopsOnKingRing,
   isInKingRing,
   kingAttackersCount,
   kingAttackersWeight,
   kingAttacks,
+  possibleChecksMask,
   rooksOnKingRing,
+  safeChecksMask,
+  unsafeChecksMask,
+  weakSquaresMask,
 } from "../../evaluation/stockfish-king";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish king evaluation", () => {
-  it("should evaluate king ring", () => {
+  /*it("should evaluate king ring", () => {
     const board = parseFEN(
       "3q4/1ppppppp/1bnrkn2/p2r2R1/3NP3/2BR4/PPP1PPPP/2KQ2N1 b KQkq - 1 3"
     );
@@ -61,5 +65,61 @@ describe("Stockfish king evaluation", () => {
     //log(maskString(kingRingCache[61]));
     expect(kingAttacks(board, BLACK)).toBe(1);
     expect(kingAttacks(board, WHITE)).toBe(3);
+  });*/
+
+  it("should evaluate weak squares mask", () => {
+    const board = parseFEN(
+      "1nb1kbn1/5ppp/5p2/p3p3/PQB3n1/3P1P2/PB2P1PP/RN2K1NR b KQkq - 1 6"
+    );
+    expect(weakSquaresMask(board, BLACK) & (1 << 13)).not.toBe(0);
+    expect(weakSquaresMask(board, BLACK) & (1 << 12)).toBe(0);
+
+  });
+
+  it("should evaluate possible checks", () => {
+    const board = parseFEN(
+      "1nb1kbn1/3q1ppp/P4p2/p3p3/1QB3n1/1N1P1P2/PB2P1PP/R3K1NR b KQkq - 3 7"
+    );
+    expect(possibleChecksMask(board, BLACK, BISHOP) & (1 << 25)).not.toBe(0);
+    expect(possibleChecksMask(board, BLACK, BISHOP) & ~(1 << 25)).toBe(0);
+    /*log(maskString(possibleChecksMask(board, WHITE, QUEEN)));
+    log(maskString(possibleChecksMask(board, WHITE, ROOK)));
+    log(maskString(possibleChecksMask(board, WHITE, BISHOP)));*/
+    expect(possibleChecksMask(board, WHITE, QUEEN) & (1 << 24)).not.toBe(0);
+/**
+ * 
+ * 
+ 
+if (
+  (!attack(pos2, {x:square.x,y:7-square.y}) || (weak_squares(pos, square) && attack(pos, square) > 1))
+  && (type != 3 || !queen_attack(pos2, {x:square.x,y:7-square.y}))
+  ) 
+    
+    return 1;
+  return 0;
+ */
+  });
+
+  it("should evaluate safe checks", () => {
+    const board = parseFEN(
+      "1nb1k1n1/3q1ppp/P4p2/p3p1bN/1QB5/1N1PnP2/PB2P1PP/2R1K2R b kq - 7 9"
+    );
+    expect(safeChecksMask(board, WHITE, BISHOP)).toBe((1 << 33));
+    expect(safeChecksMask(board, WHITE, KNIGHT)).toBe((1 << 54));
+
+    const board2 = parseFEN("1nb1k1n1/3q1ppp/P4p2/p3p1bN/2B5/1NQPnP2/PB2P1PP/2R1K2R b kq - 7 9");
+    expect(safeChecksMask(board2, WHITE, BISHOP)).toBe(0);
+    
+    const board3 = parseFEN("1nb1k1n1/3q1ppp/P4p2/p1PNp1bN/2Q5/4nP2/PB1BP1PP/2R1K2R b kq - 7 9");
+    expect(safeChecksMask(board3, WHITE, QUEEN)).toBe(0);
+  });
+
+  it("should evaluate unsafe checks", () => {
+    const board = parseFEN(
+      "1nb1k1n1/3q1ppp/P4p2/p1P1p1bN/2BQ4/1N2nP2/PB2P1PP/2R1K2R b kq - 9 10"
+    );
+    log(maskString(unsafeChecksMask(board, WHITE)));
+    expect(unsafeChecksMask(board, WHITE)).toBe((1 << 33) | (1 << 45) | (1 << 53));
+    
   });
 });
