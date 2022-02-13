@@ -2,6 +2,8 @@ import { BISHOP, BitBoard, BLACK, KNIGHT, maskString, QUEEN, ROOK, WHITE } from 
 import {
   bishopsOnKingRing,
   blockersForKingMask,
+  flankAttack,
+  flankDefense,
   isInKingRing,
   kingAttackersCount,
   kingAttackersWeight,
@@ -112,5 +114,21 @@ describe("Stockfish king evaluation", () => {
     );
     expect(blockersForKingMask(board, WHITE)).toBe(1 << 42);
     expect(blockersForKingMask(board, BLACK)).toBe(1 << 13);
+  });
+
+  it("should evaluate kings flank attacks", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(flankAttack(board, WHITE)).toBe(16);
+    expect(flankAttack(board, BLACK)).toBe(9);
+  });
+
+  it("should evaluate kings flank defenses", () => {
+    const board = parseFEN(
+      "knnb4/8/pp6/8/6P1/5PRB/5PPP/5RK1 b kq - 0 15"
+    );
+    expect(flankDefense(board, WHITE)).toBe(10);
+    expect(flankDefense(board, BLACK)).toBe(15);
   });
 });

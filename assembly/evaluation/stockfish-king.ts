@@ -2,6 +2,7 @@ import {
   BISHOP,
   BitBoard,
   BLACK,
+  firstColMask,
   firstRowMask,
   KNIGHT,
   leftBorderMask,
@@ -454,7 +455,8 @@ export function blockersForKingMask(board: BitBoard, player: i8): u64 {
   const potentialBlockersMask =
     queenMoves(board.getAllPiecesMask(), opponentKingPos) &
     board.getPlayerPiecesMask(opponentPlayer);
-  const allPiecesMaskButPotentialBlockers = potentialBlockersMask ^ board.getAllPiecesMask();
+  const allPiecesMaskButPotentialBlockers =
+    potentialBlockersMask ^ board.getAllPiecesMask();
 
   let blockers: u64 = 0;
 
@@ -464,7 +466,7 @@ export function blockersForKingMask(board: BitBoard, player: i8): u64 {
     const pos = positions.next();
     const moves = queenMoves(allPiecesMaskButPotentialBlockers, pos);
     if (moves & opponentKingMask) {
-      blockers |= (moves & potentialBlockersMask);
+      blockers |= moves & potentialBlockersMask;
     }
   }
   const rookMask = board.getRookMask(player);
@@ -473,7 +475,7 @@ export function blockersForKingMask(board: BitBoard, player: i8): u64 {
     const pos = positions.next();
     const moves = rookMoves(allPiecesMaskButPotentialBlockers, pos);
     if (moves & opponentKingMask) {
-      blockers |= (moves & potentialBlockersMask);
+      blockers |= moves & potentialBlockersMask;
     }
   }
   const bishopMask = board.getBishopMask(player);
@@ -482,9 +484,71 @@ export function blockersForKingMask(board: BitBoard, player: i8): u64 {
     const pos = positions.next();
     const moves = bishopMoves(allPiecesMaskButPotentialBlockers, pos);
     if (moves & opponentKingMask) {
-      blockers |= (moves & potentialBlockersMask);
+      blockers |= moves & potentialBlockersMask;
     }
   }
 
   return blockers;
+}
+
+const flankColumns: u64[] = [
+  firstColMask | (firstColMask << 1) | (firstColMask << 2),
+  firstColMask |
+    (firstColMask << 1) |
+    (firstColMask << 2) |
+    (firstColMask << 3),
+  firstColMask |
+    (firstColMask << 1) |
+    (firstColMask << 2) |
+    (firstColMask << 3),
+  (firstColMask << 2) |
+    (firstColMask << 3) |
+    (firstColMask << 4) |
+    (firstColMask << 5),
+  (firstColMask << 2) |
+    (firstColMask << 3) |
+    (firstColMask << 4) |
+    (firstColMask << 5),
+  (firstColMask << 4) |
+    (firstColMask << 5) |
+    (firstColMask << 6) |
+    (firstColMask << 7),
+  (firstColMask << 4) |
+    (firstColMask << 5) |
+    (firstColMask << 6) |
+    (firstColMask << 7),
+  (firstColMask << 5) | (firstColMask << 6) | (firstColMask << 7),
+];
+
+export function flankAttack(board: BitBoard, player: i8): i16 {
+  const ignoredRows =
+    player == WHITE
+      ? firstRowMask | (firstRowMask << 8) | (firstRowMask << 16)
+      : (firstRowMask << 40) | (firstRowMask << 48) | (firstRowMask << 56);
+
+  const opponentPlayer = opponent(player);
+  const opponentKingMask = board.getKingMask(opponentPlayer);
+  const opponentKingPos = <i8>ctz(opponentKingMask);
+  const opponentKingCol = opponentKingPos % 8;
+  const flank = unchecked(flankColumns[opponentKingCol]) & ~ignoredRows;
+  const twiceMask = attackTwiceMask(board, player) & flank;
+  const onceMask = attackOnceMask(board, player) & ~twiceMask & flank;
+
+  return <i16>((popcnt(twiceMask) << 1) + popcnt(onceMask));
+}
+
+export function flankDefense(board: BitBoard, player: i8): i16 {
+  const ignoredRows =
+    player == WHITE
+      ? firstRowMask | (firstRowMask << 8) | (firstRowMask << 16)
+      : (firstRowMask << 40) | (firstRowMask << 48) | (firstRowMask << 56);
+
+  const opponentPlayer = opponent(player);
+  const opponentKingMask = board.getKingMask(opponentPlayer);
+  const opponentKingPos = <i8>ctz(opponentKingMask);
+  const opponentKingCol = opponentKingPos % 8;
+  const flank = unchecked(flankColumns[opponentKingCol]) & ~ignoredRows;
+  const onceMask = attackOnceMask(board, opponentPlayer) & flank;
+
+  return <i16>popcnt(onceMask);
 }
