@@ -17,7 +17,7 @@ import {
   WHITE,
 } from "../bitboard";
 import { bishopXRayAttack, bishopXRayAttackMask, knightAttack, knightAttackMask, queenAttack, queenAttackMask, rookXRayAttack, rookXRayAttackMask } from "./stockfish-attacks";
-import { blockersForKingMask } from "./stockfish-king";
+import { blockersForKingMask } from "./stockfish-blocker-king";
 
 export function mobilityAreaMask(board: BitBoard, player: i8): u64 {
   let resultMask: u64 = ~(<u64>0);
@@ -98,6 +98,7 @@ export function pieceMobilityBonus(
   let result: i16 = 0;
   while(positions.hasNext()) {
     const pos = positions.next();
+    //log(player.toString() + ' ' + pos.toString() + ' ' + mobility(board, player, pos).toString() )
     result += bonus[mobility(board, player, pos)];
   }
   return result;
@@ -136,8 +137,10 @@ export function queenMobilityBonus(
 }
 
 export function mobilityAllBoard(board: BitBoard, mg: boolean): i16 {
-  return knightMobilityBonus(board, WHITE, mg) + bishopMobilityBonus(board, WHITE, mg) + rookMobilityBonus(board, WHITE, mg) + queenMobilityBonus(board, WHITE, mg) 
-  - (knightMobilityBonus(board, BLACK, mg) + bishopMobilityBonus(board, BLACK, mg) + rookMobilityBonus(board, BLACK, mg) + queenMobilityBonus(board, BLACK, mg))
+  const white = knightMobilityBonus(board, WHITE, mg) + bishopMobilityBonus(board, WHITE, mg) + rookMobilityBonus(board, WHITE, mg) + queenMobilityBonus(board, WHITE, mg); 
+  const black =  (knightMobilityBonus(board, BLACK, mg) + bishopMobilityBonus(board, BLACK, mg) + rookMobilityBonus(board, BLACK, mg) + queenMobilityBonus(board, BLACK, mg));
+  //log('white ' + white.toString());
+  return white - black;
 }
 
 export function mobilityMg(board: BitBoard): i16 {

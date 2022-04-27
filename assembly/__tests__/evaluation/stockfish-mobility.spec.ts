@@ -1,5 +1,14 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { mobility, mobilityArea, mobilityAreaMask, mobilityMg } from "../../evaluation/stockfish-mobility";
+import {
+  bishopMobilityBonus,
+  knightMobilityBonus,
+  mobility,
+  mobilityArea,
+  mobilityAreaMask,
+  mobilityMg,
+  queenMobilityBonus,
+  rookMobilityBonus,
+} from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish mobility evaluation", () => {
@@ -38,7 +47,13 @@ describe("Stockfish mobility evaluation", () => {
     expect(mobility(board, WHITE, 20)).toBe(5);
     expect(mobility(board, BLACK, 57)).toBe(2);
     expect(mobility(board, BLACK, 59)).toBe(1);
-   
+  });
+  xit("should evaluate mobility bis", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(mobility(board, BLACK, 42)).toBe(2);
+
   });
 
   it("should evaluate mobility at middle game", () => {
@@ -47,6 +62,13 @@ describe("Stockfish mobility evaluation", () => {
     );
 
     expect(mobilityMg(board)).toBe(-45);
-  })
- 
+  });
+
+  it("should evaluate mobility at middle game bis", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+
+    expect(mobilityMg(board)).toBe(170);
+  });
 });

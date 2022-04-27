@@ -137,6 +137,7 @@ export function sliderOnQueenMask(board: BitBoard, player: i8): u64 {
   return (
     attackTwiceMask &
     ~opponentPawnDefenseMask &
+    attackByQueensMask(board, opponentPlayer) &
     ((bishopAttackMask & opponentQueenBishopLikeAttackMask) |
       (rookAttackMask & opponentQueenRookLikeAttackMask))
   );

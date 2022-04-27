@@ -1,19 +1,81 @@
-import {
-  BitBoard,
-  BLACK, MaskIterator, WHITE
-} from "../bitboard";
+import { BitBoard, BLACK, firstColMask, firstRowMask, MaskIterator, maskString, opponent, WHITE } from "../bitboard";
 import { kingMoves } from "../king-move-generation";
 import { knightMovesFromCache } from "../knight-move-generation";
-import {
-  pawnAttacks,
-  pawnAttacksOnLeft,
-  pawnAttacksOnRight
-} from "../pawn";
+import { pawnAttacks, pawnAttacksOnLeft, pawnAttacksOnRight } from "../pawn";
 import {
   bishopMoves,
   queenMoves,
-  rookMoves
+  rookMoves,
 } from "../sliding-pieces-move-generation";
+import { blockersForKingMask } from "./stockfish-blocker-king";
+
+
+export function pinnedDirection(kingPos: i8, pos: i8): i32 {
+  const kingX = kingPos & 7;
+  const kingY = kingPos >> 3;
+  const x = pos & 7;
+  const y = pos >> 3;
+  if (kingY == y) {
+    return 1;
+  } 
+  if (kingX == x) {
+    return 3;
+  }
+  if ((x > kingX) == (y > kingY)) {
+    return 4;
+  }
+  return 2;
+}
+
+const pinnedDirectionCache: StaticArray<u64> = new StaticArray<u64>(256);
+export function initPinnedDirectionCache(): void {
+  for (let position: i8 = 0; position < 64; position++) {
+    pinnedDirectionCache[position] = firstRowMask << (position & ~7);
+  }
+  let x: i8 = 0;
+  
+  for (let index: i8 = 0; index < 8; index++) {
+    let mask: u64 = 0;
+    for (let y: i8 = index, x: i8 = 0; y >= 0; y--, x++) {
+      mask |= 1 << ((<u64>y << 3) + <u64>x);
+    }
+    for (let y: i8 = index, x: i8 = 0; y >= 0; y--, x++) {
+      pinnedDirectionCache[64 + (y << 3) + x] = mask;
+    }
+    mask = 0;
+    for (let y: i8 = 7, x: i8 = index; x < 8; y--, x++) {
+      mask |= 1 << ((<u64>y << 3) + <u64>x);
+    }
+    for (let y: i8 = 7, x: i8 = index; x < 8; y--, x++) {
+      pinnedDirectionCache[64 + (y << 3) + x] = mask;
+    }
+    mask = 0;
+    for (let y: i8 = 7 - index, x: i8 = 7; y >= 0; y--, x--) {
+      mask |= 1 << ((<u64>y << 3) + <u64>x);
+    }
+    for (let y: i8 = 7 - index, x: i8 = 7; y >= 0; y--, x--) {
+      pinnedDirectionCache[192 + (y << 3) + x] = mask;
+    }
+    mask = 0;
+    for (let y: i8 = 7, x: i8 = 7 - index; x >= 0; y--, x--) {
+      mask |= 1 << ((<u64>y << 3) + <u64>x);
+    }
+    for (let y: i8 = 7, x: i8 = 7 - index; x >= 0; y--, x--) {
+      pinnedDirectionCache[192 + (y << 3) + x] = mask;
+    }
+  }  
+
+  for (let position: i8 = 0; position < 64; position++) {
+    pinnedDirectionCache[position + 128] = firstColMask << (position & 7);
+  }
+}
+initPinnedDirectionCache();
+
+export function pinnedDirectionMask(kingPos: i8, pos: i8): u64 {
+  return pinnedDirectionCache[(pinnedDirection(kingPos, pos) - 1) * 64 + pos];
+}
+
+
 
 export function bishopXRayAttackMask(
   board: BitBoard,
@@ -23,6 +85,12 @@ export function bishopXRayAttackMask(
 ): u64 {
   const queensMask = board.getQueenMask(BLACK) | board.getQueenMask(WHITE);
   const boardMask = board.getAllPiecesMask() ^ queensMask;
+  if (blockersForKingMask(board, opponent(player)) & (1 << pos)) {
+    const kingMask = board.getKingMask(player);
+    const kingPos = <i8>ctz(kingMask);
+    const directionMask = pinnedDirectionMask(kingPos, pos);
+    return bishopMoves(boardMask, pos) & targetMask & directionMask;
+  }
   return bishopMoves(boardMask, pos) & targetMask;
 }
 export function bishopXRayAttack(
@@ -41,7 +109,15 @@ export function rookXRayAttackMask(
   targetMask: u64
 ): u64 {
   const queensMask = board.getQueenMask(BLACK) | board.getQueenMask(WHITE);
-  const boardMask = board.getAllPiecesMask() ^ queensMask;
+  const boardMask = board.getAllPiecesMask() ^ queensMask ^ board.getRookMask(player);
+
+  if (blockersForKingMask(board, opponent(player)) & (1 << pos)) {
+    const kingMask = board.getKingMask(player);
+    const kingPos = <i8>ctz(kingMask);
+    const directionMask = pinnedDirectionMask(kingPos, pos);
+    return rookMoves(boardMask, pos) & targetMask & directionMask;
+  }
+
   return rookMoves(boardMask, pos) & targetMask;
 }
 export function rookXRayAttack(
@@ -60,6 +136,12 @@ export function queenAttackMask(
   targetMask: u64
 ): u64 {
   const boardMask = board.getAllPiecesMask();
+  if (blockersForKingMask(board, opponent(player)) & (1 << pos)) {
+    const kingMask = board.getKingMask(player);
+    const kingPos = <i8>ctz(kingMask);
+    const directionMask = pinnedDirectionMask(kingPos, pos);
+    return queenMoves(boardMask, pos) & targetMask & directionMask;
+  }
   return queenMoves(boardMask, pos) & targetMask;
 }
 export function queenAttack(

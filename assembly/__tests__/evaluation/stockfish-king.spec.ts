@@ -1,19 +1,29 @@
 import { BISHOP, BitBoard, BLACK, KNIGHT, maskString, QUEEN, ROOK, WHITE } from "../../bitboard";
+import { bishopXRayAttack, initPinnedDirectionCache, rookXRayAttackMask } from "../../evaluation/stockfish-attacks";
+import { blockersForKingMask } from "../../evaluation/stockfish-blocker-king";
 import {
   bishopsOnKingRing,
-  blockersForKingMask,
   flankAttack,
   flankDefense,
   isInKingRing,
   kingAttackersCount,
   kingAttackersWeight,
   kingAttacks,
+  kingDanger,
+  knightDefender,
   possibleChecksMask,
   rooksOnKingRing,
   safeChecksMask,
+  shelterStormAndStrength,
+  stormSquare,
+  stormSquareBad,
+  strengthSquare,
+  strengthSquareBad,
   unsafeChecksMask,
+  weakBonus,
   weakSquaresMask,
 } from "../../evaluation/stockfish-king";
+import { mobilityAreaMask } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish king evaluation", () => {
@@ -33,6 +43,14 @@ describe("Stockfish king evaluation", () => {
     //log(maskString(kingRingCache[61]));
     expect(kingAttackersCount(board, BLACK)).toBe(2);
     expect(kingAttackersCount(board, WHITE)).toBe(5);
+  });
+  it("should evaluate king attackers count (bis)", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    //log(maskString(kingRingCache[61]));
+    //expect(kingAttackersCount(board, BLACK)).toBe(1);
+    expect(kingAttackersCount(board, WHITE)).toBe(3);
   });
   // 2r5/1ppppppp/R1n1kn2/pr4b1/2N1PqQ1/2B1R3/PPP1PPPP/2K3N1 b KQkq - 0 4
   it("should count rooks on king ring", () => {
@@ -78,6 +96,15 @@ describe("Stockfish king evaluation", () => {
 
   });
 
+  it("should evaluate weak bonus", () => {
+    const board = parseFEN(
+      "1nbnkb2/5ppp/5p2/p3p3/PQB3n1/3P1P2/PB2P1PP/RN2K1NR b KQkq - 1 6"
+    );
+    expect(weakBonus(board, WHITE)).toBe(1);
+    expect(weakBonus(board, BLACK)).toBe(2);
+
+  });
+
   it("should evaluate possible checks", () => {
     const board = parseFEN(
       "1nb1kbn1/3q1ppp/P4p2/p3p3/1QB3n1/1N1P1P2/PB2P1PP/R3K1NR b KQkq - 3 7"
@@ -116,13 +143,28 @@ describe("Stockfish king evaluation", () => {
     expect(blockersForKingMask(board, BLACK)).toBe(1 << 13);
   });
 
+  it("should evaluate blockers for kings bis", () => {
+    const board = parseFEN(
+      "1Rq1k1n1/n4ppp/P5N1/prPpp3/3b2B1/1Nn2P2/PBQ2PPP/5RK1 b kq - 19 15"
+    );
+
+    expect(blockersForKingMask(board, WHITE)).toBe(1 << 58);
+  });
+  it("should evaluate blockers for kings ter", () => {
+    const board = parseFEN(
+      "2q1k1n1/nR3Npp/P4pB1/prPp4/3bp3/1Nn2P2/PBQ2PPP/5RK1 b kq - 1 16"
+    );
+    expect<u64>(blockersForKingMask(board, WHITE)).toBe(1 << 53);
+  });
+
   it("should evaluate kings flank attacks", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
     );
     expect(flankAttack(board, WHITE)).toBe(16);
-    expect(flankAttack(board, BLACK)).toBe(9);
+    expect(flankAttack(board, BLACK)).toBe(7);
   });
+
 
   it("should evaluate kings flank defenses", () => {
     const board = parseFEN(
@@ -130,5 +172,113 @@ describe("Stockfish king evaluation", () => {
     );
     expect(flankDefense(board, WHITE)).toBe(10);
     expect(flankDefense(board, BLACK)).toBe(15);
+  });
+
+  it("should evaluate knight defenders", () => {
+    const board = parseFEN(
+      "1n2n3/2kb4/pp6/8/6P1/5PRB/5PPP/4QRK1 b kq - 0 15"
+    );
+    expect(knightDefender(board, WHITE)).toBe(0);
+    expect(knightDefender(board, BLACK)).toBe(3);
+  });
+
+  it("should evaluate storm square when there is no pawns ", () => {
+    const board = parseFEN(
+      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquareBad(board, WHITE)).toBe(3824);
+    expect(stormSquareBad(board, BLACK)).toBe(3824);
+  });
+  it("should evaluate storm square when there is no pawns ", () => {
+    const board = parseFEN(
+      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquare(board, WHITE)[12]).toBe(-36);
+    expect(stormSquare(board, BLACK)[17]).toBe(125);
+  });
+  it("should evaluate storm square", () => {
+    const board = parseFEN(
+      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn2P2/1B6/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquareBad(board, BLACK)).toBe(3824);
+    expect(stormSquareBad(board, WHITE)).toBe(3440);
+  });
+  it("should evaluate storm square", () => {
+    const board = parseFEN(
+      "2n1k1n1/8/2qB2N1/1Q6/3bp3/1Nn1P3/1B6/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquareBad(board, BLACK)).toBe(3926);
+    expect(stormSquareBad(board, WHITE)).toBe(3989);
+  });
+  it("should evaluate storm square", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquareBad(board, WHITE)).toBe(1226);
+    expect(stormSquareBad(board, BLACK)).toBe(2604);
+  });
+  it("should evaluate storm square", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquare(board, WHITE)[32]).toBe(130);
+    expect(stormSquare(board, BLACK)[32]).toBe(90);
+  });
+  it("should evaluate storm square", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(stormSquare(board, WHITE)[7]).toBe(125);
+    expect(stormSquare(board, BLACK)[7]).toBe(56);
+  });
+
+  it("should evaluate strength square when there is no pawns", () => {
+    const board = parseFEN(
+      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
+    );
+    expect(strengthSquareBad(board, BLACK)).toBe(-4448);
+    expect(strengthSquareBad(board, WHITE)).toBe(-4448);
+  });
+  it("should evaluate strength square", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(strengthSquareBad(board, BLACK)).toBe(-1284);
+    expect(strengthSquareBad(board, WHITE)).toBe(-2233);
+  });
+  it("should evaluate strength square", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(strengthSquare(board, BLACK)[32]).toBe(12);
+    expect(strengthSquare(board, WHITE)[32]).toBe(10);
+    expect(strengthSquare(board, WHITE)[62]).toBe(222);
+    expect(strengthSquare(board, BLACK)[62]).toBe(-54);
+  });
+
+  it("should evaluate shelter storm", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(shelterStormAndStrength(board, WHITE)[0]).toBe(48);
+    expect(shelterStormAndStrength(board, BLACK)[0]).toBe(56);
+  });
+  it("should evaluate shelter strength", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    expect(shelterStormAndStrength(board, WHITE)[1]).toBe(222);
+    expect(shelterStormAndStrength(board, BLACK)[1]).toBe(222);
+  });
+
+
+  it("should evaluate king danger", () => {
+    const board = parseFEN(
+      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
+    );
+    log(maskString(mobilityAreaMask(board, WHITE)))
+    log(maskString(rookXRayAttackMask(board, WHITE, 5, ~0)))
+    expect(kingDanger(board, BLACK)).toBe(208);
+    expect(kingDanger(board, WHITE)).toBe(1739);
   });
 });
