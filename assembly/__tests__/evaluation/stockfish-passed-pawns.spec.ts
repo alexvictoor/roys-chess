@@ -1,5 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
-import { candidatePassedMask } from "../../evaluation/stockfish-passed-pawns";
+import { candidatePassedMask, passedLeverageMask } from "../../evaluation/stockfish-passed-pawns";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish passed pawns evaluation", () => {
@@ -59,4 +59,18 @@ describe("Stockfish passed pawns evaluation", () => {
     );
     expect(candidatePassedMask(board, WHITE)).toBe((<u64>1) << 19);
   });
+
+  
+
+  it("should detect passed leverable", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p1p2ppp/p1P5/3P4/P1Np1P2/5pP1/P3K1PP/R1BQ1BNR b kq - 1 4"
+    );
+    expect(passedLeverageMask(board, WHITE)).toBe((<u64>1) << 42);
+    expect(passedLeverageMask(board, BLACK)).toBe((<u64>1) << 21 | (<u64>1) << 27);
+
+  });
 });
+
+
+

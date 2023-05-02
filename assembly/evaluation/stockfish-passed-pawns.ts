@@ -6,6 +6,7 @@ import {
   rightBorderMask,
   WHITE,
 } from "../bitboard";
+import { attackOnceMask, attackTwiceMask } from "./stockfish-attacks";
 
 export function candidatePassedMask(board: BitBoard, player: i8): u64 {
   const pawnsMask = board.getPawnMask(player);
@@ -103,4 +104,23 @@ export function candidatePassedMask(board: BitBoard, player: i8): u64 {
     }
   }
   return resultMask;
+}
+
+export function passedLeverageMask(board: BitBoard, player: i8): u64 {
+  const currentCandidatePassedMask = candidatePassedMask(board, player);
+  const opponentPlayer = opponent(player);
+  const opponentPawnsMask = board.getPawnMask(opponentPlayer);
+
+  const candidatePassedWithoutOpponentPasserMask =
+    currentCandidatePassedMask &
+    ~(player === WHITE ? opponentPawnsMask >> 8 : opponentPawnsMask << 8);
+
+  const attackMask = attackOnceMask(board, player);
+  const opponentAttackLessThanTwiceMask = ~(attackTwiceMask(board, opponentPlayer) & ~attackOnceMask(board, opponentPlayer));
+
+  const attacksMask = ~board.getPlayerPiecesMask(opponentPlayer) & (attackMask | opponentAttackLessThanTwiceMask);
+  const pawnMask = (player === WHITE) ? (board.getPawnMask(player) << 8) : (board.getPawnMask(player) >> 8)
+  const mask = ((attacksMask << 1) & (pawnMask << 1) & leftBorderMask) | ((attacksMask >> 1) & (pawnMask >> 1) & rightBorderMask);
+
+  return candidatePassedWithoutOpponentPasserMask | (currentCandidatePassedMask & mask);
 }
