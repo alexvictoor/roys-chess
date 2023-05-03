@@ -124,3 +124,35 @@ export function passedLeverageMask(board: BitBoard, player: i8): u64 {
 
   return candidatePassedWithoutOpponentPasserMask | (currentCandidatePassedMask & mask);
 }
+
+const whitePassedRanksArray = new StaticArray<i16>(8);
+const blackPassedRanksArray = new StaticArray<i16>(8);
+export function passedRanks(board: BitBoard, player: i8): StaticArray<i16> {
+  let mask = passedLeverageMask(board, player);
+  if (player === WHITE) {
+    for (let y = 0; y < 8; y++) {
+      let countForRank: i16 = 0;
+      for (let x = 0; x < 8; x++) {
+        if (mask & 1) {
+          countForRank++;
+        }
+        mask = mask >> 1;
+      }
+      whitePassedRanksArray[y] = countForRank;
+    }
+    return whitePassedRanksArray;
+  }
+
+  for (let y = 0; y < 8; y++) {
+    let countForRank: i16 = 0;
+    for (let x = 0; x < 8; x++) {
+      if (mask & 1) {
+        countForRank++;
+      }
+      mask = mask >> 1;
+    }
+    blackPassedRanksArray[7 - y] = countForRank;
+  }
+  return blackPassedRanksArray;
+  
+}

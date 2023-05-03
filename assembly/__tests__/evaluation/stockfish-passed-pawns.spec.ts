@@ -1,5 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
-import { candidatePassedMask, passedLeverageMask } from "../../evaluation/stockfish-passed-pawns";
+import { candidatePassedMask, passedLeverageMask, passedRanks } from "../../evaluation/stockfish-passed-pawns";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish passed pawns evaluation", () => {
@@ -69,6 +69,18 @@ describe("Stockfish passed pawns evaluation", () => {
     expect(passedLeverageMask(board, WHITE)).toBe((<u64>1) << 42);
     expect(passedLeverageMask(board, BLACK)).toBe((<u64>1) << 21 | (<u64>1) << 27);
 
+  });
+
+
+  it("should compute passed ranks", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p1p2ppp/p1P5/3P4/P1Np1P2/5pP1/P3K1PP/R1BQ1BNR b kq - 1 4"
+    );
+    const whiteRanks = passedRanks(board, WHITE);
+    expect(whiteRanks[5]).toBe(1);
+    const blackRanks = passedRanks(board, BLACK);
+    expect(blackRanks[4]).toBe(1);
+    expect(blackRanks[5]).toBe(1);
   });
 });
 
