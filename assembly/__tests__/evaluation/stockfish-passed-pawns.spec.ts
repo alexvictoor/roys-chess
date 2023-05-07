@@ -1,5 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
-import { candidatePassedMask, passedLeverageMask, passedRanks } from "../../evaluation/stockfish-passed-pawns";
+import { candidatePassedMask, passedBlockBonus, passedLeverageMask, passedRanks } from "../../evaluation/stockfish-passed-pawns";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish passed pawns evaluation", () => {
@@ -82,6 +82,29 @@ describe("Stockfish passed pawns evaluation", () => {
     expect(blackRanks[4]).toBe(1);
     expect(blackRanks[5]).toBe(1);
   });
+
+  it("should compute passed block bonus", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p1p2ppp/p1P5/3P4/P1Np1P2/5pP1/P3K1PP/R1BQ1BNR b kq - 1 4"
+    );
+    expect(passedBlockBonus(board, WHITE)).toBe(<i16>0);
+    expect(passedBlockBonus(board, BLACK)).toBe(<i16>35);
+
+    board = parseFEN(
+      "r4bnr/1p3kpp/bp1P2p1/np2P3/6p1/3q4/2PPPPPP/RNBQKBNR w KQ - 3 4"
+    );
+    expect(passedBlockBonus(board, WHITE)).toBe(<i16>60);
+    expect(passedBlockBonus(board, BLACK)).toBe(<i16>0);
+
+
+    board = parseFEN(
+      "r4bnr/1p3kpp/bp1P2p1/np2P3/6p1/6q1/2PPPPPP/RNBQKBNR w KQ - 3 4"
+    );
+    expect(passedBlockBonus(board, WHITE)).toBe(<i16>168);
+    expect(passedBlockBonus(board, BLACK)).toBe(<i16>0);
+    
+  });
+
 });
 
 

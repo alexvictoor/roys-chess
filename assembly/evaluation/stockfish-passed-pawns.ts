@@ -1,7 +1,9 @@
 import {
   BitBoard,
   firstColMask,
+  firstRowMask,
   leftBorderMask,
+  MaskIterator,
   opponent,
   rightBorderMask,
   WHITE,
@@ -116,13 +118,26 @@ export function passedLeverageMask(board: BitBoard, player: i8): u64 {
     ~(player === WHITE ? opponentPawnsMask >> 8 : opponentPawnsMask << 8);
 
   const attackMask = attackOnceMask(board, player);
-  const opponentAttackLessThanTwiceMask = ~(attackTwiceMask(board, opponentPlayer) & ~attackOnceMask(board, opponentPlayer));
+  const opponentAttackLessThanTwiceMask = ~(
+    attackTwiceMask(board, opponentPlayer) &
+    ~attackOnceMask(board, opponentPlayer)
+  );
 
-  const attacksMask = ~board.getPlayerPiecesMask(opponentPlayer) & (attackMask | opponentAttackLessThanTwiceMask);
-  const pawnMask = (player === WHITE) ? (board.getPawnMask(player) << 8) : (board.getPawnMask(player) >> 8)
-  const mask = ((attacksMask << 1) & (pawnMask << 1) & leftBorderMask) | ((attacksMask >> 1) & (pawnMask >> 1) & rightBorderMask);
+  const attacksMask =
+    ~board.getPlayerPiecesMask(opponentPlayer) &
+    (attackMask | opponentAttackLessThanTwiceMask);
+  const pawnMask =
+    player === WHITE
+      ? board.getPawnMask(player) << 8
+      : board.getPawnMask(player) >> 8;
+  const mask =
+    ((attacksMask << 1) & (pawnMask << 1) & leftBorderMask) |
+    ((attacksMask >> 1) & (pawnMask >> 1) & rightBorderMask);
 
-  return candidatePassedWithoutOpponentPasserMask | (currentCandidatePassedMask & mask);
+  return (
+    candidatePassedWithoutOpponentPasserMask |
+    (currentCandidatePassedMask & mask)
+  );
 }
 
 const whitePassedRanksArray = new StaticArray<i16>(8);
@@ -154,5 +169,73 @@ export function passedRanks(board: BitBoard, player: i8): StaticArray<i16> {
     blackPassedRanksArray[7 - y] = countForRank;
   }
   return blackPassedRanksArray;
-  
+}
+
+const whiteRankMask = ~(
+  firstRowMask |
+  (firstRowMask << 8) |
+  (firstRowMask << 16)
+);
+const blackRankMask = ~(
+  (firstRowMask << 40) |
+  (firstRowMask << 48) |
+  (firstRowMask << 56)
+);
+
+const positions = new MaskIterator();
+
+export function passedBlockBonus(board: BitBoard, player: i8): i16 {
+  let mask = passedLeverageMask(board, player);
+  mask = player == WHITE ? mask & whiteRankMask : mask & blackRankMask;
+
+  const allBlockerPiecesMask =
+    player == WHITE
+      ? board.getAllPiecesMask() >> 8
+      : board.getAllPiecesMask() << 8;
+  mask = mask & ~allBlockerPiecesMask;
+  const attackMask = attackOnceMask(board, player);
+  const opponentPlayer = opponent(player);
+  const opponentAttackMask = attackOnceMask(board, opponentPlayer);
+  const rookMask = board.getRookMask(player);
+  const opponentRookMask = board.getRookMask(opponentPlayer);
+  const queenMask = board.getQueenMask(player);
+  const opponentQueenMask = board.getQueenMask(opponentPlayer);
+
+  let result = <i16>0;
+
+  positions.reset(mask);
+  while (positions.hasNext()) {
+    const position = positions.next();
+    const aheadPawnMask =
+      (player == WHITE
+        ? ~(((<u64>1) << position) - 1)
+        : ((<u64>1) << position) - 1) &
+      (firstColMask << (position & 7));
+    const behindPawnMask = ~aheadPawnMask & (firstColMask << (position & 7));
+    const aheadLeftPawnMask = (aheadPawnMask >> 1) & rightBorderMask;
+    const aheadRightPawnMask = (aheadPawnMask << 1) & leftBorderMask;
+    //const defended = !!(aheadPawnMask & attackMask);
+    const aheadOffset = player == WHITE ? 8 : -8;
+    const defended1 =
+      !!(((<u64>1) << (position + aheadOffset)) & attackMask) ||
+      !!((rookMask | queenMask) & behindPawnMask);
+    const unsafe1 =
+      !!(((<u64>1) << (position + aheadOffset)) & opponentAttackMask) ||
+      !!((opponentRookMask | opponentQueenMask) & behindPawnMask);
+    const unsafe =
+      !!(aheadPawnMask & opponentAttackMask) ||
+      !!((opponentRookMask | opponentQueenMask) & behindPawnMask);
+    const wunsafe =
+      !!(aheadLeftPawnMask & opponentAttackMask) ||
+      !!(aheadRightPawnMask & opponentAttackMask);
+    const r = (player == WHITE) ? <i16>(position >> 3) : <i16>((63 - position) >> 3);
+    const w = r > 2 ? <i16>5 * r - <i16>13 : <i16>0;
+    const k =
+      (!unsafe && !wunsafe ? <i16>35 : !unsafe ? <i16>20 : !unsafe1 ? <i16>9 : <i16>0) +
+      (defended1 ? <i16>5 : <i16>0);
+    
+    result += w * k;  
+  }
+  return result;
+
 }
