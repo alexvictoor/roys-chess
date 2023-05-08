@@ -1,5 +1,12 @@
 import { BLACK, WHITE } from "../../bitboard";
-import { candidatePassedMask, passedBlockBonus, passedLeverageMask, passedRanks } from "../../evaluation/stockfish-passed-pawns";
+import {
+  candidatePassedMask,
+  passedBlockBonus,
+  passedFileBonus,
+  passedLeverageMask,
+  passedMg,
+  passedRanks,
+} from "../../evaluation/stockfish-passed-pawns";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish passed pawns evaluation", () => {
@@ -60,17 +67,15 @@ describe("Stockfish passed pawns evaluation", () => {
     expect(candidatePassedMask(board, WHITE)).toBe((<u64>1) << 19);
   });
 
-  
-
   it("should detect passed leverable", () => {
     let board = parseFEN(
       "rnbqkbnr/p1p2ppp/p1P5/3P4/P1Np1P2/5pP1/P3K1PP/R1BQ1BNR b kq - 1 4"
     );
     expect(passedLeverageMask(board, WHITE)).toBe((<u64>1) << 42);
-    expect(passedLeverageMask(board, BLACK)).toBe((<u64>1) << 21 | (<u64>1) << 27);
-
+    expect(passedLeverageMask(board, BLACK)).toBe(
+      ((<u64>1) << 21) | ((<u64>1) << 27)
+    );
   });
-
 
   it("should compute passed ranks", () => {
     let board = parseFEN(
@@ -96,16 +101,31 @@ describe("Stockfish passed pawns evaluation", () => {
     expect(passedBlockBonus(board, WHITE)).toBe(<i16>60);
     expect(passedBlockBonus(board, BLACK)).toBe(<i16>0);
 
-
     board = parseFEN(
       "r4bnr/1p3kpp/bp1P2p1/np2P3/6p1/6q1/2PPPPPP/RNBQKBNR w KQ - 3 4"
     );
     expect(passedBlockBonus(board, WHITE)).toBe(<i16>168);
     expect(passedBlockBonus(board, BLACK)).toBe(<i16>0);
-    
+  });
+  it("should compute passed file", () => {
+    let board = parseFEN(
+      "r4bnr/1p3kpp/bp1P2p1/np2P3/6p1/6q1/2PPPPPP/RNBQKBNR w KQ - 3 4"
+    );
+    expect(passedFileBonus(board, WHITE)).toBe(<i16>6);
+    expect(passedFileBonus(board, BLACK)).toBe(<i16>0);
+
+    board = parseFEN(
+      "rnbqkbnr/p2pp3/p7/1p2p3/2p1p1P1/1P1P2P1/PP4PP/RNBQKBNR w KQkq - 0 4"
+    );
+    expect(passedFileBonus(board, WHITE)).toBe(<i16>1);
+    expect(passedFileBonus(board, BLACK)).toBe(<i16>3);
   });
 
+  it("should compute passed mg bonuses", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p2pp3/p7/1p2p3/2p1p1P1/1P1P2P1/PP4PP/RNBQKBNR w KQkq - 0 4"
+    );
+    expect(passedMg(board, WHITE)).toBe(<i16>42);
+    expect(passedMg(board, BLACK)).toBe(<i16>29);
+  });
 });
-
-
-

@@ -2,6 +2,7 @@ import {
   BitBoard,
   firstColMask,
   firstRowMask,
+  lastColMask,
   leftBorderMask,
   MaskIterator,
   opponent,
@@ -228,14 +229,46 @@ export function passedBlockBonus(board: BitBoard, player: i8): i16 {
     const wunsafe =
       !!(aheadLeftPawnMask & opponentAttackMask) ||
       !!(aheadRightPawnMask & opponentAttackMask);
-    const r = (player == WHITE) ? <i16>(position >> 3) : <i16>((63 - position) >> 3);
+    const r =
+      player == WHITE ? <i16>(position >> 3) : <i16>((63 - position) >> 3);
     const w = r > 2 ? <i16>5 * r - <i16>13 : <i16>0;
     const k =
-      (!unsafe && !wunsafe ? <i16>35 : !unsafe ? <i16>20 : !unsafe1 ? <i16>9 : <i16>0) +
-      (defended1 ? <i16>5 : <i16>0);
-    
-    result += w * k;  
+      (!unsafe && !wunsafe
+        ? <i16>35
+        : !unsafe
+        ? <i16>20
+        : !unsafe1
+        ? <i16>9
+        : <i16>0) + (defended1 ? <i16>5 : <i16>0);
+
+    result += w * k;
   }
   return result;
+}
 
+export function passedFileBonus(board: BitBoard, player: i8): i16 {
+  const passedLeverage = passedLeverageMask(board, player);
+  let result = <u64>0;
+  for (let col: u64 = 1; col < 4; col++) {
+    result += popcnt(passedLeverage & (firstColMask << col)) * col;
+    result += popcnt(passedLeverage & (lastColMask >> col)) * col;
+  }
+  return <i16>result;
+}
+
+const mgPassedRankScores = StaticArray.fromArray<i16>([
+  0, 10, 17, 15, 62, 168, 276,
+]);
+export function passedMg(board: BitBoard, player: i8): i16 {
+  if (passedLeverageMask(board, player) == 0) {
+    return 0;
+  }
+  let result: i16 = 0;
+  const ranks = passedRanks(board, player);
+  for (let index: i8 = 1; index < 7; index++) {
+    result += ranks[index] * mgPassedRankScores[index];
+  }
+  result += passedBlockBonus(board, player);
+  result -= 11 * passedFileBonus(board, player);
+  return result;
 }

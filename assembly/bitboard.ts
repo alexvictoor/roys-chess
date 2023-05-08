@@ -26,9 +26,11 @@ export const firstRowMask: u64 = (
   (1 << 7)
 );
 
+export const lastColMask = firstColMask << 7;
+
 export const leftBorderMask: u64 = ~firstColMask;
 
-export const rightBorderMask: u64 = ~(firstColMask << 7);
+export const rightBorderMask: u64 = ~lastColMask;
 
 export function maskString(mask: u64): string {
   let result: string = "\n";
