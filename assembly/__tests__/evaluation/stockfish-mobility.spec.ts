@@ -1,14 +1,9 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
 import {
-  bishopMobilityBonus,
-  knightMobilityBonus,
   mobility,
   mobilityArea,
   mobilityAreaMask,
-  mobilityFor,
-  mobilityMg,
-  queenMobilityBonus,
-  rookMobilityBonus,
+  mobilityFor
 } from "../../evaluation/stockfish-mobility";
 import { parseFEN } from "../../fen-parser";
 
