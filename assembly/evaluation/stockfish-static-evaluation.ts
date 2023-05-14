@@ -6,11 +6,14 @@ import {
   opponent,
   WHITE,
 } from "../bitboard";
-import { mobilityMg } from "./stockfish-mobility";
+import { kingMg } from "./stockfish-king";
+import { mobilityFor } from "./stockfish-mobility";
+import { passedMg } from "./stockfish-passed-pawns";
 import { pawnsMg } from "./stockfish-pawn";
 import { piecesMg } from "./stockfish-pieces";
 import { space } from "./stockfish-space";
 import { threatsMg } from "./stockfish-threats";
+import { winnableTotalMg } from "./stockfish-winnable";
 
 export function mainEvaluation(board: BitBoard): i16 {
   const mg = middleGameEvaluation(board);
@@ -29,15 +32,42 @@ function middleGameEvaluation(board: BitBoard): i16 {
   let v: i16 = 0;
   v += pieceValues(board, true);
   v += psqtBonus(board, true);
-  v += imbalance(board);
+  v += imbalanceTotal(board);
   v += pawnsMg(board);
   v += piecesMg(board);
-  v += mobilityMg(board);
+  v += mobilityFor(board, WHITE, true) - mobilityFor(board, BLACK, true)
   v += threatsMg(board);
-  /*v += passed_mg(board) - passed_mg(colorflip(board));*/
+  v += passedMg(board, WHITE) - passedMg(board, BLACK);
   v += space(board, WHITE) - space(board, BLACK);
-  /*v += king_mg(board) - king_mg(colorflip(board));*/
-  //if (!nowinnable) v += winnable_total_mg(pos, v);
+  v += kingMg(board, WHITE) - kingMg(board, BLACK);
+  v += winnableTotalMg(board, v);
+
+  log(( pieceValues(board, true)).toString());
+  log(( psqtBonus(board, true)).toString());
+  log(( imbalanceTotal(board)).toString());
+  log(( pawnsMg(board)).toString());
+  log(( piecesMg(board)).toString());
+  log(( mobilityFor(board, WHITE, true) - mobilityFor(board, BLACK, true)).toString());
+  log(( threatsMg(board)).toString());
+  log(( passedMg(board, WHITE) - passedMg(board, BLACK)).toString());
+  log(( space(board, WHITE) - space(board, BLACK)).toString());
+  log(( kingMg(board, WHITE) - kingMg(board, BLACK)).toString());
+  log(( winnableTotalMg(board, v)).toString());
+  /*
+{
+  "piece_value_mg": 905,
+  "psqt_mg": -193,
+  "imbalance_total": 201,
+  "pawns_mg": -24,
+  "pieces_mg": 27,
+  "mobility_mg": 51,
+  "threats_mg": -150,
+  "passed_mg": 0,
+  "space": 119,
+  "king_mg": 8
+}
+
+  */
   return v;
 }
 
@@ -246,7 +276,7 @@ export function psqtBonus(board: BitBoard, mg: boolean): i16 {
       result += unchecked(pawnBonus[piece][position]);
     }
   }
-  for (let piece = 2; piece < 12; piece++) {
+  for (let piece: i8 = 2; piece < 12; piece++) {
     const pieceMask = unchecked(board.bits[piece]);
     positions.reset(pieceMask);
     while (positions.hasNext()) {
@@ -256,6 +286,22 @@ export function psqtBonus(board: BitBoard, mg: boolean): i16 {
   }
   return result;
 }
+
+export function imbalanceTotal(board: BitBoard): i16 {
+  return (imbalance(board) + bishopPairs(board)) >> 4;
+}
+
+function bishopPairs(board: BitBoard): i16 {
+  let result: i16 = 0;
+  if (popcnt(board.getBishopMask(WHITE)) == 2) {
+    result += 1438;
+  }
+  if (popcnt(board.getBishopMask(BLACK)) == 2) {
+    result -= 1438;
+  }
+  return result;
+}
+
 
 function imbalance(board: BitBoard): i16 {
   //if (square == null) return sum(pos, imbalance);
