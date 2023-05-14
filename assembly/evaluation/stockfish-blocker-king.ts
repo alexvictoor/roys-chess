@@ -6,9 +6,7 @@ import {
     queenMoves,
     rookMoves
 } from "../sliding-pieces-move-generation";
-import {
-    pinnedDirectionMask
-} from "./stockfish-attacks";
+import { pinnedDirectionMask } from "./stockfish-pinned-direction";
 
 const positions = new MaskIterator();
   
