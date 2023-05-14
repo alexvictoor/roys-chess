@@ -39,17 +39,17 @@ describe("Stockfish threats", () => {
 
     const whiteMask = hangingMask(board, WHITE);
     const blackMask = hangingMask(board, BLACK);
-    expect(whiteMask).toBe(1 << 46);
-    expect(blackMask).toBe((1 << 24));
+    expect(whiteMask).toBe(1 << 24);
+    expect(blackMask).toBe((1 << 46));
   });
   it("should detect hanging pieces when pieces are attacked twice", () => {
     const board = parseFEN(
       "rnbqkb1r/ppp1N1pp/2np2P1/3P4/p1P3B1/P1P1p1PP/4P3/RN1QKB1R w KQkq - 2 3"
     );
 
-    const blackMask = hangingMask(board, BLACK);
+    const whiteMask = hangingMask(board, WHITE);
 
-    expect(blackMask).toBe((1 << 24 | 1 << 58));
+    expect(whiteMask).toBe((1 << 24 | 1 << 58));
   });
 
   it("should detect pieces threat by king", () => {
@@ -237,6 +237,16 @@ describe("Stockfish threats", () => {
     const score = threatsMg(board);
 
     expect(score).toBe(36);
+
+  });
+  it("should evaluate middle game threats bis", () => {
+    const board = parseFEN(
+      "r1bqkb1r/ppp1pppp/2P2n2/8/3P4/8/PPP2PPP/RNBQKBNR b KQkq - 0 4"
+    );
+
+    const score = threatsMg(board);
+
+    expect(score).toBe(-150);
 
   });
 });

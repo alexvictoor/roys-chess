@@ -19,15 +19,16 @@ export function weakEnemiesMask(board: BitBoard, player: i8): u64 {
   );
 }
 export function hangingMask(board: BitBoard, player: i8): u64 {
-  const piecesMask = board.getPlayerPiecesMask(player);
+  const opponentPlayer = opponent(player);
+  const piecesMask = board.getPlayerPiecesMask(opponentPlayer);
   return (
     (piecesMask &
-      attackMask(board, opponent(player), false) &
-      ~attackMask(board, player, false)) |
+      attackMask(board, player, false) &
+      ~attackMask(board, opponentPlayer, false)) |
     (piecesMask &
-      attackMask(board, opponent(player), true) &
-      ~board.getPawnMask(player) &
-      ~pawnAttacks(player, board.getPawnMask(player)))
+      attackMask(board, player, true) &
+      ~board.getPawnMask(opponentPlayer) &
+      ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)))
   );
 }
 
@@ -268,6 +269,33 @@ export function rookThreats(board: BitBoard, player: i8, mg: boolean): i16 {
 }
 
 export function threatsMg(board: BitBoard): i16 {
+  /*log(`
+  WHITE
+  hangingMask: ${69 * (<i16>popcnt(hangingMask(board, WHITE)))}
+  kingThreatMask:  ${24 * (<i16>popcnt(kingThreatMask(board, WHITE))) }
+  pawnPushThreatMask:  ${48 * (<i16>popcnt(pawnPushThreatMask(board, WHITE))) }
+  threatSafePawnMask:  ${173 * (<i16>popcnt(threatSafePawnMask(board, WHITE))) }
+  sliderOnQueen:  ${60 * (sliderOnQueen(board, WHITE)) }
+  knightOnQueenMask  ${16 * (<i16>popcnt(knightOnQueenMask(board, WHITE))) }
+  restricted  ${7 * (restricted(board, WHITE)) }
+  weakQueenProtection  ${14 * (weakQueenProtection(board, WHITE)) }
+  minorThreats  ${(minorThreats(board, WHITE, true)) }
+  rookThreats  ${(rookThreats(board, WHITE, true))}   
+  `)
+  log(`
+  BLACK
+  hangingMask: ${69 * (<i16>popcnt(hangingMask(board, BLACK)))}
+  kingThreatMask:  ${24 * (<i16>popcnt(kingThreatMask(board, BLACK))) }
+  pawnPushThreatMask:  ${48 * (<i16>popcnt(pawnPushThreatMask(board, BLACK))) }
+  threatSafePawnMask:  ${173 * (<i16>popcnt(threatSafePawnMask(board, BLACK))) }
+  sliderOnQueen:  ${60 * (sliderOnQueen(board, BLACK)) }
+  knightOnQueenMask  ${16 * (<i16>popcnt(knightOnQueenMask(board, BLACK))) }
+  restricted  ${7 * (restricted(board, BLACK)) }
+  weakQueenProtection  ${14 * (weakQueenProtection(board, BLACK)) }
+  minorThreats  ${(minorThreats(board, BLACK, true)) }
+  rookThreats  ${(rookThreats(board, BLACK, true))}   
+  `)*/
+  
   return (
     69 * (<i16>popcnt(hangingMask(board, WHITE)) - <i16>popcnt(hangingMask(board, BLACK))) +
     24 * (<i16>popcnt(kingThreatMask(board, WHITE)) - <i16>popcnt(kingThreatMask(board, BLACK))) +
