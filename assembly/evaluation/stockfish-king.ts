@@ -9,7 +9,6 @@ import {
   MaskIterator,
   maskString,
   opponent,
-  PAWN,
   QUEEN,
   rightBorderMask,
   ROOK,
@@ -22,27 +21,26 @@ import {
   rookMoves,
 } from "../sliding-pieces-move-generation";
 import {
-  queenAttack,
-  rookXRayAttack,
-  bishopXRayAttack,
-  knightAttack,
-  queenAttackMask,
-  rookXRayAttackMask,
-  bishopXRayAttackMask,
-  knightAttackMask,
-  attackMask,
-  attackByPawnsMask,
-  attackByKnightsMask,
   attackByBishopsMask,
-  attackByRooksMask,
-  attackByQueensMask,
   attackByKingsMask,
-  attackTwiceMask,
+  attackByKnightsMask,
+  attackByPawnsMask,
+  attackByQueensMask,
+  attackByRooksMask,
+  attackMask,
   attackOnceMask,
-  pinnedDirectionMask,
+  attackTwiceMask,
+  bishopXRayAttack,
+  bishopXRayAttackMask,
+  knightAttack,
+  knightAttackMask,
+  queenAttack,
+  queenAttackMask,
+  rookXRayAttack,
+  rookXRayAttackMask,
 } from "./stockfish-attacks";
 import { blockersForKingMask } from "./stockfish-blocker-king";
-import { mobilityMg } from "./stockfish-mobility";
+import { mobilityFor } from "./stockfish-mobility";
 
 const kingRingCache = new StaticArray<u64>(64);
 function initKingRingCache(): void {
@@ -322,7 +320,12 @@ export function weakSquaresCount(board: BitBoard, player: i8): i16 {
 }
 
 export function weakBonus(board: BitBoard, player: i8): i16 {
-  return <i16>popcnt(weakSquaresMask(board, player) & kingRingMask(board, opponent(player), false))
+  return <i16>(
+    popcnt(
+      weakSquaresMask(board, player) &
+        kingRingMask(board, opponent(player), false)
+    )
+  );
 }
 
 export function possibleChecksMask(
@@ -428,11 +431,12 @@ export function safeChecksMask(
   return (
     checks &
     ((weakSquaresMask(board, player) & attackTwiceMask(board, player)) |
-      ~attackOnceMask(board, opponent(player)))
+      ~attackOnceMask(board, opponent(player))) &
+    ~board.getPlayerPiecesMask(player)
   );
 }
 
-function unsafeChecksMaskByType(
+function unsafeChecksMaskByTypeOld(
   board: BitBoard,
   player: i8,
   checkType: i8
@@ -447,6 +451,15 @@ function unsafeChecksMaskByType(
     )
   );
 }
+export function unsafeChecksMaskByType(
+  board: BitBoard,
+  player: i8,
+  checkType: i8
+): u64 {
+  const checks = possibleChecksMask(board, player, checkType);
+
+  return checks & ~safeChecksMask(board, player, checkType);
+}
 
 export function unsafeChecksMask(board: BitBoard, player: i8): u64 {
   return (
@@ -456,7 +469,11 @@ export function unsafeChecksMask(board: BitBoard, player: i8): u64 {
   );
 }
 
-export function isInCheckBySlidingPieces(board: BitBoard, player: i8, noDefenderMask: u64): boolean {
+export function isInCheckBySlidingPieces(
+  board: BitBoard,
+  player: i8,
+  noDefenderMask: u64
+): boolean {
   const opponentPlayer = opponent(player);
   const kingMask = board.getKingMask(player);
   const kingPos = <i8>ctz(kingMask);
@@ -464,8 +481,9 @@ export function isInCheckBySlidingPieces(board: BitBoard, player: i8, noDefender
   const potentialAttackersMask =
     queenMoves(allPiecesMask, kingPos) &
     board.getPlayerPiecesMask(opponentPlayer);
- 
-  const opponentQueenMask = board.getQueenMask(opponentPlayer) & potentialAttackersMask;
+
+  const opponentQueenMask =
+    board.getQueenMask(opponentPlayer) & potentialAttackersMask;
   if (opponentQueenMask) {
     return true;
   }
@@ -479,7 +497,7 @@ export function isInCheckBySlidingPieces(board: BitBoard, player: i8, noDefender
       return true;
     }
   }
-  const bishopMask = board.getBishopMask(player) & potentialAttackersMask;;
+  const bishopMask = board.getBishopMask(player) & potentialAttackersMask;
   positions.reset(bishopMask);
   while (positions.hasNext()) {
     const pos = positions.next();
@@ -758,7 +776,6 @@ export function strengthSquareBad(board: BitBoard, player: i8): i16 {
   return v;
 }
 
-
 const whiteStrengthSquareArray = new StaticArray<i16>(64);
 const blackStrengthSquareArray = new StaticArray<i16>(64);
 const tempStrengthSquareArray = new StaticArray<i16>(64);
@@ -791,7 +808,10 @@ export function strengthSquare(board: BitBoard, player: i8): StaticArray<i16> {
         tempStrengthSquareArray[(y << 3) + x] = weakness[f][us];
       }
     }
-    result = aggregateSquares(tempStrengthSquareArray, whiteStrengthSquareArray);
+    result = aggregateSquares(
+      tempStrengthSquareArray,
+      whiteStrengthSquareArray
+    );
   } else {
     for (let y: i8 = 7; y >= 0; y--) {
       yMask |= firstRowMask << (y << 3);
@@ -802,17 +822,23 @@ export function strengthSquare(board: BitBoard, player: i8): StaticArray<i16> {
         tempStrengthSquareArray[(y << 3) + x] = weakness[f][us];
       }
     }
-    result = aggregateSquares(tempStrengthSquareArray, blackStrengthSquareArray);
+    result = aggregateSquares(
+      tempStrengthSquareArray,
+      blackStrengthSquareArray
+    );
   }
   for (let i = 0; i < 64; i++) {
-    result[i] += 5;  
+    result[i] += 5;
   }
 
   return result;
 }
 
 const shelterStormAndStrengthResult = new StaticArray<i16>(2);
-export function shelterStormAndStrength(board: BitBoard, player: i8): StaticArray<i16> {
+export function shelterStormAndStrength(
+  board: BitBoard,
+  player: i8
+): StaticArray<i16> {
   let w: i16 = 0;
   let s: i16 = 1024;
   const strengthSquares = strengthSquare(board, player);
@@ -825,7 +851,7 @@ export function shelterStormAndStrength(board: BitBoard, player: i8): StaticArra
     s = s1;
     w = w1;
   }
-  const opponentKingRow: i8 = (player == WHITE) ? 56 : 0;
+  const opponentKingRow: i8 = player == WHITE ? 56 : 0;
   if (board.kingSideCastlingRight(opponentPlayer)) {
     const kingSideCastlingPos = opponentKingRow + 6;
     w1 = strengthSquares[kingSideCastlingPos];
@@ -853,43 +879,56 @@ export function kingDanger(board: BitBoard, player: i8): i16 {
   const count: i16 = kingAttackersCount(board, player);
   const weight: i16 = kingAttackersWeight(board, player);
   const attacks: i16 = kingAttacks(board, player);
-  const weak: i16 = weakBonus(board, player);  
-  const unsafeChecks: i16 = <i16>popcnt(unsafeChecksMask(board, player)); // unsafeChecksMask
+  const weak: i16 = weakBonus(board, player);
+  //log(maskString(unsafeChecksMask(board, player)))
+  const unsafeChecks: i16 = 0; //<i16>popcnt(unsafeChecksMask(board, player)); // unsafeChecksMask
   const blockersForKing: i16 = <i16>popcnt(blockersForKingMask(board, player)); // blockersForKingMask
   const kingFlankAttack: i16 = flankAttack(board, player);
   const kingFlankDefense: i16 = flankDefense(board, player);
   const noQueen: i16 = !board.getQueenMask(player) ? 1 : 0;
   const stormAndStrength = shelterStormAndStrength(board, player);
-  log('count ' + count.toString() 
-    + '\nweight ' + weight.toString()  
-    + '\nattacks ' + attacks.toString() 
-    + '\nweak ' + weak.toString() 
-    + '\nunsafeChecks ' + unsafeChecks.toString() 
-    + '\nblockersForKing ' + blockersForKing.toString() 
-    + '\nkingFlankAttack ' + kingFlankAttack.toString() 
-    + '\nkingFlankDefense ' + kingFlankDefense.toString() 
-    + '\nnoQueen ' + noQueen.toString() 
-    + '\nmobility ' + mobilityMg(board).toString() 
-    + '\nplayer ' + player.toString() 
+  /*log(
+    "count " +
+      count.toString() +
+      "\nweight " +
+      weight.toString() +
+      "\nattacks " +
+      attacks.toString() +
+      "\nweak " +
+      weak.toString() +
+      "\nunsafeChecks " +
+      unsafeChecks.toString() +
+      "\nblockersForKing " +
+      blockersForKing.toString() +
+      "\nkingFlankAttack " +
+      kingFlankAttack.toString() +
+      "\nkingFlankDefense " +
+      kingFlankDefense.toString() +
+      "\nnoQueen " +
+      noQueen.toString() +
+      "\nmobility " +
+      mobilityFor(board, player, true).toString() +
+      "\nplayer " +
+      player.toString()
+  );*/
 
-  )
-
-  const v: i16 = (count * weight
-        +  69 * attacks
-        + 185 * weak
-        - 100 *  (knightDefender(board, opponent(player)) > 0 ? 1 : 0)   //  (knight_defender(colorflip(board, player)) > 0)
-        + 148 * unsafeChecks
-        +  98 * blockersForKing
-        -   4 * kingFlankDefense
-        + ((3 * kingFlankAttack * kingFlankAttack) >> 3)
-        - 873 * noQueen
-        - ((3 * (stormAndStrength[1] - stormAndStrength[0])) >> 2)
-        + (player == WHITE ? 1 : -1) * mobilityMg(board) // TODO black ?
-        + 37
-        +  safeCheckQueen(board, player)
-        + safeCheckRook(board, player)
-        +  safeCheckBishop(board, player)
-        +  safeCheckKnight(board, player));
+  const v: i16 =
+    count * weight +
+    69 * attacks +
+    185 * weak -
+    100 * (knightDefender(board, opponent(player)) > 0 ? 1 : 0) + //  (knight_defender(colorflip(board, player)) > 0)
+    148 * unsafeChecks +
+    98 * blockersForKing -
+    4 * kingFlankDefense +
+    ((3 * kingFlankAttack * kingFlankAttack) >> 3) -
+    873 * noQueen -
+    ((3 * (stormAndStrength[1] - stormAndStrength[0])) >> 2) +
+    mobilityFor(board, player, true) - mobilityFor(board,  opponent(player), true) +
+    37 +
+    safeCheckQueen(board, player) +
+    safeCheckRook(board, player) +
+    safeCheckBishop(board, player) +
+    safeCheckKnight(board, player);
   if (v > 100) return v;
   return 0;
 }
@@ -909,4 +948,93 @@ function safeCheckRook(board: BitBoard, player: i8): i16 {
 function safeCheckQueen(board: BitBoard, player: i8): i16 {
   const checks = <i16>popcnt(safeChecksMask(board, player, QUEEN));
   return checks > 1 ? 1119 : checks * 772;
+}
+
+const flankMasks = new StaticArray<u64>(8);
+function initFlankMasks(): void {
+  flankMasks[0] = firstColMask | (firstColMask << 1) | (firstColMask << 2);
+  flankMasks[1] =
+    firstColMask |
+    (firstColMask << 1) |
+    (firstColMask << 2) |
+    (firstColMask << 3);
+  flankMasks[2] =
+    firstColMask |
+    (firstColMask << 1) |
+    (firstColMask << 2) |
+    (firstColMask << 3);
+  flankMasks[3] =
+    (firstColMask << 2) |
+    (firstColMask << 3) |
+    (firstColMask << 4) |
+    (firstColMask << 5);
+  flankMasks[4] =
+    (firstColMask << 2) |
+    (firstColMask << 3) |
+    (firstColMask << 4) |
+    (firstColMask << 5);
+  flankMasks[5] =
+    (firstColMask << 4) |
+    (firstColMask << 5) |
+    (firstColMask << 6) |
+    (firstColMask << 7);
+  flankMasks[6] =
+    (firstColMask << 4) |
+    (firstColMask << 5) |
+    (firstColMask << 6) |
+    (firstColMask << 7);
+  flankMasks[7] =
+    (firstColMask << 5) | (firstColMask << 6) | (firstColMask << 7);
+}
+initFlankMasks();
+export function pawnlessFlank(board: BitBoard, player: i8): boolean {
+  const kingMask = board.getKingMask(opponent(player));
+  const kingPosition = <i8>(ctz(kingMask) & 7);
+  return (
+    popcnt(
+      flankMasks[kingPosition] &
+        (board.getPawnMask(player) | board.getPawnMask(opponent(player)))
+    ) == 0
+  );
+}
+/*
+function king_mg(pos) {
+  var v = 0;
+  var kd = king_danger(pos);
+  v -= shelter_strength(pos);
+  v += shelter_storm(pos);
+  v += (kd * kd / 4096) << 0;
+  v += 8 * flank_attack(pos);
+  v += 17 * pawnless_flank(pos);
+  return v;
+}
+
+*/
+export function kingMg(board: BitBoard, player: i8): i16 {
+  let result: i16 = 0;
+  const kd = kingDanger(board, player);
+  const stormAndStrength = shelterStormAndStrength(board, player);
+  result -= stormAndStrength[1];
+  result += stormAndStrength[0];
+  result += <i16>((<i32>kd * <i32>kd) >> 12);
+  result += flankAttack(board, player) << 3;
+  if (pawnlessFlank(board, player)) {
+    result += 17;
+  }
+
+  /*log(
+    "kd " +
+      kd.toString() +
+      "\nshelter_strength " +
+      stormAndStrength[1].toString() +
+      "\nshelter_storm " +
+      stormAndStrength[0].toString() 
+      + "\nflankAttack " +
+      flankAttack(board, player).toString()
+      + "\npawnlessFlank " +
+      pawnlessFlank(board, player).toString()
+      + "\n(kd * kd) >> 12 " +
+     ((kd * kd) >> 12).toString()
+  );*/
+  return result;
 }
