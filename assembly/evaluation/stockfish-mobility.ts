@@ -143,6 +143,6 @@ export function mobilityAllBoard(board: BitBoard, mg: boolean): i16 {
   return white - black;
 }
 
-export function mobilityMg(board: BitBoard): i16 {
-  return mobilityAllBoard(board, true);
+export function mobilityFor(board: BitBoard, player: i8, mg: boolean): i16 {
+  return knightMobilityBonus(board, player, mg) + bishopMobilityBonus(board, player, mg) + rookMobilityBonus(board, player, mg) + queenMobilityBonus(board, player, mg); 
 }

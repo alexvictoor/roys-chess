@@ -5,6 +5,7 @@ import {
   mobility,
   mobilityArea,
   mobilityAreaMask,
+  mobilityFor,
   mobilityMg,
   queenMobilityBonus,
   rookMobilityBonus,
@@ -61,7 +62,7 @@ describe("Stockfish mobility evaluation", () => {
       "rnbqkb1r/ppp3pp/2np2P1/3P4/p1P3B1/P1P1p1PP/4P3/RN1QKBNR b KQkq - 1 2"
     );
 
-    expect(mobilityMg(board)).toBe(-45);
+    expect(mobilityFor(board, WHITE, true) - mobilityFor(board, BLACK, true)).toBe(-45);
   });
 
   it("should evaluate mobility at middle game bis", () => {
@@ -69,6 +70,6 @@ describe("Stockfish mobility evaluation", () => {
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
     );
 
-    expect(mobilityMg(board)).toBe(170);
+    expect(mobilityFor(board, WHITE, true) - mobilityFor(board, BLACK, true)).toBe(170);
   });
 });
