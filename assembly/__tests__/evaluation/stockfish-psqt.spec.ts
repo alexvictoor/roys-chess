@@ -16,4 +16,11 @@ describe("Stockfish psqt evaluation", () => {
     );
     expect(psqtBonus(board, true)).toBe(98);
   });
+
+  it("should evaluate piece square table bonuses (eg)", () => {
+    const board = parseFEN(
+      "r1b1kb1r/ppp1pppp/2P2n2/8/3q4/8/PPP2PPP/RNBQKBNR w KQkq - 0 5"
+    );
+    expect(psqtBonus(board, false)).toBe(-162);
+  });
 });
