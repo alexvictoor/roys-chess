@@ -67,4 +67,12 @@ describe("Stockfish mobility evaluation", () => {
 
     expect(mobilityFor(board, WHITE, true) - mobilityFor(board, BLACK, true)).toBe(170);
   });
+
+  it("should evaluate mobility at end game", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
+    );
+
+    expect(mobilityFor(board, WHITE, false) - mobilityFor(board, BLACK, false)).toBe(-26);
+  });
 });
