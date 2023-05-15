@@ -314,7 +314,7 @@ export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
   const kingPos = <i8>ctz(board.getKingMask(player));
   const kingPosX = kingPos % 8;
   const posX = pos % 8;
-  if (kingPosX < 4 !== posX < kingPosX) {
+  if (kingPosX < 4 !== posX < kingPosX) {  // <4 as https://groups.google.com/g/fishcooking/c/kHs9Ajva_lQ?pli=1 ?
     return 0;
   }
   return 1;
@@ -421,6 +421,16 @@ export function kingProtectorMg(board: BitBoard, player: i8): i16 {
   return result;
 }
 
+export function kingProtectorEg(board: BitBoard, player: i8): i16 {
+  let result: i16 = 0;
+  positions.reset(board.getKnightMask(player) | board.getBishopMask(player));
+  while (positions.hasNext()) {
+    const knightPos = positions.next();
+    result += 9 * kingDistance(board, player, knightPos);
+  }
+  return result;
+}
+
 const centerMask: u64 = (1 << 27) | (1 << 28) | (1 << 35) | (1 << 36);
 
 export function longDiagonalBishop(
@@ -444,7 +454,6 @@ export function longDiagonalBishop(
 function trappedRooksBonus(board: BitBoard, player: i8): i16 {
   return (
     countTrappedRooks(board, player) *
-    55 *
     (board.kingSideCastlingRight(player) || board.queenSideCastlingRight(player)
       ? 1
       : 2)
@@ -468,11 +477,37 @@ export function piecesMg(board: BitBoard): i16 {
   v += 16 * (rooksOnKingRing(board, WHITE) - rooksOnKingRing(board, BLACK));
   v += 24 * (bishopsOnKingRing(board, WHITE) - bishopsOnKingRing(board, BLACK));
   v += rooksOnFile(board, WHITE, true) - rooksOnFile(board, BLACK, true);
-  v -= trappedRooksBonus(board, WHITE) - trappedRooksBonus(board, BLACK);
+  v -= 55 * (trappedRooksBonus(board, WHITE) - trappedRooksBonus(board, BLACK));
   v -= 56 * (weakQueen(board, WHITE) - weakQueen(board, BLACK));
   v -= 2 * (queenInfiltration(board, WHITE) - queenInfiltration(board, BLACK));
   v -= kingProtectorMg(board, WHITE) - kingProtectorMg(board, BLACK);
   v += 45 * (longDiagonalBishop(board, WHITE) - longDiagonalBishop(board, BLACK));
+
+  return v;
+}
+
+export function piecesEg(board: BitBoard): i16 {
+  let v: i16 = 0;
+  v += outpostTotal(board, WHITE, false) - outpostTotal(board, BLACK, false);
+  v +=
+    3 *
+    (countMinorBehindPawn(board, WHITE) - countMinorBehindPawn(board, BLACK));
+  v -= 7 * (countBishopPawns(board, WHITE) - countBishopPawns(board, BLACK));
+  v -=
+    5 *
+    (countBishopXrayPawns(board, WHITE) - countBishopXrayPawns(board, BLACK));
+  v +=
+    11 *
+    (countRooksOnQueenFiles(board, WHITE) -
+      countRooksOnQueenFiles(board, BLACK));
+  //v += 16 * (rooksOnKingRing(board, WHITE) - rooksOnKingRing(board, BLACK));
+  //v += 24 * (bishopsOnKingRing(board, WHITE) - bishopsOnKingRing(board, BLACK));
+  v += rooksOnFile(board, WHITE, false) - rooksOnFile(board, BLACK, false);
+  v -= 13 * (trappedRooksBonus(board, WHITE) - trappedRooksBonus(board, BLACK));
+  v -= 15 * (weakQueen(board, WHITE) - weakQueen(board, BLACK));
+  v += 14 * (queenInfiltration(board, WHITE) - queenInfiltration(board, BLACK));
+  v -= kingProtectorEg(board, WHITE) - kingProtectorEg(board, BLACK);
+  //v += 45 * (longDiagonalBishop(board, WHITE) - longDiagonalBishop(board, BLACK));
 
   return v;
 }

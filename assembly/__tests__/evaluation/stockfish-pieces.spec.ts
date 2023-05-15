@@ -11,6 +11,7 @@ import {
   outpostTotal,
   pawnAttacksSpan,
   piecesMg,
+  piecesEg,
   queenInfiltration,
   reachableOutpost,
   rookOnFile,
@@ -187,6 +188,11 @@ describe("Stockfish pieces evaluation", () => {
   it('should compute pieces mg', () => {
     const board = parseFEN('rnbqkbnr/pppppppp/8/8/4P1B1/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 1');
     expect(piecesMg(board)).toBe(-49)
+  })
+
+  it('should compute pieces eg', () => {
+    const board = parseFEN('rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2');
+    expect(piecesEg(board)).toBe(-60)
   })
 
 });
