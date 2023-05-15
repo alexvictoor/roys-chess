@@ -14,4 +14,11 @@ describe("Stockfish piece values evaluation", () => {
     );
     expect(pieceValues(board, true)).toBe(124);
   });
+
+  it("should evaluate eg values", () => {
+    const board = parseFEN(
+      "r1b1kb1r/ppp1pppp/2P2n2/8/3q4/8/PPP2PPP/RNBQKBNR w KQkq - 0 5"
+    );
+    expect(pieceValues(board, false)).toBe(854);
+  });
 });
