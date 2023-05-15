@@ -8,6 +8,7 @@ import {
   isolated,
   opposed,
   pawnAttacksSpan,
+  pawnsEg,
   pawnsMg,
   phalanx,
   supported,
@@ -117,6 +118,13 @@ describe("Stockfish pawn evaluation", () => {
     expect(pawnAttacksSpan(board, WHITE, 33)).toBe(true);
     expect(pawnAttacksSpan(board, BLACK, 17)).toBe(false);
     expect(pawnAttacksSpan(board, BLACK, 18)).toBe(true);
+  });
+
+  it("should evaluate pawns at end game", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
+    );
+    expect(pawnsEg(board)).toBe(-77);
   });
   
 });

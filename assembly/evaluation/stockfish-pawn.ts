@@ -248,12 +248,11 @@ export function pawnsMgFor(player: i8, board: BitBoard): i16 {
       result -= 13;
     }
     switch (blocked(board, player, pos)) {
+      case 1:
+        result -= 11;
+        break;
       case 2:
         result -= 3;
-      case 2:
-        result -= 11;
-      default:
-        0;
     }
   }
   return result * playerFactor;
@@ -280,4 +279,51 @@ export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): boolean {
     y -= pawnDirection;
   }
   return false;
+}
+
+
+export function pawnsEgFor(player: i8, board: BitBoard): i16 {
+  const pawnMask = board.getPawnMask(player);
+  const playerFactor: i16 = player === WHITE ? 1 : -1;
+  pawnsPositions.reset(pawnMask);
+  let result: i16 = 0;
+  while (pawnsPositions.hasNext()) {
+    const pos = pawnsPositions.next();
+    if (doubledIsolated(board, player, pos)) {
+      result -= 56;
+    } else if (isolated(board, player, pos)) {
+      result -= 15;
+    } else if (backward(board, player, pos)) {
+      result -= 24;
+    }
+    if (doubled(board, player, pos)) {
+      result -= 56;
+    }
+    if (connected(board, player, pos)) {
+      const correctedRank = ((player === WHITE) ? (pos >> 3) : ((63 - pos) >> 3)) - 2;
+      const bonus = connectedBonus(board, player, pos) * correctedRank >> 2;
+      if (bonus < 0) {
+        result += bonus + 1;
+      } else {
+        result += bonus;
+      }
+    }
+    if (weakUnopposedPawn(board, player, pos)) {
+      result -= 27;
+    }
+    switch (blocked(board, player, pos)) {
+      case 1:
+        result -= 4;
+        break;
+      case 2:
+        result += 4;
+        break;
+      default:
+        0;
+    }
+  }
+  return result * playerFactor;
+}
+export function pawnsEg(board: BitBoard): i16 {
+  return pawnsEgFor(WHITE, board) + pawnsEgFor(BLACK, board);
 }
