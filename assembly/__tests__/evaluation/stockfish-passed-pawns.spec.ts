@@ -1,7 +1,9 @@
 import { BLACK, WHITE } from "../../bitboard";
 import {
   candidatePassedMask,
+  kingProximityBonus,
   passedBlockBonus,
+  passedEg,
   passedFileBonus,
   passedLeverageMask,
   passedMg,
@@ -127,5 +129,21 @@ describe("Stockfish passed pawns evaluation", () => {
     );
     expect(passedMg(board, WHITE)).toBe(<i16>42);
     expect(passedMg(board, BLACK)).toBe(<i16>29);
+  });
+
+  it("should compute king proximity bonuses", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p2pp3/p7/1p2p3/2p1p1P1/1P1P2P1/PP4PP/RNBQKBNR w KQkq - 0 4"
+    );
+    expect(kingProximityBonus(board, WHITE)).toBe(<i16>2);
+    expect(kingProximityBonus(board, BLACK)).toBe(<i16>-42);
+  });
+
+  it("should compute passed eg bonuses", () => {
+    let board = parseFEN(
+      "rnbqkbnr/p2pp3/p7/1p2p3/2p1p1P1/1P1P2P1/PP4PP/RNBQKBNR w KQkq - 0 4"
+    );
+    expect(passedEg(board, WHITE)).toBe(<i16>91);
+    expect(passedEg(board, BLACK)).toBe(<i16>6);
   });
 });

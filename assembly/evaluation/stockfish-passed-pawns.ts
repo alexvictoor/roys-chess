@@ -1,5 +1,6 @@
 import {
   BitBoard,
+  BLACK,
   firstColMask,
   firstRowMask,
   lastColMask,
@@ -256,6 +257,64 @@ export function passedFileBonus(board: BitBoard, player: i8): i16 {
   return <i16>result;
 }
 
+export function kingProximityBonus(board: BitBoard, player: i8): i16 {
+  let mask = passedLeverageMask(board, player);
+
+  const kingMask = board.getKingMask(player);
+  const kingPos = <i8>ctz(kingMask);
+  const kingX = kingPos & 7;
+  const kingY = kingPos >> 3;
+
+  const opponentKingMask = board.getKingMask(opponent(player));
+  const opponentKingPos = <i8>ctz(opponentKingMask);
+  const opponentKingX = opponentKingPos & 7;
+  const opponentKingY = opponentKingPos >> 3;
+
+  let result = <i16>0;
+  positions.reset(mask);
+  while (positions.hasNext()) {
+    const pos = positions.next();
+    const x = pos & 7;
+    const y = pos >> 3;
+    const r = (player === WHITE) ? y : (7 - y);
+    const w: i16 = r > 2 ? 5 * r - 13 : 0;
+    if (w > 0) {
+
+      const correction = (player === WHITE) ? 1 : -1
+
+      result += (
+        <i16>Math.min(
+          <i16>Math.max(
+            <i16>Math.abs(y - opponentKingY + correction),
+            <i16>Math.abs(x -opponentKingX)
+          ),
+          5
+        ) * 19 >> 2) * w;
+
+      result -= (
+        <i16>Math.min(
+          <i16>Math.max(
+            <i16>Math.abs(y - kingY + correction),
+            <i16>Math.abs(x - kingX)
+          ),
+          5
+        ) << 1) * w;
+      if ((player === WHITE && y < 6) || (player === BLACK && y > 1)) {
+        result -= (
+          <i16>Math.min(
+            <i16>Math.max(
+              <i16>Math.abs(y - kingY + correction + correction),
+              <i16>Math.abs(x -kingX)
+            ),
+            5
+          )) * w;
+      }
+    }
+  }
+  return result;
+}
+
+
 const mgPassedRankScores = StaticArray.fromArray<i16>([
   0, 10, 17, 15, 62, 168, 276,
 ]);
@@ -270,5 +329,24 @@ export function passedMg(board: BitBoard, player: i8): i16 {
   }
   result += passedBlockBonus(board, player);
   result -= 11 * passedFileBonus(board, player);
+  return result;
+}
+
+const egPassedRankScores = StaticArray.fromArray<i16>([
+  0, 28, 33, 41, 72, 177, 260,
+]);
+
+export function passedEg(board: BitBoard, player: i8): i16 {
+  if (passedLeverageMask(board, player) == 0) {
+    return 0;
+  }
+  let result: i16 = 0;
+  result += kingProximityBonus(board, player);
+  const ranks = passedRanks(board, player);
+  for (let index: i8 = 1; index < 7; index++) {
+    result += ranks[index] * egPassedRankScores[index];
+  }
+  result += passedBlockBonus(board, player);
+  result -= passedFileBonus(board, player) << 3;
   return result;
 }
