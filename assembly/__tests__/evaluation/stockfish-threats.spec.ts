@@ -1,5 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
-import { hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, rookThreats, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, threatsMg, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-threats";
+import { hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, rookThreats, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, threatsEg, threatsMg, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-threats";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish threats", () => {
@@ -247,6 +247,17 @@ describe("Stockfish threats", () => {
     const score = threatsMg(board);
 
     expect(score).toBe(-150);
+
+  });
+
+  it("should evaluate end game threats", () => {
+    const board = parseFEN(
+      "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
+    );
+
+    const score = threatsEg(board);
+
+    expect(score).toBe(96);
 
   });
 });

@@ -309,4 +309,22 @@ export function threatsMg(board: BitBoard): i16 {
     (rookThreats(board, WHITE, true) - rookThreats(board, BLACK, true)) 
   ) ;
 }
- 
+
+export function threatsEg(board: BitBoard): i16 {
+  let result: i16 = 36 * (<i16>popcnt(hangingMask(board, WHITE)) - <i16>popcnt(hangingMask(board, BLACK)));
+  if (kingThreatMask(board, WHITE) === 0) {
+    result += 89;
+  }
+  if (kingThreatMask(board, BLACK) === 0) {
+    result -= 89;
+  }
+  result +=  39 * (<i16>popcnt(pawnPushThreatMask(board, WHITE)) - <i16>popcnt(pawnPushThreatMask(board, BLACK)));
+  result +=  94 * (<i16>popcnt(threatSafePawnMask(board, WHITE)) - <i16>popcnt(threatSafePawnMask(board, BLACK)));
+  result += 18 * (sliderOnQueen(board, WHITE) - sliderOnQueen(board, BLACK));
+  result += 11 * (<i16>popcnt(knightOnQueenMask(board, WHITE)) - <i16>popcnt(knightOnQueenMask(board, BLACK)));
+  result += 7 * (restricted(board, WHITE) - restricted(board, BLACK));
+  result += (minorThreats(board, WHITE, false) - minorThreats(board, BLACK, false)); 
+  result += (rookThreats(board, WHITE, false) - rookThreats(board, BLACK, false)); 
+
+  return result;
+}
