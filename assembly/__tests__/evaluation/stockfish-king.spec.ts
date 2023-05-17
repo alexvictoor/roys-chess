@@ -9,6 +9,7 @@ import {
   kingAttacks,
   kingDanger,
   kingMg,
+  kingPawnDistance,
   knightDefender,
   pawnlessFlank,
   possibleChecksMask,
@@ -283,8 +284,8 @@ describe("Stockfish king evaluation", () => {
     const board = parseFEN(
       "r4bnr/3p2pp/b3K1pq/n2P4/k3P1p1/8/3PPPPP/RNBQ1BNR w KQ - 5 5"
     );
-    expect(kingDanger(board, WHITE)).toBe(4039);
     expect(kingDanger(board, BLACK)).toBe(2821);
+    expect(kingDanger(board, WHITE)).toBe(4039);
   });
 
   it("should evaluate pawnless flank", () => {
@@ -301,5 +302,20 @@ describe("Stockfish king evaluation", () => {
     );
     expect(kingMg(board, BLACK)).toBe(1889);
    //expect(kingMg(board, WHITE)).toBe(4202);
+  });
+
+  it("should evaluate king pawn distance", () => {
+    const board = parseFEN(
+      "rnbqkbnr/p2p4/pPP1pPPP/1pP1p1PP/2p1p3/8/8/RNBQKBNR b KQkq - 0 4"
+    );
+    expect(kingPawnDistance(board, WHITE)).toBe(4);
+    expect(kingPawnDistance(board, BLACK)).toBe(1);
+  });
+  it("should evaluate king pawn distance when no pawn on board", () => {
+    const board = parseFEN(
+      "rnbqkbnr/p2p4/p3p3/1p2p3/2p1p1K1/8/8/RNBQ1BNR b KQkq - 0 4"
+    );
+    expect(kingPawnDistance(board, WHITE)).toBe(6);
+    expect(kingPawnDistance(board, BLACK)).toBe(1);
   });
 });

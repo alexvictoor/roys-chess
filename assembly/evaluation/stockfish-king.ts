@@ -41,6 +41,7 @@ import {
 } from "./stockfish-attacks";
 import { blockersForKingMask } from "./stockfish-blocker-king";
 import { mobilityFor } from "./stockfish-mobility";
+import { kingDistance } from "./stockfish-pieces";
 
 const kingRingCache = new StaticArray<u64>(64);
 function initKingRingCache(): void {
@@ -997,19 +998,7 @@ export function pawnlessFlank(board: BitBoard, player: i8): boolean {
     ) == 0
   );
 }
-/*
-function king_mg(pos) {
-  var v = 0;
-  var kd = king_danger(pos);
-  v -= shelter_strength(pos);
-  v += shelter_storm(pos);
-  v += (kd * kd / 4096) << 0;
-  v += 8 * flank_attack(pos);
-  v += 17 * pawnless_flank(pos);
-  return v;
-}
 
-*/
 export function kingMg(board: BitBoard, player: i8): i16 {
   let result: i16 = 0;
   const kd = kingDanger(board, player);
@@ -1023,6 +1012,7 @@ export function kingMg(board: BitBoard, player: i8): i16 {
   }
 
   /*log(
+    "player " + (player == WHITE ? 'WHITE' : 'BLACK') +
     "kd " +
       kd.toString() +
       "\nshelter_strength " +
@@ -1037,4 +1027,22 @@ export function kingMg(board: BitBoard, player: i8): i16 {
      ((kd * kd) >> 12).toString()
   );*/
   return result;
+}
+
+export function kingPawnDistance(board: BitBoard, player: i8): i16 {
+  const kingMask = board.getKingMask(player);
+  const kingPosition = <i8>ctz(kingMask);
+
+  const kingPosX: i8 = kingPosition % 8;
+  const kingPosY: i8 = kingPosition >> 3;
+
+  let distance: i16 = 6;
+  positions.reset(board.getPawnMask(player));
+  while (positions.hasNext()) {
+    const pawnPos = positions.next();
+    const pawnPosX: i8 = pawnPos % 8;
+    const pawnPosY: i8 = pawnPos >> 3;
+    distance = <i16>Math.min(distance, <i16>Math.max(Math.abs(pawnPosX - kingPosX), Math.abs(pawnPosY - kingPosY)))
+  }
+  return distance;
 }
