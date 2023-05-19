@@ -312,10 +312,10 @@ export function threatsMg(board: BitBoard): i16 {
 
 export function threatsEg(board: BitBoard): i16 {
   let result: i16 = 36 * (<i16>popcnt(hangingMask(board, WHITE)) - <i16>popcnt(hangingMask(board, BLACK)));
-  if (kingThreatMask(board, WHITE) === 0) {
+  if (kingThreatMask(board, WHITE) !== 0) {
     result += 89;
   }
-  if (kingThreatMask(board, BLACK) === 0) {
+  if (kingThreatMask(board, BLACK) !== 0) {
     result -= 89;
   }
   result +=  39 * (<i16>popcnt(pawnPushThreatMask(board, WHITE)) - <i16>popcnt(pawnPushThreatMask(board, BLACK)));

@@ -260,4 +260,16 @@ describe("Stockfish threats", () => {
     expect(score).toBe(96);
 
   });
+
+  it("should evaluate end game threats bis", () => {
+    const board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15"
+    );
+
+    const score = threatsEg(board);
+
+    expect(score).toBe(-144);
+
+  });
+
 });
