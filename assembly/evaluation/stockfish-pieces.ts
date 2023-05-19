@@ -198,7 +198,7 @@ export function outpostTotal(board: BitBoard, player: i8, mg: boolean): i16 {
 
 export function countMinorBehindPawn(board: BitBoard, player: i8): i16 {
   const minorMask = board.getBishopMask(player) | board.getKnightMask(player);
-  const pawnMask = board.getPawnMask(player);
+  const pawnMask = board.getPawnMask(WHITE) | board.getPawnMask(BLACK);
   const behindPawnMask = player === WHITE ? pawnMask >> 8 : pawnMask << 8;
   return <i16>popcnt(behindPawnMask & minorMask);
 }
@@ -500,14 +500,25 @@ export function piecesEg(board: BitBoard): i16 {
     11 *
     (countRooksOnQueenFiles(board, WHITE) -
       countRooksOnQueenFiles(board, BLACK));
-  //v += 16 * (rooksOnKingRing(board, WHITE) - rooksOnKingRing(board, BLACK));
-  //v += 24 * (bishopsOnKingRing(board, WHITE) - bishopsOnKingRing(board, BLACK));
   v += rooksOnFile(board, WHITE, false) - rooksOnFile(board, BLACK, false);
   v -= 13 * (trappedRooksBonus(board, WHITE) - trappedRooksBonus(board, BLACK));
   v -= 15 * (weakQueen(board, WHITE) - weakQueen(board, BLACK));
   v += 14 * (queenInfiltration(board, WHITE) - queenInfiltration(board, BLACK));
   v -= kingProtectorEg(board, WHITE) - kingProtectorEg(board, BLACK);
-  //v += 45 * (longDiagonalBishop(board, WHITE) - longDiagonalBishop(board, BLACK));
+
+  /*log(outpostTotal(board, WHITE, false));
+  log(3 * (countMinorBehindPawn(board, WHITE)));
+  log(7 * (countBishopPawns(board, WHITE)));
+  log(5 *
+    (countBishopXrayPawns(board, WHITE)));
+  log(11 *
+    (countRooksOnQueenFiles(board, WHITE)));
+  log(rooksOnFile(board, WHITE, false));
+  log(13 * (trappedRooksBonus(board, WHITE)));
+  log(15 * (weakQueen(board, WHITE)));
+  log(14 * (queenInfiltration(board, WHITE)));
+  log(kingProtectorEg(board, WHITE));*/
+
 
   return v;
 }

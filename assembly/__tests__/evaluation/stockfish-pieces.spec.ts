@@ -195,4 +195,9 @@ describe("Stockfish pieces evaluation", () => {
     expect(piecesEg(board)).toBe(-60)
   })
 
+  it('should compute pieces eg bis', () => {
+    const board = parseFEN('8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15');
+    expect(piecesEg(board)).toBe(-54)
+  })
+
 });
