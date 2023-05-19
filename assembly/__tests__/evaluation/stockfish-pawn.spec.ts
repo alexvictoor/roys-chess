@@ -9,6 +9,7 @@ import {
   opposed,
   pawnAttacksSpan,
   pawnsEg,
+  pawnsEgFor,
   pawnsMg,
   phalanx,
   supported,
@@ -53,12 +54,7 @@ describe("Stockfish pawn evaluation", () => {
     expect(doubled(board, WHITE, 35)).toBe(false);
   });
 
-  /*it("should find phalanx pawns", () => {
-    const board = parseFEN(
-      "rnbqkbnr/pppppppp/8/8/P7/2P1P1PP/1P1P1P2/RNBQKBNR b KQkq a3 0 1"
-    );
-    expect(phalanx(board, WHITE)).toBe(2);
-  });*/
+
   it("should find phalanx pawns", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/P7/2P1P1PP/1P1P1P2/RNBQKBNR b KQkq a3 0 1"
@@ -94,6 +90,25 @@ describe("Stockfish pawn evaluation", () => {
     expect(weakUnopposedPawn(board, WHITE, 35)).toBe(true);
   });
 
+  it("should find pawn opposition bis", () => {
+    let board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/5P2/5RK1 w kq - 18 15"
+    );
+    expect(opposed(board, WHITE, 45)).toBe(false);
+    board = parseFEN(
+      "8/Q3P1pp/3Bk1N1/4p2P/n4p2/8/5P2/5RK1 w kq - 18 15"
+    );
+    expect(opposed(board, BLACK, 29)).toBe(true);
+  });
+
+  it("should find weak unopposed pawns bis", () => {
+    const board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15"
+    );
+    //expect(weakUnopposedPawn(board, WHITE, 8)).toBe(true);
+    expect(weakUnopposedPawn(board, WHITE, 45)).toBe(true);
+  });
+
   it("should find blocked pawns", () => {
     const board = parseFEN(
       "rnbqkbnr/ppp3pp/3p2P1/3P4/p1P5/P1P1p1PP/4P3/RNBQKBNR w KQkq - 0 2"
@@ -126,5 +141,15 @@ describe("Stockfish pawn evaluation", () => {
     );
     expect(pawnsEg(board)).toBe(-77);
   });
+
+  it("should evaluate pawns at end game bis", () => {
+    const board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15"
+    );
+    expect(pawnsEgFor(WHITE, board)).toBe(-99);
+    expect(pawnsEg(board)).toBe(-130);
+    expect(pawnsEgFor(BLACK, board)).toBe(31);
+  });
+  
   
 });
