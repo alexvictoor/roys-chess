@@ -11,6 +11,7 @@ import {
   WHITE,
 } from "../bitboard";
 import { attackOnceMask, attackTwiceMask } from "./stockfish-attacks";
+import { supported } from "./stockfish-pawn";
 
 export function candidatePassedMask(board: BitBoard, player: i8): u64 {
   const pawnsMask = board.getPawnMask(player);
@@ -24,7 +25,7 @@ export function candidatePassedMask(board: BitBoard, player: i8): u64 {
     const colPawnMask = colMask & pawnsMask;
     const leftOpponentColPawnMask = leftColMask & opponentPawnsMask;
     const rightOpponentColPawnMask = rightColMask & opponentPawnsMask;
-    const opponentColPawnMask = colMask & opponentPawnsMask;
+    const opponentColPawnMask = colMask & opponentPawnsMask & ((player === WHITE) ? ~(colPawnMask - 1) : (colPawnMask - 1));
 
     if (colPawnMask != 0) {
       const pawnPos =
@@ -51,6 +52,11 @@ export function candidatePassedMask(board: BitBoard, player: i8): u64 {
       const ty2 =
         leftRightOpponentPawnPos === 64 ? 8 : leftRightOpponentPawnPos >> 3;
 
+     /*if (col === 5) {
+      log('ty1 ' + ty1.toString())
+      log('ty2 ' + ty2.toString())
+      log('opponentPawnPos ' + opponentPawnPos.toString())
+     }*/
       //if (ty1 == 8 && ty2 >= square.y - 1) return 1;
       if (ty1 === 8 && ty2 >= y - 1) {
         resultMask |= pawnMask;
@@ -95,14 +101,24 @@ export function candidatePassedMask(board: BitBoard, player: i8): u64 {
         ((pawnMask >> 1) & rightBorderMask) |
         ((pawnMask << 1) & leftBorderMask);
       const phalanx = popcnt(phalanxMask & pawnsMask);
+      const leverMask =
+        player === WHITE
+          ? ((pawnMask << 7) & rightBorderMask) |
+            ((pawnMask << 9) & leftBorderMask)
+          : ((pawnMask >> 7) & leftBorderMask) |
+            ((pawnMask >> 9) & rightBorderMask);
       const leverPushMask =
         player === WHITE
           ? ((pawnMask << 15) & rightBorderMask) |
             ((pawnMask << 17) & leftBorderMask)
           : ((pawnMask >> 15) & leftBorderMask) |
             ((pawnMask >> 17) & rightBorderMask);
+      const lever = popcnt(leverMask & opponentPawnsMask);
+      if (lever -  supported(board, player, pawnPos) > 1) {
+        continue;
+      }
       const leverPush = popcnt(leverPushMask & opponentPawnsMask);
-      if (phalanx >= leverPush) {
+      if (phalanx >= leverPush && (lever === 0 || leverPush === 0)) {
         resultMask |= pawnMask;
       }
     }

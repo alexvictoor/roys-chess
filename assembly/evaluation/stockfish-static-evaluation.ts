@@ -6,14 +6,14 @@ import {
   opponent,
   WHITE,
 } from "../bitboard";
-import { kingMg } from "./stockfish-king";
+import { kingEg, kingMg } from "./stockfish-king";
 import { mobilityFor } from "./stockfish-mobility";
-import { passedMg } from "./stockfish-passed-pawns";
-import { pawnsMg } from "./stockfish-pawn";
-import { piecesMg } from "./stockfish-pieces";
+import { passedEg, passedMg } from "./stockfish-passed-pawns";
+import { pawnsEg, pawnsMg } from "./stockfish-pawn";
+import { piecesEg, piecesMg } from "./stockfish-pieces";
 import { space } from "./stockfish-space";
-import { threatsMg } from "./stockfish-threats";
-import { winnableTotalMg } from "./stockfish-winnable";
+import { threatsEg, threatsMg } from "./stockfish-threats";
+import { winnableTotalEg, winnableTotalMg } from "./stockfish-winnable";
 
 export function mainEvaluation(board: BitBoard): i16 {
   const mg = middleGameEvaluation(board);
@@ -42,7 +42,7 @@ function middleGameEvaluation(board: BitBoard): i16 {
   v += kingMg(board, WHITE) - kingMg(board, BLACK);
   v += winnableTotalMg(board, v);
 
-  log(pieceValues(board, true).toString());
+  /*log(pieceValues(board, true).toString());
   log(psqtBonus(board, true).toString());
   log(imbalanceTotal(board).toString());
   log(pawnsMg(board).toString());
@@ -57,29 +57,41 @@ function middleGameEvaluation(board: BitBoard): i16 {
   log((space(board, WHITE) - space(board, BLACK)).toString());
   log((kingMg(board, WHITE) - kingMg(board, BLACK)).toString());
   log(winnableTotalMg(board, v).toString());
-  /*
-{
-  "piece_value_mg": 905,
-  "psqt_mg": -193,
-  "imbalance_total": 201,
-  "pawns_mg": -24,
-  "pieces_mg": 27,
-  "mobility_mg": 51,
-  "threats_mg": -150,
-  "passed_mg": 0,
-  "space": 119,
-  "king_mg": 8
+*/
+  return v;
 }
+export function endGameEvaluation(board: BitBoard): i16 {
+  let v: i16 = 0;
+  v += pieceValues(board, false);
+  v += psqtBonus(board, false);
+  v += imbalanceTotal(board);
+  v += pawnsEg(board);
+  v += piecesEg(board);
+  v += mobilityFor(board, WHITE, false) - mobilityFor(board, BLACK, false);
+  v += threatsEg(board);
+  v += passedEg(board, WHITE) - passedEg(board, BLACK);
+  v += kingEg(board, WHITE) - kingEg(board, BLACK);
+  v += winnableTotalEg(board, v);
 
-  */
+  /*log(pieceValues(board, false).toString()); // OK 4771
+  log(psqtBonus(board, false).toString()); // OK -135
+  log(imbalanceTotal(board).toString()); // OK 51
+  log(pawnsEg(board).toString());  // OK -130
+  log(piecesEg(board).toString());  // OK -54
+  log(
+    (
+      mobilityFor(board, WHITE, false) - mobilityFor(board, BLACK, false)
+    ).toString()
+  ); // OK 323
+  log(threatsEg(board).toString()); // OK -144
+  log((passedEg(board, WHITE) - passedEg(board, BLACK)).toString()); // KO 19 vs -1
+  log((kingEg(board, WHITE) - kingEg(board, BLACK)).toString()); // OK 182
+  log(winnableTotalEg(board, v).toString());*/
+
   return v;
 }
 
-/*
-function piece_value_mg(pos, square) {
-    if (square == null) return sum(pos, piece_value_mg);
-    return piece_value_bonus(pos, square, true);
-  }*/
+
 
 const positions = new MaskIterator();
 const positions2 = new MaskIterator();

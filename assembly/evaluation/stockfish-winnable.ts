@@ -47,3 +47,11 @@ export function winnableTotalMg(board: BitBoard, evaluation: i16): i16 {
     const factor: i16 = evaluation > 0 ? 1 : -1;
     return factor * <i16>Math.max(Math.min(winnable(board) + 50, 0), -Math.abs(evaluation));
   }
+
+export function winnableTotalEg(board: BitBoard, evaluation: i16): i16 {
+    if (evaluation === 0) {
+        return 0;
+    }
+    const factor: i16 = evaluation > 0 ? 1 : -1;
+    return factor * <i16>Math.max(winnable(board), -Math.abs(evaluation));
+  }

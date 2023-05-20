@@ -1029,6 +1029,17 @@ export function kingMg(board: BitBoard, player: i8): i16 {
   return result;
 }
 
+export function kingEg(board: BitBoard, player: i8): i16 {
+  let result: i16 = 0;
+  result -= kingPawnDistance(board, player) << 4;
+  // TODO end game shelter...
+  if (pawnlessFlank(board, player)) {
+    result += 95;
+  }
+  result += kingDanger(board, player) >> 4;
+  return result;
+}
+
 export function kingPawnDistance(board: BitBoard, player: i8): i16 {
   const kingMask = board.getKingMask(player);
   const kingPosition = <i8>ctz(kingMask);

@@ -1,4 +1,4 @@
-import { BLACK, WHITE } from "../../bitboard";
+import { BLACK, maskString, WHITE } from "../../bitboard";
 import {
   candidatePassedMask,
   kingProximityBonus,
@@ -41,6 +41,7 @@ describe("Stockfish passed pawns evaluation", () => {
     board = parseFEN(
       "rnbqkbnr/1p2p1pp/1p2P1p1/1p1P4/8/8/2PPPPPP/RNBQKBNR b KQkq - 0 2"
     );
+    log(maskString(candidatePassedMask(board, WHITE)));
     expect(candidatePassedMask(board, WHITE)).toBe((<u64>1) << 44);
 
     board = parseFEN(
@@ -145,5 +146,26 @@ describe("Stockfish passed pawns evaluation", () => {
     );
     expect(passedEg(board, WHITE)).toBe(<i16>91);
     expect(passedEg(board, BLACK)).toBe(<i16>6);
+  });
+
+  it("should compute candidated passed (bug))", () => {
+    let board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15"
+    );
+    //log(maskString(1 << 2));
+    //log(ctz(1 << 2));
+    //log(maskString(candidatePassedMask(board, BLACK)));
+    expect(popcnt(candidatePassedMask(board, BLACK))).toBe(2);
+
+  });
+  it("should compute passed eg bonuses bis", () => {
+    let board = parseFEN(
+      "8/Q5pp/3BkPN1/4p2P/n4p2/8/P7/5RK1 w kq - 18 15"
+    );
+    //log(maskString(candidatePassedMask(board, WHITE)));
+    //log(maskString(candidatePassedMask(board, BLACK)));
+    //expect(passedLeverageMask(board, BLACK)).toBe(<i16>7);
+    expect(passedEg(board, BLACK)).toBe(<i16>98);
+    expect(passedEg(board, WHITE)).toBe(<i16>117);
   });
 });
