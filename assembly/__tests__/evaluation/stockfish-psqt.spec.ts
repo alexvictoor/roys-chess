@@ -1,6 +1,4 @@
-import { WHITE } from "../../bitboard";
-import { isolated } from "../../evaluation/stockfish-pawn";
-import { psqtBonus } from "../../evaluation/stockfish-static-evaluation";
+import { psqtBonus } from "../../evaluation/stockfish-psqt";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish psqt evaluation", () => {
