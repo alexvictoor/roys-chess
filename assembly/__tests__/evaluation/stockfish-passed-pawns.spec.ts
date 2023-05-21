@@ -41,7 +41,7 @@ describe("Stockfish passed pawns evaluation", () => {
     board = parseFEN(
       "rnbqkbnr/1p2p1pp/1p2P1p1/1p1P4/8/8/2PPPPPP/RNBQKBNR b KQkq - 0 2"
     );
-    log(maskString(candidatePassedMask(board, WHITE)));
+    //log(maskString(candidatePassedMask(board, WHITE)));
     expect(candidatePassedMask(board, WHITE)).toBe((<u64>1) << 44);
 
     board = parseFEN(
@@ -156,6 +156,19 @@ describe("Stockfish passed pawns evaluation", () => {
     //log(ctz(1 << 2));
     //log(maskString(candidatePassedMask(board, BLACK)));
     expect(popcnt(candidatePassedMask(board, BLACK))).toBe(2);
+
+  });
+
+  it("should compute candidated passed (again)", () => {
+    let board = parseFEN(
+      "8/Q2pP3/3BkPN1/4p3/n4p2/4p1P1/8/5RK1 w kq - 18 15"
+    );
+    //log(maskString(1 << 2));
+    //log(ctz(1 << 2));
+    //log(maskString(candidatePassedMask(board, WHITE)));
+    //log(maskString(candidatePassedMask(board, BLACK)));
+    expect(popcnt(candidatePassedMask(board, BLACK))).toBe(3);
+    expect(popcnt(candidatePassedMask(board, WHITE))).toBe(3);
 
   });
   it("should compute passed eg bonuses bis", () => {

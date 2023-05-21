@@ -116,8 +116,6 @@ describe("Stockfish threats", () => {
     const whiteMask = sliderOnQueenMask(board, WHITE);
     const blackMask = sliderOnQueenMask(board, BLACK);
 
-    log(maskString(blackMask));
-
     expect(whiteMask).toBe(0);
     expect(blackMask).toBe(1 << 17 | 1 << 11 | 1 << 19);
   });

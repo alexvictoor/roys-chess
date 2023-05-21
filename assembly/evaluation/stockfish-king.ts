@@ -882,7 +882,7 @@ export function kingDanger(board: BitBoard, player: i8): i16 {
   const attacks: i16 = kingAttacks(board, player);
   const weak: i16 = weakBonus(board, player);
   //log(maskString(unsafeChecksMask(board, player)))
-  const unsafeChecks: i16 = 0; //<i16>popcnt(unsafeChecksMask(board, player)); // unsafeChecksMask
+  const unsafeChecks: i16 = <i16>popcnt(unsafeChecksMask(board, player)); // unsafeChecksMask
   const blockersForKing: i16 = <i16>popcnt(blockersForKingMask(board, player)); // blockersForKingMask
   const kingFlankAttack: i16 = flankAttack(board, player);
   const kingFlankDefense: i16 = flankDefense(board, player);

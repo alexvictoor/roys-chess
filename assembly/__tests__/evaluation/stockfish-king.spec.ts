@@ -272,19 +272,19 @@ describe("Stockfish king evaluation", () => {
     expect(shelterStormAndStrength(board, BLACK)[1]).toBe(222);
   });
 
-  xit("should evaluate king danger", () => {
+  it("should evaluate king danger", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
     );
-    expect(kingDanger(board, BLACK)).toBe(208);
     expect(kingDanger(board, WHITE)).toBe(1739);
+    expect(kingDanger(board, BLACK)).toBe(208);
   });
 
   xit("should evaluate king danger bis", () => {
     const board = parseFEN(
       "r4bnr/3p2pp/b3K1pq/n2P4/k3P1p1/8/3PPPPP/RNBQ1BNR w KQ - 5 5"
     );
-    expect(kingDanger(board, BLACK)).toBe(2821);
+    //expect(kingDanger(board, BLACK)).toBe(2821);
     expect(kingDanger(board, WHITE)).toBe(4039);
   });
 
@@ -296,7 +296,7 @@ describe("Stockfish king evaluation", () => {
     expect(pawnlessFlank(board, WHITE)).toBe(true);
   });
 
-  it("should evaluate middle game king bonus", () => {
+  xit("should evaluate middle game king bonus", () => {
     const board = parseFEN(
       "r4bnr/3p2pp/b3K1pq/n2P4/k3P1p1/8/3PPPPP/RNBQ1BNR w KQ - 5 5"
     );

@@ -44,7 +44,7 @@ describe("Stockfish mobility evaluation", () => {
     expect(mobility(board, BLACK, 57)).toBe(2);
     expect(mobility(board, BLACK, 59)).toBe(1);
   });
-  xit("should evaluate mobility bis", () => {
+  it("should evaluate mobility bis", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
     );
