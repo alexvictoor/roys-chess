@@ -2,13 +2,19 @@ import {
   BISHOP,
   BitBoard,
   BLACK,
+  firstColMask,
   MaskIterator,
   opponent,
   WHITE,
 } from "../bitboard";
-import { kingEg, kingMg } from "./stockfish-king";
+import { kingEg, kingMg, kingRingMask } from "./stockfish-king";
+import { nonPawnMaterial } from "./stockfish-material";
 import { mobilityFor } from "./stockfish-mobility";
-import { passedEg, passedMg } from "./stockfish-passed-pawns";
+import {
+  candidatePassedMask,
+  passedEg,
+  passedMg,
+} from "./stockfish-passed-pawns";
 import { pawnsEg, pawnsMg } from "./stockfish-pawn";
 import { piecesEg, piecesMg } from "./stockfish-pieces";
 import { psqtBonus } from "./stockfish-psqt";
@@ -16,17 +22,31 @@ import { space } from "./stockfish-space";
 import { threatsEg, threatsMg } from "./stockfish-threats";
 import { winnableTotalEg, winnableTotalMg } from "./stockfish-winnable";
 
-export function mainEvaluation(board: BitBoard): i16 {
-  const mg = middleGameEvaluation(board);
-  /*var eg = end_game_evaluation(board);
-    var p = phase(board), rule50 = rule50(board);
-    eg = eg * scale_factor(board, eg) / 64;
-    var v = (((mg * p + ((eg * (128 - p)) << 0)) / 128) << 0);
-    if (arguments.length == 1) v = ((v / 16) << 0) * 16;
-    v += tempo(pos);
-    v = (v * (100 - rule50) / 100) << 0;
-    return v;*/
-  return mg;
+export function mainEvaluation(player: i8, board: BitBoard): i16 {
+  const mg: i32 = middleGameEvaluation(board);
+  const eg: i32 = endGameEvaluation(board);
+  const sf: i32 = scaleFactor(board, eg > 0 ? WHITE :  BLACK);
+  const egAdjusted: i32 = (eg * sf) >> 6;
+  const p: i32 = phase(board);
+  const rule50: i32 = <i16>board.getHalfMoveClock();
+  let v: i32 = ((mg * p + (egAdjusted * (128 - p))) >> 7);
+  v += player === WHITE ? 28 : -28;
+  v = v * (100 - rule50) / 100;
+  /*log('mg ' + mg.toString())
+  log('eg ' + eg.toString())
+  log('egAdjusted ' + egAdjusted.toString())
+  log('sf ' + sf.toString())
+  log('p ' + p.toString())
+  log('rule50 ' + rule50.toString())*/
+  return <i16>v;
+}
+
+const midgameLimit = <i32>15258;
+const endgameLimit = <i32>3915;
+function phase(board: BitBoard): i16 { 
+  const npm = <i32>nonPawnMaterial(board, WHITE) + <i32>nonPawnMaterial(board, BLACK);
+  const npmAdjusted = <i32>Math.max(endgameLimit, <i32>Math.min(npm, midgameLimit));
+  return <i16>(((npmAdjusted - endgameLimit) << 7) / (midgameLimit - endgameLimit));
 }
 
 function middleGameEvaluation(board: BitBoard): i16 {
@@ -194,4 +214,75 @@ function imbalance(board: BitBoard): i16 {
     }
   }
   return result;
+}
+
+const leftFlank =
+  firstColMask |
+  (firstColMask << 1) |
+  (firstColMask << 2) |
+  (firstColMask << 3);
+const rightFlank =
+  (firstColMask << 4) |
+  (firstColMask << 5) |
+  (firstColMask << 6) |
+  (firstColMask << 7);
+
+export function scaleFactor(board: BitBoard, player: i8): i16 {
+  const opponentPlayer = opponent(player);
+  let sf = <i16>64;
+  const pc_w = <i16>popcnt(board.getPawnMask(player));
+  const pc_b = <i16>popcnt(board.getPawnMask(opponentPlayer));
+  const qc_w = <i16>popcnt(board.getQueenMask(player));
+  const qc_b = <i16>popcnt(board.getQueenMask(opponentPlayer));
+  const bc_w = <i16>popcnt(board.getBishopMask(player));
+  const bc_b = <i16>popcnt(board.getBishopMask(opponentPlayer));
+  const nc_w = <i16>popcnt(board.getKnightMask(player));
+  const nc_b = <i16>popcnt(board.getKnightMask(opponentPlayer));
+  const npm_w = nonPawnMaterial(board, player);
+  const npm_b = nonPawnMaterial(board, opponentPlayer);
+  const bishopValueMg = <i16>825;
+  const rookValueMg = <i16>1276;
+
+  if (pc_w == 0 && npm_w - npm_b <= bishopValueMg) {
+    sf = npm_w < rookValueMg ? 0 : npm_b <= bishopValueMg ? 4 : 14;
+  }
+  if (sf === 64) {
+    const ob = oppositeBishops(board);
+    if (ob && npm_w === bishopValueMg && npm_b === bishopValueMg) {
+      sf = 22 + 4 * <i16>popcnt(candidatePassedMask(board, player));
+    } else if (ob) {
+      sf = 22 + 3 * <i16>popcnt(board.getPlayerPiecesMask(player));
+    } else {
+      if (npm_w == rookValueMg && npm_b == rookValueMg && pc_w - pc_b <= 1) {
+        if (
+          !!(
+            kingRingMask(board, opponentPlayer, true) &
+            board.getPawnMask(opponentPlayer)
+          ) &&
+          !!(board.getPawnMask(player) & leftFlank) !==
+            !!(board.getPawnMask(player) & rightFlank)
+        ) {
+          return 36;
+        }
+      }
+      if (qc_w + qc_b == 1) {
+        sf = 37 + 3 * (qc_w == 1 ? bc_b + nc_b : bc_w + nc_w);
+      } else {
+        sf = <i16>Math.min(sf, 36 + 7 * pc_w);
+      }
+    }
+  }
+  return sf;
+}
+
+function oppositeBishops(board: BitBoard): boolean {
+  const whiteBishopMask = board.getBishopMask(WHITE);
+  const blackBishopMask = board.getBishopMask(BLACK);
+  if (popcnt(whiteBishopMask) !== 1 || popcnt(blackBishopMask) !== 1) {
+    return false;
+  }
+  if ((ctz(whiteBishopMask) & 1) === (ctz(blackBishopMask) & 1)) {
+    return false;
+  }
+  return true;
 }

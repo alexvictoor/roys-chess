@@ -114,14 +114,14 @@ function initKingNeighborsCache(): void {
 }
 initKingNeighborsCache();
 
-function kingRingMask(board: BitBoard, player: i8, full: boolean): u64 {
-  const pawnMask = board.getPawnMask(player);
-  const defendedTwiceByPawns =
-    pawnAttacksOnLeft(player, pawnMask) & pawnAttacksOnRight(player, pawnMask);
+export function kingRingMask(board: BitBoard, player: i8, full: boolean): u64 {
   const kingPos = <i8>ctz(board.getKingMask(player));
   if (full) {
     return kingRingCache[kingPos];
   }
+  const pawnMask = board.getPawnMask(player);
+  const defendedTwiceByPawns =
+    pawnAttacksOnLeft(player, pawnMask) & pawnAttacksOnRight(player, pawnMask);
   return kingRingCache[kingPos] & ~defendedTwiceByPawns;
 }
 
