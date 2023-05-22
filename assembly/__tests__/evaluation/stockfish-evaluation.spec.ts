@@ -34,4 +34,9 @@ describe("Stockfish main evaluation", () => {
     board.bits[CLOCK] = 18;
     expect(mainEvaluation(WHITE, board)).toBe(3366); //3368
   });
+  it("should evaluate score", () => {
+    const board = parseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
+    board.bits[CLOCK] = 0;
+    expect(mainEvaluation(WHITE, board)).toBe(3366); //3368
+  });
 });
