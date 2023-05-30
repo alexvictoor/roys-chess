@@ -1,7 +1,13 @@
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { pieceValues } from "../../evaluation/stockfish-static-evaluation";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish piece values evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should be 0 before the game begins", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

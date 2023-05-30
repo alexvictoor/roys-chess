@@ -8,6 +8,7 @@ import {
   rookMoves
 } from "../sliding-pieces-move-generation";
 import { blockersForKingMask } from "./stockfish-blocker-king";
+import { ATTACK_BY_BISHOPS_MASK_KEY, ATTACK_BY_KINGS_MASK_KEY, ATTACK_BY_KNIGHTS_MASK_KEY, ATTACK_BY_QUEENS_MASK_KEY, ATTACK_BY_ROOKS_MASK_KEY, ATTACK_ONCE_MASK_KEY, ATTACK_TWICE_MASK_KEY, getValueFromCacheU64, isInCache, setValueInCacheU64 } from "./stockfish-cache";
 import { pinnedDirectionMask } from "./stockfish-pinned-direction";
 
 export function bishopXRayAttackMask(
@@ -108,6 +109,11 @@ export function knightAttack(
 const positions = new MaskIterator();
 
 export function attackByKnightsMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_BY_KNIGHTS_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_BY_KNIGHTS_MASK_KEY, player);
+  }
+
   let resultMask: u64 = 0;
   const knightMask = board.getKnightMask(player);
   positions.reset(knightMask);
@@ -115,10 +121,18 @@ export function attackByKnightsMask(board: BitBoard, player: i8): u64 {
     const position = positions.next();
     resultMask |= knightAttackMask(board, player, position, ~0);
   }
+
+  setValueInCacheU64(ATTACK_BY_KNIGHTS_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 
 export function attackByBishopsMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_BY_BISHOPS_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_BY_BISHOPS_MASK_KEY, player);
+  }
+
   let resultMask: u64 = 0;
   const bishopMask = board.getBishopMask(player);
   positions.reset(bishopMask);
@@ -126,10 +140,18 @@ export function attackByBishopsMask(board: BitBoard, player: i8): u64 {
     const position = positions.next();
     resultMask |= bishopXRayAttackMask(board, player, position, ~0);
   }
+
+  setValueInCacheU64(ATTACK_BY_BISHOPS_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 
 export function attackByRooksMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_BY_ROOKS_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_BY_ROOKS_MASK_KEY, player);
+  }
+
   let resultMask: u64 = 0;
   const rookMask = board.getRookMask(player);
   positions.reset(rookMask);
@@ -137,9 +159,17 @@ export function attackByRooksMask(board: BitBoard, player: i8): u64 {
     const position = positions.next();
     resultMask |= rookXRayAttackMask(board, player, position, ~0);
   }
+
+  setValueInCacheU64(ATTACK_BY_ROOKS_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 export function attackByQueensMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_BY_QUEENS_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_BY_QUEENS_MASK_KEY, player);
+  }
+
   let resultMask: u64 = 0;
   const queenMask = board.getQueenMask(player);
   positions.reset(queenMask);
@@ -147,9 +177,17 @@ export function attackByQueensMask(board: BitBoard, player: i8): u64 {
     const position = positions.next();
     resultMask |= queenAttackMask(board, player, position, ~0);
   }
+
+  setValueInCacheU64(ATTACK_BY_QUEENS_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 export function attackByKingsMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_BY_KINGS_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_BY_KINGS_MASK_KEY, player);
+  }
+
   let resultMask: u64 = 0;
   const kingMask = board.getKingMask(player);
   positions.reset(kingMask);
@@ -157,6 +195,9 @@ export function attackByKingsMask(board: BitBoard, player: i8): u64 {
     const position = positions.next();
     resultMask |= kingMoves(position);
   }
+
+  setValueInCacheU64(ATTACK_BY_KINGS_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 
@@ -165,6 +206,11 @@ export function attackByPawnsMask(board: BitBoard, player: i8): u64 {
 }
 
 export function attackOnceMask(board: BitBoard, player: i8): u64 {
+  
+  if (isInCache(ATTACK_ONCE_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_ONCE_MASK_KEY, player);
+  }
+
   let resultMask: u64 = attackByPawnsMask(board, player);
   resultMask |= attackByKnightsMask(board, player);
   resultMask |= attackByBishopsMask(board, player);
@@ -172,9 +218,16 @@ export function attackOnceMask(board: BitBoard, player: i8): u64 {
   resultMask |= attackByQueensMask(board, player);
   resultMask |= attackByKingsMask(board, player);
 
+  setValueInCacheU64(ATTACK_ONCE_MASK_KEY, player, resultMask);
+  
   return resultMask;
 }
 export function attackTwiceMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(ATTACK_TWICE_MASK_KEY, player)) {
+    return getValueFromCacheU64(ATTACK_TWICE_MASK_KEY, player);
+  }
+
   let onceMask: u64 = pawnAttacks(player, board.getPawnMask(player));
   let twiceMask: u64 =
     pawnAttacksOnLeft(player, board.getPawnMask(player)) &
@@ -219,6 +272,8 @@ export function attackTwiceMask(board: BitBoard, player: i8): u64 {
     twiceMask |= onceMask & mask;
     onceMask |= mask;
   }
+
+  setValueInCacheU64(ATTACK_TWICE_MASK_KEY, player, twiceMask);
 
   return twiceMask;
 }

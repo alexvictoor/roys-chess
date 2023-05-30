@@ -27,7 +27,7 @@ function pawnsMg(board: BitBoard, player: i8) {
 
 export function doubled(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   const forwardDirection: i8 = player === WHITE ? 1 : -1;
   if (!(pawnMask & toMask(posX, posY - forwardDirection))) {
@@ -45,7 +45,7 @@ export function doubled(board: BitBoard, player: i8, pos: i8): boolean {
 export function backward(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
   const opponentPawnMask = board.getPawnMask(opponent(player));
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   const forwardDirection: i8 = player === WHITE ? 1 : -1;
   for (let y: i8 = posY; y < 8 && y >= 0; y -= forwardDirection) {
@@ -71,7 +71,7 @@ export function doubledIsolated(board: BitBoard, player: i8, pos: i8): boolean {
   const opponentPawnMask = board.getPawnMask(opponent(player));
   const pawnBellowMask: u64 = player === WHITE ? pawnMask : opponentPawnMask;
   const pawnUpperMask: u64 = player === WHITE ? opponentPawnMask : pawnMask;
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   let pawnBellow: boolean = false;
   let pawnUpper: boolean = false;
@@ -106,7 +106,7 @@ export function isolatedAll(board: BitBoard, player: i8): boolean {
   positions.reset(pawnMask);
   while (positions.hasNext()) {
     const pos: i8 = positions.next();
-    const row = pos % 8;
+    const row = pos & 7;
     const leftMask = getRowMask(row - 1);
     if (leftMask & pawnMask) {
       continue;
@@ -122,7 +122,7 @@ export function isolatedAll(board: BitBoard, player: i8): boolean {
 
 export function isolated(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
-  const row = pos % 8;
+  const row = pos & 7;
   const leftMask = getRowMask(row - 1);
   if (leftMask & pawnMask) {
     return false;
@@ -177,11 +177,17 @@ export function opposed(board: BitBoard, player: i8, pos: i8): boolean {
   return false;
 }
 
+const seed: i16[] = [0, 7, 8, 12, 29, 48, 86];
 export function connectedBonus(board: BitBoard, player: i8, pos: i8): i16 {
+  
+  
+  /*
+  check done by caller
   if (!connected(board, player, pos)) {
     return 0;
   }
-  const seed: i16[] = [0, 7, 8, 12, 29, 48, 86];
+  */
+
   //const opponentPawnMask = board.getPawnMask(opponent(player));
   //const forwardDirection: i8 = player === WHITE ? 8 : -8;
   const r: i8 = player === WHITE ? (pos >> 3) + 1 : 8 - (pos >> 3);
@@ -191,7 +197,7 @@ export function connectedBonus(board: BitBoard, player: i8, pos: i8): i16 {
   if (r < 2 || r > 7) {
     return 0;
   }
-  return seed[r - 1] * (2 + ph - op) + 21 * su;
+  return unchecked(seed[r - 1]) * (2 + ph - op) + 21 * su;
 }
 
 export function weakUnopposedPawn(
@@ -270,7 +276,7 @@ export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): boolean {
   const pawnMask = board.getPawnMask(player);
   const opponentPawnMask = board.getPawnMask(opponentPlayer);
   let y: i8 = player == WHITE ? 7 : 0;
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   while (y != posY) {
     if (posX > 0 && (toMask(posX - 1, y) & opponentPawnMask) && ((y == posY + pawnDirection) || (!(toMask(posX - 1, y - pawnDirection) & pawnMask) && !backward(board, opponentPlayer, pos - 1))  )) {

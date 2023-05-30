@@ -63,5 +63,5 @@ export function initPinnedDirectionCache(): void {
 initPinnedDirectionCache();
 
 export function pinnedDirectionMask(kingPos: i8, pos: i8): u64 {
-  return pinnedDirectionCache[(pinnedDirection(kingPos, pos) - 1) * 64 + pos];
+  return unchecked(pinnedDirectionCache[(pinnedDirection(kingPos, pos) - 1) * 64 + pos]);
 }

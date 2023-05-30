@@ -1,10 +1,16 @@
 import {
   BLACK, WHITE
 } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { space, spaceArea } from "../../evaluation/stockfish-space";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish space area evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should count safe squares for minor peaces on central files", () => {
     const board = parseFEN(
       "rnbqkbnr/4pppp/p4p2/pP6/4P3/3P4/P3PPPP/RNBQKBNR w KQkq - 0 5"
@@ -13,7 +19,13 @@ describe("Stockfish space area evaluation", () => {
     expect(spaceArea(board, WHITE)).toBe(<i16>10);
   });
 });
+
 describe("Stockfish space evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+
   it("should be 0 when there is not enough non pawn material", () => {
     const board = parseFEN(
       "1nb1kbn1/4pppp/p4p2/pP6/4P3/3P4/P3PPPP/RNBQKBNR w KQkq - 0 5"

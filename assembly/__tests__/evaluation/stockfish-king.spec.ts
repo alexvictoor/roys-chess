@@ -1,4 +1,5 @@
 import { BISHOP, BLACK, KNIGHT, maskString, QUEEN, ROOK, WHITE } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import {
   bishopsOnKingRing,
   flankAttack,
@@ -17,9 +18,7 @@ import {
   safeChecksMask,
   shelterStormAndStrength,
   stormSquare,
-  stormSquareBad,
   strengthSquare,
-  strengthSquareBad,
   unsafeChecksMask,
   unsafeChecksMaskByType,
   weakBonus,
@@ -28,6 +27,11 @@ import {
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish king evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should evaluate king ring", () => {
     const board = parseFEN(
       "3q4/1ppppppp/1bnrkn2/p2r2R1/3NP3/2BR4/PPP1PPPP/2KQ2N1 b KQkq - 1 3"
@@ -120,11 +124,13 @@ describe("Stockfish king evaluation", () => {
     expect(safeChecksMask(board, WHITE, BISHOP)).toBe(1 << 33);
     expect(safeChecksMask(board, WHITE, KNIGHT)).toBe(1 << 54);
 
+    resetCache();
     const board2 = parseFEN(
       "1nb1k1n1/3q1ppp/P4p2/p3p1bN/2B5/1NQPnP2/PB2P1PP/2R1K2R b kq - 7 9"
     );
     expect(safeChecksMask(board2, WHITE, BISHOP)).toBe(0);
 
+    resetCache();
     const board3 = parseFEN(
       "1nb1k1n1/3q1ppp/P4p2/p1PNp1bN/2Q5/4nP2/PB1BP1PP/2R1K2R b kq - 7 9"
     );
@@ -187,37 +193,10 @@ describe("Stockfish king evaluation", () => {
     const board = parseFEN(
       "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
     );
-    expect(stormSquareBad(board, WHITE)).toBe(3824);
-    expect(stormSquareBad(board, BLACK)).toBe(3824);
-  });
-  it("should evaluate storm square when there is no pawns ", () => {
-    const board = parseFEN(
-      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
-    );
     expect(stormSquare(board, WHITE)[12]).toBe(-36);
     expect(stormSquare(board, BLACK)[17]).toBe(125);
   });
-  it("should evaluate storm square", () => {
-    const board = parseFEN(
-      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn2P2/1B6/3R1RK1 w kq - 16 14"
-    );
-    expect(stormSquareBad(board, BLACK)).toBe(3824);
-    expect(stormSquareBad(board, WHITE)).toBe(3440);
-  });
-  it("should evaluate storm square", () => {
-    const board = parseFEN(
-      "2n1k1n1/8/2qB2N1/1Q6/3bp3/1Nn1P3/1B6/3R1RK1 w kq - 16 14"
-    );
-    expect(stormSquareBad(board, BLACK)).toBe(3926);
-    expect(stormSquareBad(board, WHITE)).toBe(3989);
-  });
-  it("should evaluate storm square", () => {
-    const board = parseFEN(
-      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
-    );
-    expect(stormSquareBad(board, WHITE)).toBe(1226);
-    expect(stormSquareBad(board, BLACK)).toBe(2604);
-  });
+
   it("should evaluate storm square", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
@@ -233,20 +212,6 @@ describe("Stockfish king evaluation", () => {
     expect(stormSquare(board, BLACK)[7]).toBe(56);
   });
 
-  it("should evaluate strength square when there is no pawns", () => {
-    const board = parseFEN(
-      "2n1k1n1/8/2qB2N1/1Q6/3b4/1Nn5/1B6/3R1RK1 w kq - 16 14"
-    );
-    expect(strengthSquareBad(board, BLACK)).toBe(-4448);
-    expect(strengthSquareBad(board, WHITE)).toBe(-4448);
-  });
-  it("should evaluate strength square", () => {
-    const board = parseFEN(
-      "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"
-    );
-    expect(strengthSquareBad(board, BLACK)).toBe(-1284);
-    expect(strengthSquareBad(board, WHITE)).toBe(-2233);
-  });
   it("should evaluate strength square", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1qBp1N1/pQP1p3/3b4/1Nn2P2/PB3PPP/3R1RK1 w kq - 16 14"

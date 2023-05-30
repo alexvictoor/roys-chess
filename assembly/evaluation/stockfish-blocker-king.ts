@@ -6,11 +6,17 @@ import {
     queenMoves,
     rookMoves
 } from "../sliding-pieces-move-generation";
+import { BLOCKERS_FOR_KING_MASK_KEY, getValueFromCacheU64, isInCache, setValueInCacheU64 } from "./stockfish-cache";
 import { pinnedDirectionMask } from "./stockfish-pinned-direction";
 
 const positions = new MaskIterator();
   
 export function blockersForKingMask(board: BitBoard, player: i8): u64 {
+
+    if (isInCache(BLOCKERS_FOR_KING_MASK_KEY, player)) {
+      return getValueFromCacheU64(BLOCKERS_FOR_KING_MASK_KEY, player);
+    }
+
     const opponentPlayer = opponent(player);
     const opponentKingMask = board.getKingMask(opponentPlayer);
     const opponentKingPos = <i8>ctz(opponentKingMask);
@@ -56,6 +62,8 @@ export function blockersForKingMask(board: BitBoard, player: i8): u64 {
         blockers |= moves & potentialBlockersMask & directionMask;
       }
     }
+
+    setValueInCacheU64(BLOCKERS_FOR_KING_MASK_KEY, player, blockers);
   
     return blockers;
   }

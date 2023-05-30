@@ -29,7 +29,7 @@ import { bishopsOnKingRing, rooksOnKingRing } from "./stockfish-king";
 export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): i16 {
   const pawnMask = board.getPawnMask(player);
   const opponentPawnMask = board.getPawnMask(opponent(player));
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   const forwardDirection: i8 = player === WHITE ? 1 : -1;
   const lastRow: i8 = player === WHITE ? 7 : 0;
@@ -57,7 +57,7 @@ export function pawnAttacksSpan(board: BitBoard, player: i8, pos: i8): i16 {
 }
 
 export function outpostSquare(board: BitBoard, player: i8, pos: i8): i16 {
-  const posX: i8 = pos % 8;
+  const posX: i8 = pos & 7;
   const posY: i8 = pos >> 3;
   const pawnMask = board.getPawnMask(player);
   const forwardDirection: i8 = player === WHITE ? 1 : -1;
@@ -153,14 +153,14 @@ export function outpostTotal(board: BitBoard, player: i8, mg: boolean): i16 {
   while (positions.hasNext()) {
     const pos = positions.next();
     if (outpost(board, player, pos)) {
-      result += scores[3];
+      result += unchecked(scores[3]);
     }
   }
   positions.reset(knightMask);
   while (positions.hasNext()) {
     const pos = positions.next();
     if (outpost(board, player, pos)) {
-      const posX: i8 = pos % 8;
+      const posX: i8 = pos & 7;
       const posY: i8 = pos >> 3;
       const posMask = <u64>(1 << pos);
       if (posX < 2 || posX > 5) {
@@ -184,13 +184,13 @@ export function outpostTotal(board: BitBoard, player: i8, mg: boolean): i16 {
           }
         }
         if (!ea && cnt <= 1) {
-          result -= scores[2];
+          result -= unchecked(scores[2]);
         }
       }
 
-      result += scores[4];
+      result += unchecked(scores[4]);
     } else if (!!reachableOutpost(board, player, pos)) {
-      result += scores[1];
+      result += unchecked(scores[1]);
     }
   }
   return result;
@@ -259,7 +259,7 @@ export function countRooksOnQueenFiles(board: BitBoard, player: i8): i16 {
   positions.reset(rookMask);
   while (positions.hasNext()) {
     const pos = positions.next();
-    const rookFile = pos % 8;
+    const rookFile = pos & 7;
     if ((firstColMask << rookFile) & queenMask) {
       result++;
     }
@@ -270,7 +270,7 @@ export function countRooksOnQueenFiles(board: BitBoard, player: i8): i16 {
 export function rookOnFile(board: BitBoard, player: i8, pos: i8): i16 {
   const pawnMask = board.getPawnMask(player);
   const opponentPawnMask = board.getPawnMask(opponent(player));
-  const rookFile = pos % 8;
+  const rookFile = pos & 7;
   const rookFileMask = firstColMask << rookFile;
   if (rookFileMask & pawnMask) {
     return 0;
@@ -293,7 +293,7 @@ export function rooksOnFile(board: BitBoard, player: i8, mg: boolean): i16 {
   let result: i16 = 0;
   while (positions.hasNext()) {
     const pos = positions.next();
-    const rookFile = pos % 8;
+    const rookFile = pos & 7;
     const rookFileMask = firstColMask << rookFile;
     if (rookFileMask & pawnMask) {
       continue;
@@ -312,8 +312,8 @@ export function trappedRooks(board: BitBoard, player: i8, pos: i8): i16 {
     return 0;
   }
   const kingPos = <i8>ctz(board.getKingMask(player));
-  const kingPosX = kingPos % 8;
-  const posX = pos % 8;
+  const kingPosX = kingPos & 7;
+  const posX = pos & 7;
   if (kingPosX < 4 !== posX < kingPosX) {  // <4 as https://groups.google.com/g/fishcooking/c/kHs9Ajva_lQ?pli=1 ?
     return 0;
   }
@@ -377,7 +377,7 @@ export function queenInfiltration(board: BitBoard, player: i8): i16 {
   let result: i16 = 0;
   while (positions.hasNext()) {
     const queenPosition = positions.next();
-    const posX: i8 = queenPosition % 8;
+    const posX: i8 = queenPosition & 7;
     const posY: i8 = queenPosition >> 3;
     if ((player === WHITE && posY < 4) || (player === BLACK && posY > 3)) {
       continue;
@@ -399,9 +399,9 @@ export function queenInfiltration(board: BitBoard, player: i8): i16 {
 export function kingDistance(board: BitBoard, player: i8, position: i8): i16 {
   const kingMask = board.getKingMask(player);
   const kingPosition = <i8>ctz(kingMask);
-  const posX: i8 = position % 8;
+  const posX: i8 = position & 7;
   const posY: i8 = position >> 3;
-  const kingPosX: i8 = kingPosition % 8;
+  const kingPosX: i8 = kingPosition & 7;
   const kingPosY: i8 = kingPosition >> 3;
   return <i16>Math.max(Math.abs(posX - kingPosX), Math.abs(posY - kingPosY));
 }

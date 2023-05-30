@@ -7,6 +7,7 @@ import {
   pawnAttacks, pawnInitialRowMask
 } from "../pawn";
 import { attackByBishopsMask, attackByKingsMask, attackByKnightsMask, attackByQueensMask, attackByRooksMask, attackMask, attackOnceMask, attackTwiceMask, bishopXRayAttackMask, knightAttackMask, rookXRayAttackMask } from "./stockfish-attacks";
+import { getValueFromCacheU64, isInCache, RESTRICTED_MASK_KEY, setValueInCacheU64 } from "./stockfish-cache";
 
 
 export function weakEnemiesMask(board: BitBoard, player: i8): u64 {
@@ -184,14 +185,24 @@ export function knightOnQueenMask(board: BitBoard, player: i8): u64 {
 }
 
 export function restrictedMask(board: BitBoard, player: i8): u64 {
+  
+  if (isInCache(RESTRICTED_MASK_KEY, player)) {
+    return getValueFromCacheU64(RESTRICTED_MASK_KEY, player);
+  }
+
   const opponentPlayer = opponent(player);
-  return (
+  const resultMask = (
     attackMask(board, player, false) &
     attackMask(board, opponentPlayer, false) &
     ~pawnAttacks(opponentPlayer, board.getPawnMask(opponentPlayer)) &
     (~attackMask(board, opponentPlayer, true) | attackMask(board, player, true))
   );
+
+  setValueInCacheU64(RESTRICTED_MASK_KEY, player, resultMask);
+
+  return resultMask;
 }
+
 export function weakQueenProtectionMask(board: BitBoard, player: i8): u64 {
   const opponentPlayer = opponent(player);
   return (

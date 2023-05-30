@@ -7,6 +7,7 @@ import {
   opponent,
   WHITE,
 } from "../bitboard";
+import { getValueFromCache, IMBALANCE_TOTAL_KEY, isInCache, resetCache, setValueInCache } from "./stockfish-cache";
 import { kingEg, kingMg, kingRingMask } from "./stockfish-king";
 import { nonPawnMaterial } from "./stockfish-material";
 import { mobilityFor } from "./stockfish-mobility";
@@ -23,6 +24,8 @@ import { threatsEg, threatsMg } from "./stockfish-threats";
 import { winnableTotalEg, winnableTotalMg } from "./stockfish-winnable";
 
 export function mainEvaluation(player: i8, board: BitBoard): i16 {
+  resetCache();
+  
   const mg: i32 = middleGameEvaluation(board);
   const eg: i32 = endGameEvaluation(board);
   const sf: i32 = scaleFactor(board, eg > 0 ? WHITE :  BLACK);
@@ -130,7 +133,12 @@ export function pieceValues(board: BitBoard, mg: boolean): i16 {
 }
 
 export function imbalanceTotal(board: BitBoard): i16 {
-  return (imbalance(board) + bishopPairs(board)) >> 4;
+  if (isInCache(IMBALANCE_TOTAL_KEY, WHITE)) {
+    return getValueFromCache(IMBALANCE_TOTAL_KEY, WHITE);
+  }
+  const result = (imbalance(board) + bishopPairs(board)) >> 4;
+  setValueInCache(IMBALANCE_TOTAL_KEY, WHITE, result);
+  return result;
 }
 
 function bishopPairs(board: BitBoard): i16 {
@@ -144,43 +152,45 @@ function bishopPairs(board: BitBoard): i16 {
   return result;
 }
 
+const qo: i16[][] = [
+  [40, 38],
+  [-40, -38],
+  [32, 255, -62],
+  [-32, -255, 62],
+  [0, 104, 4, 0],
+  [0, -104, -4, 0],
+  [-26, -2, 47, 105, -208],
+  [26, 2, -47, -105, 208],
+  [-189, 24, 117, 133, -134, -6],
+  [189, -24, -117, -133, 134, 6],
+  [0],
+  [0],
+];
+const qt: i16[][] = [
+  [36, 0],
+  [-36, 0],
+  [9, 63, 0],
+  [-9, -63, 0],
+  [59, 65, 42, 0],
+  [-59, -65, -42, 0],
+  [46, 39, 24, -24, 0],
+  [-46, -39, -24, 24, 0],
+  [97, 100, -42, 137, 268, 0],
+  [-97, -100, 42, -137, -268, 0],
+  [0],
+  [0],
+];
+
 function imbalance(board: BitBoard): i16 {
   //if (square == null) return sum(pos, imbalance);
-  const qo: i16[][] = [
-    [40, 38],
-    [-40, -38],
-    [32, 255, -62],
-    [-32, -255, 62],
-    [0, 104, 4, 0],
-    [0, -104, -4, 0],
-    [-26, -2, 47, 105, -208],
-    [26, 2, -47, -105, 208],
-    [-189, 24, 117, 133, -134, -6],
-    [189, -24, -117, -133, 134, 6],
-    [0],
-    [0],
-  ];
-  const qt: i16[][] = [
-    [36, 0],
-    [-36, 0],
-    [9, 63, 0],
-    [-9, -63, 0],
-    [59, 65, 42, 0],
-    [-59, -65, -42, 0],
-    [46, 39, 24, -24, 0],
-    [-46, -39, -24, 24, 0],
-    [97, 100, -42, 137, 268, 0],
-    [-97, -100, 42, -137, -268, 0],
-    [0],
-    [0],
-  ];
 
-  const allPiecesMask = unchecked(board.getAllPiecesMask());
+  const allPiecesMask = board.getAllPiecesMask();
+
   let result: i16 = 0;
   for (let piece: i8 = 0; piece < 10; piece++) {
     const pieceMask = unchecked(board.bits[piece]);
 
-    const player: i8 = piece % 2;
+    const player: i8 = piece & 1;
 
     positions.reset(pieceMask);
     while (positions.hasNext()) {
@@ -190,26 +200,26 @@ function imbalance(board: BitBoard): i16 {
       while (positions2.hasNext()) {
         const pos = positions2.next();
         const otherPiece = board.getPieceAt(pos);
-        const otherPlayer: i8 = otherPiece % 2;
+        const otherPlayer: i8 = otherPiece & 1;
         if (otherPiece === BISHOP + WHITE) {
-          bishops[WHITE]++;
+          unchecked(bishops[WHITE]++);
         } else if (otherPiece === BISHOP + BLACK) {
-          bishops[BLACK]++;
+          unchecked(bishops[BLACK]++);
         }
         if (otherPiece >> 1 > piece >> 1) {
           continue;
         }
         if (player != otherPlayer) {
-          result += qt[piece][(otherPiece >> 1) + 1];
+          result += unchecked(qt[piece][(otherPiece >> 1) + 1]);
         } else {
-          result += qo[piece][(otherPiece >> 1) + 1];
+          result += unchecked(qo[piece][(otherPiece >> 1) + 1]);
         }
       }
-      if (bishops[player] == 2) {
-        result += qo[piece][0];
+      if (unchecked(bishops[player]) == 2) {
+        result += unchecked(qo[piece][0]);
       }
-      if (bishops[opponent(player)] == 2) {
-        result += qt[piece][0];
+      if (unchecked(bishops[opponent(player)]) == 2) {
+        result += unchecked(qt[piece][0]);
       }
     }
   }

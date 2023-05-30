@@ -1,4 +1,5 @@
 import { BitBoard, BLACK, MaskIterator, PLAYER_PIECES } from "./bitboard";
+import { mainEvaluation } from "./evaluation/stockfish-static-evaluation";
 
 const WHITE_PAWN_WEIGHTS: i16[] = [
   0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10,
@@ -145,7 +146,7 @@ export function isPastMiddleGame(board: BitBoard): boolean {
 
 const positions = new MaskIterator();
 
-export function evaluate(player: i8, board: BitBoard): i16 {
+export function OLD_evaluate(player: i8, board: BitBoard): i16 {
   const weights = isPastMiddleGame(board)
     ? WEIGHTS_END_GAME
     : WEIGHTS_MIDDLE_GAME;
@@ -162,4 +163,12 @@ export function evaluate(player: i8, board: BitBoard): i16 {
     result = -result;
   }
   return result;
+}
+
+export function evaluate(player: i8, board: BitBoard): i16 {
+  const evaluation =  mainEvaluation(player, board);
+  if (player === BLACK) {
+    return -evaluation;
+  }
+  return evaluation;
 }

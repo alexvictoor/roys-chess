@@ -1,8 +1,13 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { hangingMask, kingThreatMask, knightOnQueenMask, minorThreats, pawnPushThreatMask, restricted, rookThreats, sliderOnQueen, sliderOnQueenMask, threatSafePawnMask, threatsEg, threatsMg, weakEnemiesMask, weakQueenProtection } from "../../evaluation/stockfish-threats";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish threats", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
 
   it("should detect weak enemies", () => {
     const board = parseFEN(

@@ -1,4 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import {
   backward,
   blocked,
@@ -18,6 +19,12 @@ import {
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish pawn evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
+
   it("should find one isolated pawn", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppp1p/8/6p1/1P1P4/8/P4PPP/RNBQKBNR b KQkq - 0 1"

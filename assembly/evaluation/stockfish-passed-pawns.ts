@@ -11,9 +11,13 @@ import {
   WHITE,
 } from "../bitboard";
 import { attackOnceMask, attackTwiceMask } from "./stockfish-attacks";
+import { CANDIDATE_PASSED_MASK_KEY, getValueFromCache, getValueFromCacheU64, isInCache, PASSED_BLOCK_BONUS_KEY, PASSED_LEVERAGE_MASK_KEY, setValueInCache, setValueInCacheU64 } from "./stockfish-cache";
 import { supported } from "./stockfish-pawn";
 
 export function candidatePassedMask(board: BitBoard, player: i8): u64 {
+  if (isInCache(CANDIDATE_PASSED_MASK_KEY, player)) {
+    return getValueFromCacheU64(CANDIDATE_PASSED_MASK_KEY, player);
+  }
   const pawnsMask = board.getPawnMask(player);
   const opponentPlayer = opponent(player);
   const opponentPawnsMask = board.getPawnMask(opponentPlayer);
@@ -123,10 +127,16 @@ export function candidatePassedMask(board: BitBoard, player: i8): u64 {
       }
     }
   }
+
+  setValueInCacheU64(CANDIDATE_PASSED_MASK_KEY, player, resultMask);
+  
   return resultMask;
 }
 
 export function passedLeverageMask(board: BitBoard, player: i8): u64 {
+  if (isInCache(PASSED_LEVERAGE_MASK_KEY, player)) {
+    return getValueFromCacheU64(PASSED_LEVERAGE_MASK_KEY, player);
+  }
   const currentCandidatePassedMask = candidatePassedMask(board, player);
   const opponentPlayer = opponent(player);
   const opponentPawnsMask = board.getPawnMask(opponentPlayer);
@@ -152,10 +162,14 @@ export function passedLeverageMask(board: BitBoard, player: i8): u64 {
     ((attacksMask << 1) & (pawnMask << 1) & leftBorderMask) |
     ((attacksMask >> 1) & (pawnMask >> 1) & rightBorderMask);
 
-  return (
+  const resultMask: u64 = (
     candidatePassedWithoutOpponentPasserMask |
     (currentCandidatePassedMask & mask)
   );
+  
+  setValueInCacheU64(PASSED_LEVERAGE_MASK_KEY, player, resultMask);
+  
+  return resultMask;
 }
 
 const whitePassedRanksArray = new StaticArray<i16>(8);
@@ -171,7 +185,7 @@ export function passedRanks(board: BitBoard, player: i8): StaticArray<i16> {
         }
         mask = mask >> 1;
       }
-      whitePassedRanksArray[y] = countForRank;
+      unchecked(whitePassedRanksArray[y] = countForRank);
     }
     return whitePassedRanksArray;
   }
@@ -184,7 +198,7 @@ export function passedRanks(board: BitBoard, player: i8): StaticArray<i16> {
       }
       mask = mask >> 1;
     }
-    blackPassedRanksArray[7 - y] = countForRank;
+    unchecked(blackPassedRanksArray[7 - y] = countForRank);
   }
   return blackPassedRanksArray;
 }
@@ -203,6 +217,9 @@ const blackRankMask = ~(
 const positions = new MaskIterator();
 
 export function passedBlockBonus(board: BitBoard, player: i8): i16 {
+  if (isInCache(PASSED_BLOCK_BONUS_KEY, player)) {
+    return getValueFromCache(PASSED_BLOCK_BONUS_KEY, player);
+  }
   let mask = passedLeverageMask(board, player);
   mask = player == WHITE ? mask & whiteRankMask : mask & blackRankMask;
 
@@ -260,6 +277,9 @@ export function passedBlockBonus(board: BitBoard, player: i8): i16 {
 
     result += w * k;
   }
+
+  setValueInCache(PASSED_BLOCK_BONUS_KEY, player, result);
+
   return result;
 }
 
@@ -341,7 +361,7 @@ export function passedMg(board: BitBoard, player: i8): i16 {
   let result: i16 = 0;
   const ranks = passedRanks(board, player);
   for (let index: i8 = 1; index < 7; index++) {
-    result += ranks[index] * mgPassedRankScores[index];
+    result += unchecked(ranks[index] * mgPassedRankScores[index]);
   }
   result += passedBlockBonus(board, player);
   result -= 11 * passedFileBonus(board, player);
@@ -360,7 +380,7 @@ export function passedEg(board: BitBoard, player: i8): i16 {
   result += kingProximityBonus(board, player);
   const ranks = passedRanks(board, player);
   for (let index: i8 = 1; index < 7; index++) {
-    result += ranks[index] * egPassedRankScores[index];
+    result += unchecked(ranks[index] * egPassedRankScores[index]);
   }
   result += passedBlockBonus(board, player);
   result -= passedFileBonus(board, player) << 3;

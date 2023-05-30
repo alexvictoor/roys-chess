@@ -40,6 +40,7 @@ import {
   rookXRayAttackMask,
 } from "./stockfish-attacks";
 import { blockersForKingMask } from "./stockfish-blocker-king";
+import { FLANK_ATTACK_KEY, getValueFromCache, getValueFromCacheU64, isInCache, KING_DANGER_KEY, setValueInCache, setValueInCacheU64, WEAK_SQUARE_MASK_KEY } from "./stockfish-cache";
 import { mobilityFor } from "./stockfish-mobility";
 import { kingDistance } from "./stockfish-pieces";
 
@@ -117,12 +118,12 @@ initKingNeighborsCache();
 export function kingRingMask(board: BitBoard, player: i8, full: boolean): u64 {
   const kingPos = <i8>ctz(board.getKingMask(player));
   if (full) {
-    return kingRingCache[kingPos];
+    return unchecked(kingRingCache[kingPos]);
   }
   const pawnMask = board.getPawnMask(player);
   const defendedTwiceByPawns =
     pawnAttacksOnLeft(player, pawnMask) & pawnAttacksOnRight(player, pawnMask);
-  return kingRingCache[kingPos] & ~defendedTwiceByPawns;
+  return unchecked(kingRingCache[kingPos]) & ~defendedTwiceByPawns;
 }
 
 export function isInKingRing(
@@ -254,7 +255,7 @@ export function kingAttackersWeight(board: BitBoard, player: i8): i16 {
 
 export function kingAttacks(board: BitBoard, player: i8): i16 {
   const opponentKingPos = <i8>ctz(board.getKingMask(opponent(player)));
-  const opponentKingNeighbors = kingNeighborsCache[opponentKingPos];
+  const opponentKingNeighbors = unchecked(kingNeighborsCache[opponentKingPos]);
   const queenMask = board.getQueenMask(player);
   const rookMask = board.getRookMask(player);
   const bishopMask = board.getBishopMask(player);
@@ -293,6 +294,11 @@ export function kingAttacks(board: BitBoard, player: i8): i16 {
 }
 
 export function weakSquaresMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(WEAK_SQUARE_MASK_KEY, player)) {
+    return getValueFromCacheU64(WEAK_SQUARE_MASK_KEY, player);
+  }
+
   const opponentPlayer = opponent(player);
 
   let defenseMask: u64 = attackByPawnsMask(board, opponentPlayer);
@@ -303,7 +309,11 @@ export function weakSquaresMask(board: BitBoard, player: i8): u64 {
     attackByQueensMask(board, opponentPlayer) &
     attackByKingsMask(board, opponentPlayer);
 
-  return attackMask(board, player, false) & ~defenseMask;
+  const resultMask =  attackMask(board, player, false) & ~defenseMask;
+
+  setValueInCacheU64(WEAK_SQUARE_MASK_KEY, player, resultMask);
+
+  return resultMask;
 }
 
 export function weakSquaresCount(board: BitBoard, player: i8): i16 {
@@ -541,6 +551,11 @@ const flankColumns: u64[] = [
 ];
 
 export function flankAttack(board: BitBoard, player: i8): i16 {
+  
+  if (isInCache(FLANK_ATTACK_KEY, player)) {
+    return getValueFromCache(FLANK_ATTACK_KEY, player);
+  }
+  
   const ignoredRows =
     player == WHITE
       ? firstRowMask | (firstRowMask << 8) | (firstRowMask << 16)
@@ -549,12 +564,16 @@ export function flankAttack(board: BitBoard, player: i8): i16 {
   const opponentPlayer = opponent(player);
   const opponentKingMask = board.getKingMask(opponentPlayer);
   const opponentKingPos = <i8>ctz(opponentKingMask);
-  const opponentKingCol = opponentKingPos % 8;
+  const opponentKingCol = opponentKingPos & 7;
   const flank = unchecked(flankColumns[opponentKingCol]) & ~ignoredRows;
   const twiceMask = attackTwiceMask(board, player) & flank;
   const onceMask = attackOnceMask(board, player) & ~twiceMask & flank;
 
-  return <i16>((popcnt(twiceMask) << 1) + popcnt(onceMask));
+  const result = <i16>((popcnt(twiceMask) << 1) + popcnt(onceMask));
+
+  setValueInCache(FLANK_ATTACK_KEY, player, result);
+
+  return result;
 }
 
 export function flankDefense(board: BitBoard, player: i8): i16 {
@@ -566,7 +585,7 @@ export function flankDefense(board: BitBoard, player: i8): i16 {
   const opponentPlayer = opponent(player);
   const opponentKingMask = board.getKingMask(opponentPlayer);
   const opponentKingPos = <i8>ctz(opponentKingMask);
-  const opponentKingCol = opponentKingPos % 8;
+  const opponentKingCol = opponentKingPos & 7;
   const flank = unchecked(flankColumns[opponentKingCol]) & ~ignoredRows;
   const onceMask = attackOnceMask(board, opponentPlayer) & flank;
 
@@ -596,60 +615,6 @@ const xFactors: i16[] = [2, 3, 4, 3, 3, 4, 3, 2];
 
 const lastRowMask = firstRowMask << 56;
 
-export function stormSquareBad(board: BitBoard, player: i8): i16 {
-  const opponentPlayer = opponent(player);
-  const playerPawnMask = board.getPawnMask(player);
-  const opponentPawnMask = board.getPawnMask(opponentPlayer);
-
-  const pawnDefenseMask =
-    player == WHITE
-      ? ((playerPawnMask << 7) & rightBorderMask) |
-        ((playerPawnMask << 9) & leftBorderMask)
-      : ((playerPawnMask >> 7) & leftBorderMask) |
-        ((playerPawnMask >> 9) & rightBorderMask);
-
-  const usMask = opponentPawnMask & ~pawnDefenseMask;
-  const themMask = playerPawnMask;
-
-  let v: i16 = 0;
-
-  let yMask: u64 = 0;
-
-  if (player == WHITE) {
-    for (let y = 0; y < 8; y++) {
-      yMask |= firstRowMask << (y << 3);
-      for (let x = 0; x < 8; x++) {
-        const colMask = firstColMask << x;
-        const us = <i8>(clz(usMask & colMask & yMask) >> 3) % 8;
-        const them = <i8>(clz(themMask & colMask & yMask) >> 3) % 8;
-        if (us > 0 && them == us + 1) {
-          v += blockedStorm[0][them] * xFactors[x];
-        } else {
-          const f = x > 3 ? 7 - x : x;
-          v += unblockedStorm[f][them] * xFactors[x];
-        }
-      }
-    }
-  } else {
-    for (let y = 0; y < 8; y++) {
-      yMask |= lastRowMask >> (y << 3);
-      for (let x = 0; x < 8; x++) {
-        const colMask = firstColMask << x;
-        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) % 8;
-        const them = <i8>(ctz(themMask & colMask & yMask) >> 3) % 8;
-        if (us > 0 && them == us + 1) {
-          v += blockedStorm[0][them] * xFactors[x];
-        } else {
-          const f = x > 3 ? 7 - x : x;
-          v += unblockedStorm[f][them] * xFactors[x];
-        }
-      }
-    }
-  }
-
-  return v;
-}
-
 const whiteStormSquareArray = new StaticArray<i16>(64);
 const blackStormSquareArray = new StaticArray<i16>(64);
 const tempStormSquareArray = new StaticArray<i16>(64);
@@ -659,11 +624,11 @@ function aggregateSquares(
   result: StaticArray<i16>
 ): StaticArray<i16> {
   for (let i = 1; i < 63; i++) {
-    result[i] = raw[i - 1] + raw[i] + raw[i + 1];
+    unchecked(result[i] = raw[i - 1] + raw[i] + raw[i + 1]);
   }
   for (let i = 0; i < 64; i += 8) {
-    result[i] = result[i + 1];
-    result[i + 7] = result[i + 6];
+    unchecked(result[i] = result[i + 1]);
+    unchecked(result[i + 7] = result[i + 6]);
   }
   return result;
 }
@@ -683,8 +648,6 @@ export function stormSquare(board: BitBoard, player: i8): StaticArray<i16> {
   const usMask = opponentPawnMask & ~pawnDefenseMask;
   const themMask = playerPawnMask;
 
-  let v: i16 = 0;
-
   let yMask: u64 = 0;
 
   let result: StaticArray<i16>;
@@ -694,13 +657,13 @@ export function stormSquare(board: BitBoard, player: i8): StaticArray<i16> {
       yMask |= firstRowMask << (y << 3);
       for (let x = 0; x < 8; x++) {
         const colMask = firstColMask << x;
-        const us = <i8>(clz(usMask & colMask & yMask) >> 3) % 8;
-        const them = <i8>(clz(themMask & colMask & yMask) >> 3) % 8;
+        const us = <i8>(clz(usMask & colMask & yMask) >> 3) & 7;
+        const them = <i8>(clz(themMask & colMask & yMask) >> 3) & 7;
         if (us > 0 && them == us + 1) {
-          tempStormSquareArray[(y << 3) + x] = blockedStorm[0][them];
+          unchecked(tempStormSquareArray[(y << 3) + x] = blockedStorm[0][them]);
         } else {
           const f = x > 3 ? 7 - x : x;
-          tempStormSquareArray[(y << 3) + x] = unblockedStorm[f][them];
+          unchecked(tempStormSquareArray[(y << 3) + x] = unblockedStorm[f][them]);
         }
       }
     }
@@ -711,13 +674,13 @@ export function stormSquare(board: BitBoard, player: i8): StaticArray<i16> {
       yMask |= firstRowMask << (y << 3);
       for (let x = 0; x < 8; x++) {
         const colMask = firstColMask << x;
-        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) % 8;
-        const them = <i8>(ctz(themMask & colMask & yMask) >> 3) % 8;
+        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) & 7;
+        const them = <i8>(ctz(themMask & colMask & yMask) >> 3) & 7;
         if (us > 0 && them == us + 1) {
-          tempStormSquareArray[(y << 3) + x] = blockedStorm[0][them];
+          unchecked(tempStormSquareArray[(y << 3) + x] = blockedStorm[0][them]);
         } else {
           const f = x > 3 ? 7 - x : x;
-          tempStormSquareArray[(y << 3) + x] = unblockedStorm[f][them];
+          unchecked(tempStormSquareArray[(y << 3) + x] = unblockedStorm[f][them]);
         }
       }
     }
@@ -733,49 +696,6 @@ const weakness: i16[][] = [
   [-10, 75, 23, -2, 32, 3, -45],
   [-39, -13, -29, -52, -48, -67, -166],
 ];
-
-export function strengthSquareBad(board: BitBoard, player: i8): i16 {
-  const opponentPlayer = opponent(player);
-  const playerPawnMask = board.getPawnMask(player);
-  const opponentPawnMask = board.getPawnMask(opponentPlayer);
-
-  const pawnDefenseMask =
-    player == WHITE
-      ? ((playerPawnMask << 7) & rightBorderMask) |
-        ((playerPawnMask << 9) & leftBorderMask)
-      : ((playerPawnMask >> 7) & leftBorderMask) |
-        ((playerPawnMask >> 9) & rightBorderMask);
-
-  const usMask = opponentPawnMask & ~pawnDefenseMask;
-
-  let v: i16 = 5 * 64;
-
-  let yMask: u64 = 0;
-
-  if (player == WHITE) {
-    for (let y = 0; y < 8; y++) {
-      yMask |= firstRowMask << (y << 3);
-      for (let x = 0; x < 8; x++) {
-        const colMask = firstColMask << x;
-        const us = <i8>(clz(usMask & colMask & yMask) >> 3) % 8;
-        const f = x > 3 ? 7 - x : x;
-        v += weakness[f][us] * xFactors[x];
-      }
-    }
-  } else {
-    for (let y = 0; y < 8; y++) {
-      yMask |= lastRowMask >> (y << 3);
-      for (let x = 0; x < 8; x++) {
-        const colMask = firstColMask << x;
-        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) % 8;
-        const f = x > 3 ? 7 - x : x;
-        v += weakness[f][us] * xFactors[x];
-      }
-    }
-  }
-
-  return v;
-}
 
 const whiteStrengthSquareArray = new StaticArray<i16>(64);
 const blackStrengthSquareArray = new StaticArray<i16>(64);
@@ -804,9 +724,9 @@ export function strengthSquare(board: BitBoard, player: i8): StaticArray<i16> {
       yMask |= firstRowMask << (y << 3);
       for (let x = 0; x < 8; x++) {
         const colMask = firstColMask << x;
-        const us = <i8>(clz(usMask & colMask & yMask) >> 3) % 8;
+        const us = <i8>(clz(usMask & colMask & yMask) >> 3) & 7;
         const f = x > 3 ? 7 - x : x;
-        tempStrengthSquareArray[(y << 3) + x] = weakness[f][us];
+        unchecked(tempStrengthSquareArray[(y << 3) + x] = weakness[f][us]);
       }
     }
     result = aggregateSquares(
@@ -818,9 +738,9 @@ export function strengthSquare(board: BitBoard, player: i8): StaticArray<i16> {
       yMask |= firstRowMask << (y << 3);
       for (let x = 0; x < 8; x++) {
         const colMask = firstColMask << x;
-        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) % 8;
+        const us = <i8>(ctz(usMask & colMask & yMask) >> 3) & 7;
         const f = x > 3 ? 7 - x : x;
-        tempStrengthSquareArray[(y << 3) + x] = weakness[f][us];
+        unchecked(tempStrengthSquareArray[(y << 3) + x] = weakness[f][us]);
       }
     }
     result = aggregateSquares(
@@ -829,7 +749,7 @@ export function strengthSquare(board: BitBoard, player: i8): StaticArray<i16> {
     );
   }
   for (let i = 0; i < 64; i++) {
-    result[i] += 5;
+    unchecked(result[i] += 5);
   }
 
   return result;
@@ -846,8 +766,8 @@ export function shelterStormAndStrength(
   const stormSquares = stormSquare(board, player);
   const opponentPlayer = opponent(player);
   const opponentkingPos = <i8>ctz(board.getKingMask(opponentPlayer));
-  let w1 = strengthSquares[opponentkingPos];
-  let s1 = stormSquares[opponentkingPos];
+  let w1 = unchecked(strengthSquares[opponentkingPos]);
+  let s1 = unchecked(stormSquares[opponentkingPos]);
   if (s1 - w1 < s - w) {
     s = s1;
     w = w1;
@@ -855,8 +775,8 @@ export function shelterStormAndStrength(
   const opponentKingRow: i8 = player == WHITE ? 56 : 0;
   if (board.kingSideCastlingRight(opponentPlayer)) {
     const kingSideCastlingPos = opponentKingRow + 6;
-    w1 = strengthSquares[kingSideCastlingPos];
-    s1 = stormSquares[kingSideCastlingPos];
+    w1 = unchecked(strengthSquares[kingSideCastlingPos]);
+    s1 = unchecked(stormSquares[kingSideCastlingPos]);
     if (s1 - w1 < s - w) {
       s = s1;
       w = w1;
@@ -864,19 +784,24 @@ export function shelterStormAndStrength(
   }
   if (board.queenSideCastlingRight(opponentPlayer)) {
     const queenSideCastlingPos = opponentKingRow + 2;
-    w1 = strengthSquares[queenSideCastlingPos];
-    s1 = stormSquares[queenSideCastlingPos];
+    w1 = unchecked(strengthSquares[queenSideCastlingPos]);
+    s1 = unchecked(stormSquares[queenSideCastlingPos]);
     if (s1 - w1 < s - w) {
       s = s1;
       w = w1;
     }
   }
-  shelterStormAndStrengthResult[0] = s;
-  shelterStormAndStrengthResult[1] = w;
+  unchecked(shelterStormAndStrengthResult[0] = s);
+  unchecked(shelterStormAndStrengthResult[1] = w);
   return shelterStormAndStrengthResult;
 }
 
 export function kingDanger(board: BitBoard, player: i8): i16 {
+
+  if (isInCache(KING_DANGER_KEY, player)) {
+    return getValueFromCache(KING_DANGER_KEY, player);
+  }
+
   const count: i16 = kingAttackersCount(board, player);
   const weight: i16 = kingAttackersWeight(board, player);
   const attacks: i16 = kingAttacks(board, player);
@@ -923,15 +848,19 @@ export function kingDanger(board: BitBoard, player: i8): i16 {
     4 * kingFlankDefense +
     ((3 * kingFlankAttack * kingFlankAttack) >> 3) -
     873 * noQueen -
-    ((3 * (stormAndStrength[1] - stormAndStrength[0])) >> 2) +
+    ((3 * (unchecked(stormAndStrength[1]) - unchecked(stormAndStrength[0]))) >> 2) +
     mobilityFor(board, player, true) - mobilityFor(board,  opponent(player), true) +
     37 +
     safeCheckQueen(board, player) +
     safeCheckRook(board, player) +
     safeCheckBishop(board, player) +
     safeCheckKnight(board, player);
-  if (v > 100) return v;
-  return 0;
+
+  const result: i16 = (v > 100) ? v : 0;
+  
+  setValueInCache(KING_DANGER_KEY, player, result);
+  
+  return result;
 }
 
 function safeCheckKnight(board: BitBoard, player: i8): i16 {
@@ -993,7 +922,7 @@ export function pawnlessFlank(board: BitBoard, player: i8): boolean {
   const kingPosition = <i8>(ctz(kingMask) & 7);
   return (
     popcnt(
-      flankMasks[kingPosition] &
+      unchecked(flankMasks[kingPosition]) &
         (board.getPawnMask(player) | board.getPawnMask(opponent(player)))
     ) == 0
   );
@@ -1003,8 +932,8 @@ export function kingMg(board: BitBoard, player: i8): i16 {
   let result: i16 = 0;
   const kd = kingDanger(board, player);
   const stormAndStrength = shelterStormAndStrength(board, player);
-  result -= stormAndStrength[1];
-  result += stormAndStrength[0];
+  result -= unchecked(stormAndStrength[1]);
+  result += unchecked(stormAndStrength[0]);
   result += <i16>((<i32>kd * <i32>kd) >> 12);
   result += flankAttack(board, player) << 3;
   if (pawnlessFlank(board, player)) {
@@ -1044,14 +973,14 @@ export function kingPawnDistance(board: BitBoard, player: i8): i16 {
   const kingMask = board.getKingMask(player);
   const kingPosition = <i8>ctz(kingMask);
 
-  const kingPosX: i8 = kingPosition % 8;
+  const kingPosX: i8 = kingPosition & 7;
   const kingPosY: i8 = kingPosition >> 3;
 
   let distance: i16 = 6;
   positions.reset(board.getPawnMask(player));
   while (positions.hasNext()) {
     const pawnPos = positions.next();
-    const pawnPosX: i8 = pawnPos % 8;
+    const pawnPosX: i8 = pawnPos & 7;
     const pawnPosY: i8 = pawnPos >> 3;
     distance = <i16>Math.min(distance, <i16>Math.max(Math.abs(pawnPosX - kingPosX), Math.abs(pawnPosY - kingPosY)))
   }

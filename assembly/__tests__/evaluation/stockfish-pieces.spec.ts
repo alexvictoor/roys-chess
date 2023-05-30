@@ -1,4 +1,5 @@
 import { BLACK, WHITE } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import {
   countBishopPawns,
   countBishopXrayPawns,
@@ -22,6 +23,11 @@ import {
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish pieces evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should evaluate pawn attacks span", () => {
     const board = parseFEN(
       "rnbqk1nr/pp1p1p1p/2pPpb2/4P1p1/2P1P3/5P2/P2N2PP/R1BQKBNR w KQkq g6 0 2"

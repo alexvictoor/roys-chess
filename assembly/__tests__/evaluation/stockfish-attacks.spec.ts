@@ -1,8 +1,14 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
 import { attackByBishopsMask, attackByRooksMask, attackOnceMask, attackTwiceMask, queenAttackMask, rookXRayAttackMask } from "../../evaluation/stockfish-attacks";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish attacks", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should compute bishop attacks", () => {
     const board = parseFEN(
       "2n1k1n1/5ppp/P1q1p1N1/pQP1p3/3b4/1Nn2P2/P4PPP/1RRr1BK1 w kq - 18 15"

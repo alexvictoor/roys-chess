@@ -1,8 +1,14 @@
 import { BLACK, WHITE } from "../../bitboard";
 import { blockersForKingMask } from "../../evaluation/stockfish-blocker-king";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish blocker king evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   
   it("should evaluate blockers for kings", () => {
     const board = parseFEN(

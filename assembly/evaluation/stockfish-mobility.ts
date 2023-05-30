@@ -21,8 +21,14 @@ import {
   rookXRayAttackMask,
 } from "./stockfish-attacks";
 import { blockersForKingMask } from "./stockfish-blocker-king";
+import { getValueFromCacheU64, isInCache, MOBILITY_AREA_MASK_KEY, setValueInCacheU64 } from "./stockfish-cache";
 
 export function mobilityAreaMask(board: BitBoard, player: i8): u64 {
+
+  if (isInCache(MOBILITY_AREA_MASK_KEY, player)) {
+    return getValueFromCacheU64(MOBILITY_AREA_MASK_KEY, player);
+  }
+
   let resultMask: u64 = ~(<u64>0);
   resultMask &= ~board.getKingMask(player);
   resultMask &= ~board.getQueenMask(player);
@@ -50,6 +56,9 @@ export function mobilityAreaMask(board: BitBoard, player: i8): u64 {
     resultMask &= ~opponentPawnDefenseMask;
   }
   resultMask &= ~blockersForKingMask(board, opponent(player));
+
+  setValueInCacheU64(MOBILITY_AREA_MASK_KEY, player, resultMask);
+
   return resultMask;
 }
 
@@ -107,7 +116,7 @@ export function pieceMobilityBonus(
   while (positions.hasNext()) {
     const pos = positions.next();
     //log(player.toString() + ' ' + pos.toString() + ' ' + mobility(board, player, pos).toString() )
-    result += bonus[mobility(board, player, pos)];
+    result += unchecked(bonus[mobility(board, player, pos)]);
   }
   return result;
 }

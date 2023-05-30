@@ -1,7 +1,13 @@
+import { resetCache } from "../../evaluation/stockfish-cache";
 import { psqtBonus } from "../../evaluation/stockfish-psqt";
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish psqt evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should evaluate piece square table bonuses (pawn)", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"

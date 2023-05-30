@@ -1,8 +1,14 @@
 import { BLACK, CLOCK, encodeCapture, PAWN, QUEEN, WHITE } from "../../bitboard";
 import { parseFEN } from "../../fen-parser";
 import { endGameEvaluation, mainEvaluation, scaleFactor } from "../../evaluation/stockfish-static-evaluation";
+import { resetCache } from "../../evaluation/stockfish-cache";
 
 describe("Stockfish main evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should be 0 when the game begins", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -37,6 +43,6 @@ describe("Stockfish main evaluation", () => {
   it("should evaluate score", () => {
     const board = parseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
     board.bits[CLOCK] = 0;
-    expect(mainEvaluation(WHITE, board)).toBe(3366); //3368
+    expect(mainEvaluation(WHITE, board)).toBe(191); //188
   });
 });

@@ -31,7 +31,7 @@ export function evaluateQuiescence(
   // checked ?
   if (!canMove(board, player)) {
     if (isInCheck(player, board)) {
-      return -10000;
+      return -30000;
     }
     return 0;
   }

@@ -1,4 +1,5 @@
 import { BLACK, maskString, WHITE } from "../../bitboard";
+import { resetCache } from "../../evaluation/stockfish-cache";
 import {
   mobility,
   mobilityArea,
@@ -8,6 +9,11 @@ import {
 import { parseFEN } from "../../fen-parser";
 
 describe("Stockfish mobility evaluation", () => {
+
+  beforeEach(() => {
+    resetCache();
+  });
+  
   it("should evaluate mobility areas", () => {
     const board = parseFEN(
       "rnbqkbnr/pp1ppppp/8/2p2P2/2P5/8/PP1PP1PP/RNBQKBNR w KQkq c6 0 2"
