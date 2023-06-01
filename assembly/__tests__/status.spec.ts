@@ -5,7 +5,6 @@ import {
   encodeMove,
   KING,
   KNIGHT,
-  maskString,
   PAWN,
   QUEEN,
   ROOK,
@@ -222,7 +221,7 @@ describe("Status", () => {
   it("should be draw on the third board repetition", () => {
     // given
     const board = new BitBoard();
-    board.putPiece(KING, WHITE, 5);
+    board.putPiece(KING, WHITE, 0);
     board.putPiece(KING, BLACK, 56);
     board.putPiece(ROOK, WHITE, 6);
     board.putPiece(ROOK, BLACK, 63);
