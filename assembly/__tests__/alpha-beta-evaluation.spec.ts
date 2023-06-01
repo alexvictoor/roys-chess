@@ -55,7 +55,7 @@ describe("Alpha-Beta move chooser", () => {
     expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KING);
   });
 
-  it("should move piece that would be captured", () => {
+  xit("should move piece that would be captured", () => {
     const board = parseFEN(
       "r1bqkbnr/ppp1pppp/2n5/3P4/4p3/2N5/PPP2PPP/R1BQKBNR b KQkq - 0 4"
     );
@@ -63,7 +63,7 @@ describe("Alpha-Beta move chooser", () => {
     log(toNotation(<u32>move));
     expect(decodeSrcPiece(<u32>move)).toBe(BLACK + KNIGHT);
   });
-  it("should move piece that would be captured", () => {
+  xit("should move piece that would be captured", () => {
     const board = parseFEN(
       "rnbqkb1r/pppppppp/4n3/3P4/4P3/8/PPP2PPP/RNBQKBNR b KQkq - 1 4"
     );

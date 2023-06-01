@@ -9,6 +9,7 @@ import {
 } from "../bitboard";
 import { addCastlingMoves } from "../castling";
 import { parseFEN } from "../fen-parser";
+import { MoveStack } from "../move-stack";
 
 describe("Castling", () => {
   it("should be possible for white on king side", () => {
@@ -19,12 +20,13 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, WHITE);
 
     // then
-    expect(moves).toHaveLength(1);
-    const boardAfterCastling = board.execute(moves[0]);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(1);
+    const boardAfterCastling = board.execute(moveArray[0]);
     expect(boardAfterCastling.getKingMask(WHITE)).toBe(1 << 6);
     expect(boardAfterCastling.getRookMask(WHITE)).toBe(1 << 5);
   });
@@ -36,12 +38,13 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, WHITE);
 
     // then
-    expect(moves).toHaveLength(1);
-    const boardAfterCastling = board.execute(moves[0]);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(1);
+    const boardAfterCastling = board.execute(moveArray[0]);
     expect(boardAfterCastling.getKingMask(WHITE)).toBe(1 << 2);
     expect(boardAfterCastling.getRookMask(WHITE)).toBe(1 << 3);
   });
@@ -55,12 +58,13 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, BLACK);
 
     // then
-    expect(moves).toHaveLength(2);
-    const boardAfterKingSideCastling = board.execute(moves[0]);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(2);
+    const boardAfterKingSideCastling = board.execute(moveArray[0]);
     expect(boardAfterKingSideCastling.getKingMask(BLACK)).toBe(1 << 62);
     expect(boardAfterKingSideCastling.getRookMask(BLACK)).toBe(
       (1 << 61) | (1 << 56)
@@ -79,11 +83,12 @@ describe("Castling", () => {
     );
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board2, BLACK);
 
     // then
-    expect(moves).toHaveLength(1);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(1);
   });
 
   it("should be possible for black on queen side", () => {
@@ -97,13 +102,14 @@ describe("Castling", () => {
     const board3 = board2.execute(encodeMove(ROOK + WHITE, 0, ROOK + WHITE, 1));
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board3, BLACK);
 
     // then
     log(board3.toString());
     expect(board2.queenSideCastlingRight(BLACK)).toBe(true);
-    //expect(moves).toHaveLength(1);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(1);
   });
 
   it("should not be possible when white king has moved", () => {
@@ -118,11 +124,12 @@ describe("Castling", () => {
       .execute(encodeMove(KING + WHITE, 12, KING + WHITE, 4));
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, boardAfterKingMoves, WHITE);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
 
   it("should not be possible when black king has moved", () => {
@@ -139,11 +146,12 @@ describe("Castling", () => {
       .execute(encodeMove(KING + BLACK, 52, KING + BLACK, 60));
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, boardAfterKingMoves, BLACK);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
 
   it("should not be possible when white rook has moved", () => {
@@ -160,11 +168,12 @@ describe("Castling", () => {
       .execute(encodeMove(ROOK + WHITE, 8, ROOK + WHITE, 0));
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, boardAfterKingMoves, WHITE);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
 
   it("should not be possible when there are pieces between the king and rooks", () => {
@@ -179,11 +188,12 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, BLACK);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
   it("should not be possible when king is in check", () => {
     // given
@@ -196,11 +206,12 @@ describe("Castling", () => {
     board.putPiece(BISHOP, WHITE, 51);
 
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, BLACK);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
 
   it("should not be possible when king goes through check", () => {
@@ -213,10 +224,11 @@ describe("Castling", () => {
     board.putPiece(KING, BLACK, 60);
     board.putPiece(BISHOP, WHITE, 52);
     // when
-    const moves: u32[] = [];
+    const moves = new MoveStack();
     addCastlingMoves(moves, board, BLACK);
 
     // then
-    expect(moves).toHaveLength(0);
+    const moveArray = moves.flush();
+    expect(moveArray).toHaveLength(0);
   });
 });

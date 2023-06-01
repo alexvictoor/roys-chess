@@ -7,6 +7,7 @@ import {
   opponent,
 } from "./bitboard";
 import { getKingMoves } from "./king";
+import { MoveStack } from "./move-stack";
 
 const kingMoveCache: StaticArray<u64> = new StaticArray<u64>(64);
 function initKingMoveCache(): void {
@@ -25,7 +26,7 @@ const toPositions = new MaskIterator();
 const capturePositions = new MaskIterator();
 
 export function addKingPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -61,7 +62,7 @@ export function addKingPseudoLegalMoves(
 }
 
 export function addKingPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {

@@ -2,6 +2,7 @@ import { BitBoard } from "./bitboard";
 import { addCastlingMoves } from "./castling";
 import { addKingPseudoLegalMoves } from "./king-move-generation";
 import { addKnightPseudoLegalMoves } from "./knight-move-generation";
+import { MoveStack } from "./move-stack";
 import { addPawnPseudoLegalMoves } from "./pawn";
 import {
   addBishopPseudoLegalMoves,
@@ -11,7 +12,7 @@ import {
 import { isInCheck } from "./status";
 
 export function removeCheckedBoardFrom(
-  moves: u32[],
+  moves: StaticArray<u32>,
   board: BitBoard,
   player: i8
 ): BitBoard[] {
@@ -26,56 +27,59 @@ export function removeCheckedBoardFrom(
   return result;
 }
 
-export function pseudoLegalMoves(board: BitBoard, player: i8): u32[] {
-  const moves: u32[] = [];
-  addPawnPseudoLegalMoves(moves, board, player);
-  addKnightPseudoLegalMoves(moves, board, player);
-  addBishopPseudoLegalMoves(moves, board, player);
-  addRookPseudoLegalMoves(moves, board, player);
-  addQueenPseudoLegalMoves(moves, board, player);
-  addKingPseudoLegalMoves(moves, board, player);
-  addCastlingMoves(moves, board, player);
+const moveStack = new MoveStack();
+export function pseudoLegalMoves(board: BitBoard, player: i8): StaticArray<u32> {
+  addPawnPseudoLegalMoves(moveStack, board, player);
+  addKnightPseudoLegalMoves(moveStack, board, player);
+  addBishopPseudoLegalMoves(moveStack, board, player);
+  addRookPseudoLegalMoves(moveStack, board, player);
+  addQueenPseudoLegalMoves(moveStack, board, player);
+  addKingPseudoLegalMoves(moveStack, board, player);
+  addCastlingMoves(moveStack, board, player);
 
-  return moves;
+  return moveStack.flush();
 }
 
-function hasLegalMove(moves: u32[], board: BitBoard, player: i8): boolean {
-  while (moves.length > 0) {
-    const move: u32 = moves.pop();
+function hasLegalMove(moves: MoveStack, board: BitBoard, player: i8): boolean {
+  for (let index: i8 = 0; index < moves.count; index++) {
+    const move: u32 = moves.moves[index];
     board.do(move);
     if (!isInCheck(player, board)) {
       board.undo();
+      moves.count = 0;
       return true;
     }
     board.undo();
   }
+  moves.count = 0;
   return false;
 }
 
+const canMoveStack = new MoveStack();
 export function canMove(board: BitBoard, player: i8): boolean {
-  const moves: u32[] = [];
-  addPawnPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+
+  addPawnPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addKnightPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+  addKnightPseudoLegalMoves(moveStack, board, player);
+  if (hasLegalMove(moveStack, board, player)) {
     return true;
   }
-  addBishopPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+  addBishopPseudoLegalMoves(moveStack, board, player);
+  if (hasLegalMove(moveStack, board, player)) {
     return true;
   }
-  addRookPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+  addRookPseudoLegalMoves(moveStack, board, player);
+  if (hasLegalMove(moveStack, board, player)) {
     return true;
   }
-  addQueenPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+  addQueenPseudoLegalMoves(moveStack, board, player);
+  if (hasLegalMove(moveStack, board, player)) {
     return true;
   }
-  addKingPseudoLegalMoves(moves, board, player);
-  if (hasLegalMove(moves, board, player)) {
+  addKingPseudoLegalMoves(moveStack, board, player);
+  if (hasLegalMove(moveStack, board, player)) {
     return true;
   }
 
@@ -83,7 +87,7 @@ export function canMove(board: BitBoard, player: i8): boolean {
 }
 
 export function legalMoves(board: BitBoard, player: i8): BitBoard[] {
-  const moves: u32[] = pseudoLegalMoves(board, player);
+  const moves: StaticArray<u32> = pseudoLegalMoves(board, player);
 
   return removeCheckedBoardFrom(moves, board, player);
 }

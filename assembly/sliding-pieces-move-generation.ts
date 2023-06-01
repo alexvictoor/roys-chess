@@ -20,6 +20,7 @@ import {
   rookMaskAt,
   transformBlock2Index,
 } from "./magic";
+import { MoveStack } from "./move-stack";
 
 const rookMaskCache: StaticArray<u64> = new StaticArray<u64>(64);
 const rookMoveCache: StaticArray<u64>[] = [];
@@ -84,7 +85,7 @@ const toPositions = new MaskIterator();
 const capturePositions = new MaskIterator();
 
 export function addRookPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -120,7 +121,7 @@ export function addRookPseudoLegalMoves(
 }
 
 export function addRookPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -163,7 +164,7 @@ export function queenMoves(board: u64, queenPosition: i8): u64 {
 }
 
 export function addBishopPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -199,7 +200,7 @@ export function addBishopPseudoLegalMoves(
 }
 
 export function addBishopPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -228,7 +229,7 @@ export function addBishopPseudoLegalCaptures(
 }
 
 export function addQueenPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -264,7 +265,7 @@ export function addQueenPseudoLegalMoves(
 }
 
 export function addQueenPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {

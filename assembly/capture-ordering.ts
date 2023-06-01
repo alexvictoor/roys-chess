@@ -18,7 +18,7 @@ function decodeScore(capture: u64): i8 {
 }
 
 const scores: StaticArray<u32> = new StaticArray<u32>(256);
-export function sortCaptures(captures: u32[]): void {
+export function sortCaptures(captures: StaticArray<u32>): void {
   for (let index = 0; index < captures.length; index++) {
     const capture = unchecked(captures[index]);
     unchecked((scores[index] = captureScore(capture)));

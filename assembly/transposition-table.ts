@@ -1,10 +1,10 @@
-import { BitBoard } from "./bitboard";
+import { BitBoard, toNotation } from "./bitboard";
 
 export const EXACT_SCORE: i8 = 0;
 export const ALPHA_SCORE: i8 = 1;
 export const BETA_SCORE: i8 = 2;
 
-const debugMap = new Map<u64, string>();
+//const debugMap = new Map<u64, string>();
 
 export class TranspositionTable {
   verificationEntries: StaticArray<u64>;
@@ -39,6 +39,10 @@ export class TranspositionTable {
     depth: i8
   ): void {
     const hash = board.hashCode();
+    /*if (scoreType == 0) {
+      trace("EXACT STORE " + board.toFEN() + " " + toNotation(move));
+    }*/
+
     /*if (debugMap.has(hash)) {
       const fenAlreadySeen = debugMap.get(hash);
       if (fenAlreadySeen != board.toFEN()) {
@@ -47,13 +51,20 @@ export class TranspositionTable {
     } else {
       debugMap.set(hash, board.toFEN());
     }*/
-    const index: i32 = <i32>(hash % this.size);
-    const existingEntry = this.moveEntries[index];
+    const index: i32 = <i32>(hash & (this.size - 1));
+    const existingEntry = unchecked(this.moveEntries[index]);
     if (existingEntry != 0 && decodeDepthFromEntry(existingEntry) > depth) {
       return;
     }
     /*if (existingEntry != 0 && decodeDepthFromEntry(existingEntry) >= depth) {
-      trace(board.toFEN());
+      trace(
+        "SURCHARGE " +
+          board.toFEN() +
+          " " +
+          depth.toString() +
+          " " +
+          decodeDepthFromEntry(existingEntry).toString()
+      );
     }*/
     const verificationEntry: u64 = (<u64>depth) | ((hash >> 5) << 5);
     unchecked((this.verificationEntries[index] = verificationEntry));
@@ -72,7 +83,7 @@ export class TranspositionTable {
       const fenAlreadySeen = debugMap.get(hash);
       trace("Same HASH " + fenAlreadySeen + " " + board.toFEN());
     }*/
-    const index = <i32>(hash % this.size);
+    const index = <i32>(hash & (this.size - 1));
     const verificationEntry = unchecked(this.verificationEntries[index]);
     const hashVerified = verificationEntry >> 5 == hash >> 5;
     if (hashVerified) {

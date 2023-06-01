@@ -38,9 +38,9 @@ export function benchPerft(): f64 {
   return <f64>perft(4, parseFEN(board), BLACK);
 }
 export function benchPerftOptimized(): f64 {
-  const board = "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -";
+  const board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 
-  return <f64>perft2(4, parseFEN(board), BLACK);
+  return <f64>perft2(5, parseFEN(board), BLACK);
 }
 
 export function nextMove(fen: string, player: f64): string {
@@ -111,6 +111,7 @@ export class Game {
   }
 
   performMove(move: f64): string {
+    trace('coucou alex')
     this.board.do(<u32>move);
     const nextPlayer = opponent(decodePlayer(<u32>move));
     if (isCheckMate(nextPlayer, this.board)) {
@@ -119,6 +120,8 @@ export class Game {
     if (isDraw(nextPlayer, this.board)) {
       return "DRAW";
     }
+    trace('coucou alex 2')
+    trace(this.board.toFEN())
     return this.board.toFEN();
   }
 

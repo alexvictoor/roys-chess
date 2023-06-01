@@ -7,10 +7,11 @@ import {
   ROOK,
   WHITE,
 } from "./bitboard";
+import { MoveStack } from "./move-stack";
 import { isInCheck } from "./status";
 
 export function addCastlingMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {

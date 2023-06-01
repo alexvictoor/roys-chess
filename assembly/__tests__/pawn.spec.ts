@@ -12,6 +12,7 @@ import {
   ROOK,
   WHITE,
 } from "../bitboard";
+import { MoveStack } from "../move-stack";
 import { addPawnPseudoLegalCaptures, addPawnPseudoLegalMoves } from "../pawn";
 
 describe("Pawn move generation", () => {
@@ -21,9 +22,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 16);
     board.putPiece(PAWN, BLACK, 24);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(1);
     expect(moves).toContain(encodeMove(PAWN + BLACK, 16, PAWN + BLACK, 8));
   });
@@ -34,9 +36,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 16);
     board.putPiece(PAWN, BLACK, 24);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(0);
   });
 
@@ -48,9 +51,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 10);
     board.putPiece(PAWN, BLACK, 17);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(2);
   });
   it("should capture on the side (bis)", () => {
@@ -61,9 +65,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 17);
     board.putPiece(PAWN, BLACK, 19);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(5);
   });
   it("should capture on the side (ter)", () => {
@@ -73,9 +78,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 23);
     board.putPiece(PAWN, BLACK, 30);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(1);
   });
 
@@ -85,9 +91,10 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, WHITE, 16);
     board.putPiece(PAWN, BLACK, 8);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(4);
     expect(moves).toContain(encodeMove(PAWN + BLACK, 8, QUEEN + BLACK, 0));
     expect(moves).toContain(encodeMove(PAWN + BLACK, 8, ROOK + BLACK, 0));
@@ -101,9 +108,10 @@ describe("Pawn move generation", () => {
     board.putPiece(ROOK, WHITE, 1);
     board.putPiece(PAWN, BLACK, 8);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, BLACK);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, BLACK);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(4);
     expect(moves).toContain(
       encodeCapture(PAWN + BLACK, 8, QUEEN + BLACK, 1, ROOK + WHITE, 1)
@@ -124,9 +132,10 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(2);
   });
   it("should get pawn capture en passant", () => {
@@ -134,13 +143,14 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     board.putPiece(PAWN, BLACK, 25);
-    const whiteMoves: u32[] = [];
-    addPawnPseudoLegalMoves(whiteMoves, board, WHITE);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, WHITE);
+    const whiteMoves = moveStack.flush();
     // when pawn moves 2 squares forward
     const boardAfterPawnMove = board.execute(whiteMoves[1]);
     // then
-    const blackMoves: u32[] = [];
-    addPawnPseudoLegalMoves(blackMoves, boardAfterPawnMove, BLACK);
+    addPawnPseudoLegalMoves(moveStack, boardAfterPawnMove, BLACK);
+    const blackMoves = moveStack.flush();
     expect(blackMoves).toHaveLength(2);
   });
 
@@ -158,9 +168,10 @@ describe("Pawn move generation", () => {
 
     const board2 = board.execute(encodePawnDoubleMove(BLACK, 48, 32));
     // when
-    const moves: u32[] = [];
-    addPawnPseudoLegalMoves(moves, board2, WHITE);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board2, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(2);
   });
 
@@ -169,8 +180,9 @@ describe("Pawn move generation", () => {
     const board = new BitBoard();
     board.putPiece(PAWN, WHITE, 8);
     board.putPiece(PAWN, BLACK, 25);
-    const whiteMoves: u32[] = [];
-    addPawnPseudoLegalMoves(whiteMoves, board, WHITE);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board, WHITE);
+    const whiteMoves = moveStack.flush();
     // when pawn moves 2 squares forward
     const boardAfterPawnMove = board.execute(whiteMoves[1]);
     // then black pawns should not have changed
@@ -186,8 +198,9 @@ describe("Pawn move generation", () => {
     board.putPiece(PAWN, BLACK, 50);
     // when pawn moves 2 squares forward
     const board2 = board.execute(encodePawnDoubleMove(BLACK, 50, 34));
-    const whiteMoves: u32[] = [];
-    addPawnPseudoLegalMoves(whiteMoves, board2, WHITE);
+    const moveStack = new MoveStack();
+    addPawnPseudoLegalMoves(moveStack, board2, WHITE);
+    const whiteMoves = moveStack.flush();
     // then white pawns should be able to eat en passant
     expect(whiteMoves).toHaveLength(2);
     board2.execute(whiteMoves[0]).checkBitsValidity();

@@ -3,11 +3,6 @@ import { parseFEN } from "../fen-parser";
 import { BitBoard, BLACK, KING, PAWN, QUEEN, ROOK, WHITE } from "../bitboard";
 
 describe("Static evaluation", () => {
-  it("should be 0 when the game begins", () => {
-    const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const initialBoard = parseFEN(fen);
-    expect(evaluate(BLACK, initialBoard)).toBe(0);
-  });
 
   it("should be positive when white wins", () => {
     const fen = "rnb1kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

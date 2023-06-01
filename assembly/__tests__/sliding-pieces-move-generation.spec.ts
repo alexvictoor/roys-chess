@@ -8,6 +8,7 @@ import {
   WHITE,
 } from "../bitboard";
 import { bishopAttacks, rookAttacks } from "../magic";
+import { MoveStack } from "../move-stack";
 import {
   addBishopPseudoLegalMoves,
   addRookPseudoLegalMoves,
@@ -40,9 +41,10 @@ describe("Rook magic move generation", () => {
     const whiteRookPosition: i8 = 0;
     board.putPiece(ROOK, WHITE, whiteRookPosition);
     // when
-    const moves: u32[] = [];
-    addRookPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addRookPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(14);
   });
   it("should get rook pseudo legal moves when there is a piece in the way", () => {
@@ -53,9 +55,10 @@ describe("Rook magic move generation", () => {
     const whiteRookPosition: i8 = 0;
     board.putPiece(ROOK, WHITE, whiteRookPosition);
     // when
-    const moves: u32[] = [];
-    addRookPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addRookPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(7);
   });
   it("should get rook pseudo legal moves when there is a capture", () => {
@@ -68,9 +71,10 @@ describe("Rook magic move generation", () => {
     const whiteKnightPosition: i8 = 1;
     board.putPiece(KNIGHT, WHITE, whiteKnightPosition);
     // when
-    const moves: u32[] = [];
-    addRookPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addRookPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(1);
     expect(board.execute(moves[0]).getKnightMask(BLACK)).toBe(0);
   });
@@ -92,9 +96,10 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u32[] = [];
-    addBishopPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addBishopPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(7);
   });
   it("should get bishop pseudo legal moves when there is a piece in the way", () => {
@@ -105,9 +110,10 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u32[] = [];
-    addBishopPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addBishopPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(0);
   });
   it("should get bishop pseudo legal moves when there is a capture", () => {
@@ -118,9 +124,10 @@ describe("Bishop magic move generation", () => {
     const whiteBishopPosition: i8 = 0;
     board.putPiece(BISHOP, WHITE, whiteBishopPosition);
     // when
-    const moves: u32[] = [];
-    addBishopPseudoLegalMoves(moves, board, WHITE);
+    const moveStack = new MoveStack();
+    addBishopPseudoLegalMoves(moveStack, board, WHITE);
     // then
+    const moves = moveStack.flush();
     expect(moves).toHaveLength(1);
     expect(board.execute(moves[0]).getKnightMask(BLACK)).toBe(0);
   });

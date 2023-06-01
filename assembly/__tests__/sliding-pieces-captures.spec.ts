@@ -7,6 +7,7 @@ import {
   ROOK,
   WHITE,
 } from "../bitboard";
+import { MoveStack } from "../move-stack";
 import {
   addBishopPseudoLegalCaptures,
   addQueenPseudoLegalCaptures,
@@ -21,8 +22,9 @@ describe("Rook captures", () => {
     board.putPiece(ROOK, WHITE, 0);
     board.putPiece(KNIGHT, WHITE, 3);
     // when
-    const captures: u32[] = [];
-    addRookPseudoLegalCaptures(captures, board, WHITE);
+    const moveStack = new MoveStack();
+    addRookPseudoLegalCaptures(moveStack, board, WHITE);
+    const captures = moveStack.flush();
     // then
     expect(captures).toHaveLength(1);
     expect(board.execute(captures[0]).getKnightMask(BLACK)).toBe(0);
@@ -37,8 +39,9 @@ describe("Bishop captures", () => {
     board.putPiece(BISHOP, WHITE, 36);
     board.putPiece(KNIGHT, WHITE, 43);
     // when
-    const captures: u32[] = [];
-    addBishopPseudoLegalCaptures(captures, board, WHITE);
+    const moveStack = new MoveStack();
+    addBishopPseudoLegalCaptures(moveStack, board, WHITE);
+    const captures = moveStack.flush();
     // then
     expect(captures).toHaveLength(1);
     expect(board.execute(captures[0]).getKnightMask(BLACK)).toBe(0);
@@ -53,8 +56,9 @@ describe("Queen captures", () => {
     board.putPiece(QUEEN, WHITE, 36);
     board.putPiece(KNIGHT, WHITE, 43);
     // when
-    const captures: u32[] = [];
-    addQueenPseudoLegalCaptures(captures, board, WHITE);
+    const moveStack = new MoveStack();
+    addQueenPseudoLegalCaptures(moveStack, board, WHITE);
+    const captures = moveStack.flush();
     // then
     expect(captures).toHaveLength(1);
     expect(board.execute(captures[0]).getKnightMask(BLACK)).toBe(0);

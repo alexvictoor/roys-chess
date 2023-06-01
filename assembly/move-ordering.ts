@@ -43,7 +43,7 @@ const scores: StaticArray<i16> = new StaticArray<i16>(256);
 export function sortMoves(
   player: i8,
   ply: i8,
-  moves: u32[],
+  moves: StaticArray<u32>,
   bestMove: u32
 ): void {
   for (let index = 0; index < moves.length; index++) {

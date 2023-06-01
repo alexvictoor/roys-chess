@@ -3,6 +3,7 @@ import { sortCaptures } from "./capture-ordering";
 import { canMove, removeCheckedBoardFrom } from "./engine";
 import { addKingPseudoLegalCaptures } from "./king-move-generation";
 import { addKnightPseudoLegalCaptures } from "./knight-move-generation";
+import { MoveStack } from "./move-stack";
 import { addPawnPseudoLegalCaptures } from "./pawn";
 import {
   addBishopPseudoLegalCaptures,
@@ -91,19 +92,19 @@ export function evaluateQuiescence(
   return alphaUpdated;
 }
 
-export function pseudoLegalCaptures(board: BitBoard, player: i8): u32[] {
-  const moves: u32[] = [];
-  addPawnPseudoLegalCaptures(moves, board, player);
-  addKnightPseudoLegalCaptures(moves, board, player);
-  addBishopPseudoLegalCaptures(moves, board, player);
-  addRookPseudoLegalCaptures(moves, board, player);
-  addQueenPseudoLegalCaptures(moves, board, player);
-  addKingPseudoLegalCaptures(moves, board, player);
-  return moves;
+const moveStack = new MoveStack();
+export function pseudoLegalCaptures(board: BitBoard, player: i8): StaticArray<u32> {
+  addPawnPseudoLegalCaptures(moveStack, board, player);
+  addKnightPseudoLegalCaptures(moveStack, board, player);
+  addBishopPseudoLegalCaptures(moveStack, board, player);
+  addRookPseudoLegalCaptures(moveStack, board, player);
+  addQueenPseudoLegalCaptures(moveStack, board, player);
+  addKingPseudoLegalCaptures(moveStack, board, player);
+  return moveStack.flush();
 }
 
 export function legalCaptures(board: BitBoard, player: i8): BitBoard[] {
-  const moves: u32[] = pseudoLegalCaptures(board, player);
+  const moves: StaticArray<u32> = pseudoLegalCaptures(board, player);
   sortCaptures(moves);
 
   return removeCheckedBoardFrom(moves, board, player);

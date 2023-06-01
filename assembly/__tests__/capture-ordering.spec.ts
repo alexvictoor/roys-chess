@@ -90,7 +90,7 @@ describe('"Most valuable victim, least valuable attacker" capture comparison', (
       QUEEN + BLACK,
       17
     );
-    const captures: u32[] = [
+    const captures: StaticArray<u32> = [
       lowValueCapture,
       highestValueCapture,
       mediumValueCapture,
@@ -140,7 +140,7 @@ describe('"Most valuable victim, least valuable attacker" capture comparison', (
       QUEEN + WHITE,
       17
     );
-    const captures: u32[] = [
+    const captures: StaticArray<u32> = [
       lowValueCapture,
       highestValueCapture,
       mediumValueCapture,

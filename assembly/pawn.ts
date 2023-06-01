@@ -15,6 +15,7 @@ import {
   ROOK,
   WHITE,
 } from "./bitboard";
+import { MoveStack } from "./move-stack";
 
 const whiteInitialRowMask: u64 =
   (1 << 8) |
@@ -73,7 +74,7 @@ const pawnCapturinEnPassantLeftPositions = new MaskIterator();
 const pawnCapturinEnPassantRightPositions = new MaskIterator();
 
 export function addPawnPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -127,7 +128,7 @@ export function addPawnPseudoLegalMoves(
 }
 
 export function addPawnPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {

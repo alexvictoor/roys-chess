@@ -7,6 +7,7 @@ import {
   opponent,
 } from "./bitboard";
 import { getKnightMoves } from "./knight";
+import { MoveStack } from "./move-stack";
 
 const knightMoveCache: StaticArray<u64> = new StaticArray<u64>(64);
 function initKnightMoveCache(): void {
@@ -25,7 +26,7 @@ const toPositions = new MaskIterator();
 const capturePositions = new MaskIterator();
 
 export function addKnightPseudoLegalMoves(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -61,7 +62,7 @@ export function addKnightPseudoLegalMoves(
 }
 
 export function addKnightPseudoLegalCaptures(
-  moves: u32[],
+  moves: MoveStack,
   board: BitBoard,
   player: i8
 ): void {
@@ -75,7 +76,7 @@ export function addKnightPseudoLegalCaptures(
     capturePositions.reset(captureMask);
     while (capturePositions.hasNext()) {
       const capturePosition = capturePositions.next();
-      const capturedPiece = board.getPieceAt(capturePosition);
+      //const capturedPiece = board.getPieceAt(capturePosition);
       const captureAction = encodeCapture(
         KNIGHT + player,
         from,
@@ -83,11 +84,12 @@ export function addKnightPseudoLegalCaptures(
         capturePosition,
         board.getPieceAt(capturePosition)
       );
-      if (capturedPiece > KNIGHT) {
+      /*if (capturedPiece > KNIGHT) {
         moves.unshift(captureAction);
       } else {
         moves.push(captureAction);
-      }
+      }*/
+      moves.push(captureAction);
     }
   }
 }

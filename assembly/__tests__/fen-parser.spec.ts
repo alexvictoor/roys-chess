@@ -68,6 +68,6 @@ describe("FEN genrator", () => {
     // when
     const board = parseFEN(fen);
     // then
-    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR");
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w");
   });
 });
