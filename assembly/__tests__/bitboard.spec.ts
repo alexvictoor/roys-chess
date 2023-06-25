@@ -127,10 +127,10 @@ describe("Bit Board hash", () => {
     const board2 = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
-    board1.do(encodeMove(PAWN + WHITE, 12, PAWN + WHITE, 28));
-    board2.do(encodeMove(PAWN + WHITE, 12, PAWN + WHITE, 28));
-    board1.do(encodeMove(PAWN + BLACK, 52, PAWN + BLACK, 36));
-    board2.do(encodeMove(PAWN + BLACK, 52, PAWN + BLACK, 36));
+    board1.do(encodePawnDoubleMove(PAWN + WHITE, 12, 28));
+    board2.do(encodePawnDoubleMove(PAWN + WHITE, 12, 28));
+    board1.do(encodePawnDoubleMove(PAWN + BLACK, 52, 36));
+    board2.do(encodePawnDoubleMove(PAWN + BLACK, 52, 36));
 
     // when
     board1.do(encodeMove(BISHOP + WHITE, 5, BISHOP + WHITE, 19));
@@ -142,8 +142,59 @@ describe("Bit Board hash", () => {
 
     const hash1 = board1.hashCode();
     const hash2 = board2.hashCode();
+
     // then
     expect(hash1).not.toBe(hash2);
+  });
+
+  it("should get different hash when en passant is active or not", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    const board2 = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    
+    // when
+    board.do(encodePawnDoubleMove(WHITE + PAWN, 8, 24));
+    board.do(encodePawnDoubleMove(BLACK + PAWN, 49, 33));
+    board2.do(encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16));
+    board2.do(encodeMove(BLACK + PAWN, 49, BLACK + PAWN, 41));
+    board2.do(encodeMove(WHITE + PAWN, 16, WHITE + PAWN, 24));
+    board2.do(encodeMove(BLACK + PAWN, 41, BLACK + PAWN, 33));
+
+    // then
+    expect(board.hashCode()).not.toBe(board2.hashCode());
+
+  });
+
+  it("should get different hash when en passant is active or not (FEN)", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR w KQkq b6 0 2"
+    );
+    const board2 = parseFEN(
+      "rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 4"
+    );
+    
+    // when
+    // then
+    expect(board.hashCode()).not.toBe(board2.hashCode());
+
+  });
+
+  it("should get different hash when castling rights are different", () => {
+    // given
+    const board = parseFEN('4k3/8/8/8/8/8/8/R3K2R w KQ - 0 0');
+    const firstHash = board.hashCode();
+    board.do(encodeMove(KING + WHITE, 4, KING + WHITE, 5))
+    board.do(encodeMove(KING + BLACK, 60, KING + BLACK, 61))
+    board.do(encodeMove(KING + WHITE, 5, KING + WHITE, 4))
+    board.do(encodeMove(KING + BLACK, 61, KING + BLACK, 60))
+    // when
+    // then
+    expect(board.hashCode()).not.toBe(firstHash);
   });
 });
 
@@ -266,26 +317,44 @@ describe("Action do/undo", () => {
   it("should get the original board when a move is undone", () => {
     // given
     const board = parseFEN(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
     );
+    const originalHash = board.hashCode();
     const move = encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16);
     board.do(move);
     // when
     board.undo();
     // then
-    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+    expect(board.hashCode()).toBe(originalHash);
+    expect(board.currentPlayer).toBe(WHITE);
+  });
+
+  it("should get the original board when a null move is undone", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
+    );
+    const originalHash = board.hashCode();
+    board.doNullMove();
+    // when
+    board.undoNullMove();
+    // then
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+    expect(board.hashCode()).toBe(originalHash);
+    expect(board.currentPlayer).toBe(WHITE);
   });
   it("should get the original board when a pawn double move is undone", () => {
     // given
     const board = parseFEN(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0"
     );
     const move = encodePawnDoubleMove(WHITE + PAWN, 8, 24);
     board.do(move);
     // when
     board.undo();
     // then
-    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
+    expect(board.toFEN()).toBe("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
     expect(board.getEnPassantFile()).toBe(-1);
   });
   it("should get back en passant file when an action is undone", () => {
@@ -294,22 +363,84 @@ describe("Action do/undo", () => {
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
     board.do(encodePawnDoubleMove(WHITE + PAWN, 8, 24));
-    board.do(encodePawnDoubleMove(BLACK + PAWN, 49, 33));
+    const fenBeforeMove = board.toFEN();
+    const hashBeforeMove = board.hashCode();
     // when
+    board.do(encodePawnDoubleMove(BLACK + PAWN, 49, 33));
     board.undo();
     // then
     expect(board.getEnPassantFile()).toBe(0);
+    expect(board.toFEN()).toBe(fenBeforeMove);
+    expect(board.hashCode()).toBe(hashBeforeMove);
   });
+  it("should....", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    // when
+    board.do(encodePawnDoubleMove(WHITE + PAWN, 8, 24));
+    const board2 = parseFEN("rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq a3 0 1");
+    // then
+    expect(board.hashCode()).toBe(board2.hashCode());
+  });
+
+  it("should....", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    // when
+    board.do(encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16));
+    const board2 = parseFEN("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1");
+    // then
+    expect(board.hashCode() ^ board2.hashCode()).toBe(0);
+    expect(board.hashCode()).toBe(board2.hashCode());
+  });
+
+  it("should get back en passant file when an action is undone", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
+    const fenBeforeMove = board.toFEN();
+    const hashBeforeMove = board.hashCode();
+    // when
+    board.do(encodePawnDoubleMove(WHITE + PAWN, 8, 24));
+    board.undo();
+    // then
+    expect(board.getEnPassantFile()).toBe(-1);
+    expect(board.toFEN()).toBe(fenBeforeMove);
+    expect(board.hashCode()).toBe(hashBeforeMove);
+  });
+
+  it("should undo a move", () => {
+    // given
+    const board = parseFEN(
+      "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq a3 0 1"
+    );
+    const fenBeforeMove = board.toFEN();
+    const hashBeforeMove = board.hashCode();
+    // when
+    board.do(encodeMove(BLACK + PAWN, 48, BLACK + PAWN, 40));
+    board.undo();
+    // then
+    expect(board.getEnPassantFile()).toBe(0);
+    expect(board.toFEN()).toBe(fenBeforeMove);
+    expect(board.hashCode()).toBe(hashBeforeMove);
+  });
+
   it("should undo a capture", () => {
     // given
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
+    board.do(encodeMove(WHITE + KNIGHT, 1, WHITE + KNIGHT, 18));
+    board.do(encodeMove(BLACK + KNIGHT, 57, BLACK + KNIGHT, 42));
     board.do(encodePawnDoubleMove(WHITE + PAWN, 8, 24));
     board.do(encodePawnDoubleMove(BLACK + PAWN, 49, 33));
-    board.do(encodePawnDoubleMove(WHITE + KNIGHT, 1, 18));
-    board.do(encodePawnDoubleMove(BLACK + KNIGHT, 57, 42));
     const fenBeforeCapture = board.toFEN();
+    const hashBeforeCapture = board.hashCode();
     const clockBefore = board.getHalfMoveClock();
     // when
     board.do(
@@ -318,6 +449,7 @@ describe("Action do/undo", () => {
     board.undo();
     // then
     expect(board.toFEN()).toBe(fenBeforeCapture);
+    expect(board.hashCode()).toBe(hashBeforeCapture);
     expect(board.getHalfMoveClock()).toBe(clockBefore);
   });
 
@@ -329,11 +461,13 @@ describe("Action do/undo", () => {
     board.putPiece(ROOK, WHITE, 7);
     board.putPiece(KING, BLACK, 60);
     const fenBeforeCastling = board.toFEN();
+    const hashBeforeCastling = board.hashCode();
     // when
     board.do(encodeMove(KING + WHITE, 4, KING + WHITE, 6));
     board.undo();
     // then
     expect(board.toFEN()).toBe(fenBeforeCastling);
+    expect(board.hashCode()).toBe(hashBeforeCastling);
     expect(board.queenSideCastlingRight(WHITE)).toBe(true);
     expect(board.kingSideCastlingRight(WHITE)).toBe(true);
   });

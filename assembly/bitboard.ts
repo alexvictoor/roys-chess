@@ -54,6 +54,9 @@ export const PLAYER_PIECES: i8 = 12;
 
 export const ALL_PIECES: i8 = 14;
 export const EXTRA: i8 = 15;
+
+export const ACTION_OFFSET_EN_PASSANT: i8 = 26;
+
 export const HASH: i8 = 16;
 export const PREVIOUS_ACTION: i8 = 17;
 export const CLOCK: i8 = 18;
@@ -61,11 +64,11 @@ export const CLOCK: i8 = 18;
 export const WHITE: i8 = 0;
 export const BLACK: i8 = 1;
 
-const BIT_MASK_4 = (1 << 4) - 1;
+export const BIT_MASK_4 = (1 << 4) - 1;
 const BIT_MASK_6 = (1 << 6) - 1;
 const BIT_MASK_50: u64 = ((<u64>1) << 50) - 1;
 
-const ZOBRIST_PLAYER_KEY = 1234556789;
+const ZOBRIST_PLAYER_KEY = 1634556789;
 
 
 export const opponent = (player: i8): i8 => (player == WHITE ? BLACK : WHITE);
@@ -98,6 +101,10 @@ export class BitBoard {
     unchecked((this.bits[piece + player] |= mask));
     unchecked((this.bits[PLAYER_PIECES + player] |= mask));
     unchecked((this.bits[ALL_PIECES] |= mask));
+
+    unchecked(
+      (this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position])
+    );
   }
 
   private put(piece: i8, position: i8): void {
@@ -108,16 +115,16 @@ export class BitBoard {
     unchecked((this.bits[ALL_PIECES] |= mask));
 
     unchecked(
-      (this.bits[HASH] ^= (zobristKeys[((<u32>piece) << 6) + <u32>position] ^ ZOBRIST_PLAYER_KEY))
+      (this.bits[HASH] ^= zobristKeys[((<u32>piece) << 6) + <u32>position])
     );
   }
 
-  removePiece(piece: i8, player: i8, position: i8): void {
+  /*removePiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
     unchecked((this.bits[piece + player] &= mask));
     unchecked((this.bits[PLAYER_PIECES + player] &= mask));
     unchecked((this.bits[ALL_PIECES] &= mask));
-  }
+  }*/
 
   private remove(piece: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
@@ -127,15 +134,29 @@ export class BitBoard {
     unchecked((this.bits[ALL_PIECES] &= mask));
 
     unchecked(
-      (this.bits[HASH] ^= (zobristKeys[((<u32>piece) << 6) + <u32>position] ^ ZOBRIST_PLAYER_KEY))
+      (this.bits[HASH] ^= (zobristKeys[((<u32>piece) << 6) + <u32>position]))
     );
   }
 
+  private getEnPassantData(): i8 {
+    return <i8>unchecked(this.bits[EXTRA] & BIT_MASK_4);
+  }
+
   getEnPassantFile(): i8 {
-    if (unchecked(this.bits[EXTRA]) & 1) {
-      return (<i8>(unchecked(this.bits[EXTRA]) >> 1)) & ((1 << 3) - 1);
+    const data = this.getEnPassantData();
+    if (data & 1) {
+      return data >> 1;
     }
     return -1;
+  }
+
+  setEnPassant(flagAndFile: i8): void {
+    unchecked(this.bits[HASH] ^= zobristKeys[768 + <i32>this.getEnPassantData()]); 
+    
+    unchecked(this.bits[EXTRA] =
+      (this.bits[EXTRA] & ~BIT_MASK_4) | flagAndFile);
+
+    unchecked(this.bits[HASH] ^=  zobristKeys[768 + <i32>this.getEnPassantData()]);  
   }
 
   @inline
@@ -174,17 +195,26 @@ export class BitBoard {
     return unchecked(this.bits[PREVIOUS_ACTION]);
   }
 
+  updateHashWithCastlingRights(): void {
+    unchecked(this.bits[HASH] ^= zobristKeys[784 + <i32>((this.bits[EXTRA] >> 4) & BIT_MASK_4)]); 
+  }
+
   kingSideCastlingRight(player: i8): boolean {
     return !((unchecked(this.bits[EXTRA]) >> (4 + player)) & 1);
   }
   removeKingSideCastlingRight(player: i8): void {
+    this.updateHashWithCastlingRights();
     unchecked((this.bits[EXTRA] |= 1 << (4 + player)));
+    this.updateHashWithCastlingRights();
+    
   }
   queenSideCastlingRight(player: i8): boolean {
     return !((unchecked(this.bits[EXTRA]) >> (6 + player)) & 1);
   }
   removeQueenSideCastlingRight(player: i8): void {
+    this.updateHashWithCastlingRights();
     unchecked((this.bits[EXTRA] |= 1 << (6 + player)));
+    this.updateHashWithCastlingRights();
   }
 
   getHalfMoveClock(): i8 {
@@ -199,9 +229,16 @@ export class BitBoard {
     return updatedBoard;
   }
 
-  do(action: u32): void {
+  switchPlayer(): void {
     this.currentPlayer = opponent(this.currentPlayer);
+    unchecked(
+      this.bits[HASH] ^= ZOBRIST_PLAYER_KEY
+    );
+  }
+
+  do(action: u32): void {
     unchecked(this.hashHistory.push(this.hashCode()));
+    this.switchPlayer();
     this.storeState(action);
     const srcPiece: i8 = decodeSrcPiece(action);
     const fromPosition: i8 = decodeFromPosition(action);
@@ -259,8 +296,9 @@ export class BitBoard {
     }
 
     // en passant file
-    unchecked(this.bits[EXTRA] =
-      (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(action));
+    this.setEnPassant(<i8>decodeMoveEnPassantFlagAndFile(action))
+    /*unchecked(this.bits[EXTRA] =
+      (this.bits[EXTRA] & ~BIT_MASK_4) | decodeMoveEnPassantFlagAndFile(action));*/
 
     // update clock
     if (captureFlag || srcPiece == PAWN + player) {
@@ -275,6 +313,8 @@ export class BitBoard {
     unchecked(this.hashHistory.push(this.hashCode()));
     this.storeState(0);
 
+    this.switchPlayer();
+
     // en passant file
     unchecked(this.bits[EXTRA] =
       (this.bits[EXTRA] & ~BIT_MASK_4));
@@ -283,19 +323,21 @@ export class BitBoard {
     this.bits[CLOCK]++;
   }
 
-  storeState(action: u64): void {
+  storeState(action: u32): void {
     unchecked(this.stateHistory.push(
-      (action & BIT_MASK_50) |
+      <u64>action |
+        (<u64>this.getEnPassantData() << 32) |
         (((this.bits[EXTRA] >> 4) & BIT_MASK_4) << 50) |
         (this.bits[CLOCK] << 54)
     ));
   }
 
   undo(): void {
-    this.currentPlayer = opponent(this.currentPlayer);
-    this.hashHistory.pop();
+    this.switchPlayer();
+    const hash = this.hashHistory.pop();
     const state = this.stateHistory.pop();
     const castlingRights = decodeCastlingRights(state);
+    
     unchecked(this.bits[EXTRA] &= castlingRights << 4);
     unchecked(this.bits[CLOCK] = state >> 54);
 
@@ -310,15 +352,8 @@ export class BitBoard {
     this.remove(destPiece, toPosition);
     this.put(srcPiece, fromPosition);
 
-    // en passant file
-    if (this.stateHistory.length > 0) {
-      const previousState = this.stateHistory[this.stateHistory.length - 1];
-      const previousAction = decodeAction(previousState);
-      unchecked(this.bits[EXTRA] =
-        (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(previousAction));
-    } else {
-      unchecked(this.bits[EXTRA] = this.bits[EXTRA] & ~BIT_MASK_4);
-    }
+    const enPassantData = decodeEnPassant(state);
+    this.setEnPassant(enPassantData);
 
     const captureFlag: i8 = decodeCaptureFlag(action);
     if (captureFlag) {
@@ -350,24 +385,24 @@ export class BitBoard {
         }
       }
     }
+
+    this.bits[HASH] = hash;
+   
   }
 
   undoNullMove(): void {
-    this.hashHistory.pop();
+    this.switchPlayer();
+    const hash = this.hashHistory.pop();
     const state = this.stateHistory.pop();
     const castlingRights = decodeCastlingRights(state);
     unchecked(this.bits[EXTRA] &= castlingRights << 4);
     unchecked(this.bits[CLOCK] = state >> 54);
 
     // en passant file
-    if (this.stateHistory.length > 0) {
-      const previousState = this.stateHistory[this.stateHistory.length - 1];
-      const previousAction = decodeAction(previousState);
-      unchecked(this.bits[EXTRA] =
-        (this.bits[EXTRA] & ~BIT_MASK_4) | decodeEnPassantFile(previousAction));
-    } else {
-      unchecked(this.bits[EXTRA] = this.bits[EXTRA] & ~BIT_MASK_4);
-    }
+    const enPassantData = decodeEnPassant(state);
+    this.setEnPassant(enPassantData);
+    
+    this.bits[HASH] = hash;
   }
 
   checkBitsValidity(): void {
@@ -436,11 +471,50 @@ export class BitBoard {
     }
 
     if (this.currentPlayer == WHITE) {
-      result += ' w';
+      result += ' w ';
     } else {
-      result += ' b';
+      result += ' b ';
     }
 
+    let atLeastOneCastingRight: boolean = false;
+
+    if (this.kingSideCastlingRight(WHITE)) {
+      result += 'K';
+      atLeastOneCastingRight = true;
+    }
+    if (this.queenSideCastlingRight(WHITE)) {
+      result += 'Q';
+      atLeastOneCastingRight = true;
+    }
+    if (this.kingSideCastlingRight(BLACK)) {
+      result += 'k';
+      atLeastOneCastingRight = true;
+    }
+    if (this.queenSideCastlingRight(BLACK)) {
+      result += 'q';
+      atLeastOneCastingRight = true;
+    }
+
+    if (!atLeastOneCastingRight) {
+      result += '-';
+    } 
+
+    result += ' ';
+
+    if (this.getEnPassantFile() > -1) {
+      if (this.currentPlayer == WHITE) {
+        result +=  cols[this.getEnPassantFile()] + '6';
+      } else {
+        result +=  cols[this.getEnPassantFile()] + '3';
+      }
+    } else {
+      result += '-';
+    }
+
+    result += ' ';
+    result += this.getHalfMoveClock().toString();
+    result += ' ';
+    result += this.hashHistory.length.toString()
     return result;
   }
 
@@ -562,7 +636,7 @@ export function encodePawnDoubleMove(
   toPosition: i8
 ): u32 {
   let move = encodeMove(PAWN + player, fromPosition, PAWN + player, toPosition);
-  move |= ((<u32>toPosition % 8 << 1) + 1) << 26;
+  move |= ((<u32>toPosition % 8 << 1) + 1) << ACTION_OFFSET_EN_PASSANT;
   return move;
 }
 
@@ -628,8 +702,8 @@ export function decodeCaptureEnPassantFlag(action: u32): i8 {
 
 // @ts-ignore
 @inline
-export function decodeEnPassantFile(action: u32): u64 {
-  return (action >> 26) & BIT_MASK_4;
+export function decodeMoveEnPassantFlagAndFile(action: u32): u64 {
+  return (action >> ACTION_OFFSET_EN_PASSANT) & BIT_MASK_4;
 }
 
 // @ts-ignore
@@ -642,6 +716,11 @@ export function decodeAction(state: u64): u32 {
 @inline
 export function decodeCastlingRights(state: u64): u64 {
   return (state >> 50) & BIT_MASK_4;
+}
+// @ts-ignore
+@inline
+export function decodeEnPassant(state: u64): i8 {
+  return <i8>((state >> 32) & BIT_MASK_4);
 }
 
 // @ts-ignore

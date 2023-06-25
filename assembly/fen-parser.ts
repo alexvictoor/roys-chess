@@ -2,6 +2,7 @@ import {
   BISHOP,
   BitBoard,
   BLACK,
+  CLOCK,
   EXTRA,
   KING,
   KNIGHT,
@@ -10,6 +11,8 @@ import {
   ROOK,
   WHITE,
 } from "./bitboard";
+
+const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
 export function parseFEN(fen: string): BitBoard {
   const bits = new StaticArray<u64>(19);
@@ -43,6 +46,11 @@ export function parseFEN(fen: string): BitBoard {
     position++;
   }
 
+  const currentPlayer = fenFragments[1] == "w" ? WHITE : BLACK;
+  if (currentPlayer == BLACK) {
+    board.switchPlayer();
+  }
+
   const castlingFragment = fenFragments[2];
   const whiteKingSide = castlingFragment.indexOf("K") > -1 ? 0 : 1;
   const blackKingSide = castlingFragment.indexOf("k") > -1 ? 0 : 1;
@@ -53,5 +61,15 @@ export function parseFEN(fen: string): BitBoard {
   bits[EXTRA] = bits[EXTRA] | (whiteQueenSide << 6);
   bits[EXTRA] = bits[EXTRA] | (blackQueenSide << 7);
 
+  const enPassantFragment = fenFragments[3];
+  if (enPassantFragment == "-") {
+    board.setEnPassant(0);
+  } else {
+    const enPassantFile = <i8>cols.indexOf(enPassantFragment.substring(0, 1));
+    board.setEnPassant((enPassantFile << 1) | 1);
+  }
+
+  const halfMoveClock = <u64>parseInt(fenFragments[4].toString(), 10);
+  bits[CLOCK] = halfMoveClock;
   return board;
 }
