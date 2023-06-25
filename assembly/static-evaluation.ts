@@ -1,4 +1,5 @@
-import { BitBoard, BLACK, MaskIterator, PLAYER_PIECES } from "./bitboard";
+import { BitBoard, BLACK, MaskIterator, PLAYER_PIECES, WHITE } from "./bitboard";
+import { EvaluationTable } from "./evaluation-table";
 import { mainEvaluation } from "./evaluation/stockfish-static-evaluation";
 
 const WHITE_PAWN_WEIGHTS: i16[] = [
@@ -165,10 +166,36 @@ export function OLD_evaluate(player: i8, board: BitBoard): i16 {
   return result;
 }
 
+const table = new EvaluationTable();
+
+let verbose: boolean = true;
+let count: i32 = 0;
+
 export function evaluate(player: i8, board: BitBoard): i16 {
-  const evaluation =  mainEvaluation(player, board);
-  if (player === BLACK) {
-    return -evaluation;
+  const cachedEvaluation = table.getCachedEvaluation(board);
+  if (cachedEvaluation) {
+    return cachedEvaluation;
   }
+  count++;
+
+  /*if (verbose && count > 188360) {
+    trace(board.toFEN());
+  }*/
+
+  const evaluation = mainEvaluation(player, board) * ((player === WHITE ? 1 : -1));
+  /*if (board.hashCode() == 216317760343299884) {
+    trace(board.toFEN() + " /// " + evaluation.toString() + " /// " + player.toString() + ' / ' + count.toString());
+    verbose = false;
+  }*/
+  /*const cachedEvaluation = table.getCachedEvaluation(board);
+  if (cachedEvaluation) {
+    if (cachedEvaluation == evaluation) {
+      //trace('chouette');
+    } else {
+
+      trace(board.hashCode().toString() + ' ' + cachedEvaluation.toString() + ' ' + evaluation.toString());
+    }
+  }*/
+  table.record(board, evaluation);
   return evaluation;
 }

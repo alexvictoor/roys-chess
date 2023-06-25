@@ -24,7 +24,7 @@ export class History {
   @inline
   recordCutOffMove(player: i8, ply: i8, depth: i8, move: u32): void {
     //log(this.computeMoveIndex(player, move));
-    //log(1 << ply);
+    //trace(ply.toString() +  ' ' +(1 << ply).toString());
     unchecked(
       (this.cutOffMoveCounters[this.computeMoveIndex(player, move)] += 1 << ply)
     );
@@ -39,20 +39,24 @@ export class History {
   getMoveScore(player: i8, ply: i8, move: u32): i16 {
     //log(this.cutOffMoveCounters[this.computeMoveIndex(player, move)]);
 
-    const index = this.computeMoveIndex(player, move);
-    const cutOff = unchecked(this.cutOffMoveCounters[index]);
+    
     /*if (cutOff === 0) {
       return 0;
     }*/
-    let result: i16 = cutOff - unchecked(this.playedMoveCounters[index]);
+   
     if (unchecked(this.primaryKillers[ply]) === move) {
-      result += 400;
+      return i16.MAX_VALUE >> 1;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
-      result += 200;
+      return i16.MAX_VALUE >> 2;
     }
     //return cutOff;
-    return result;
+    const index = this.computeMoveIndex(player, move);
+    const cutOff = unchecked(this.cutOffMoveCounters[index]);
+    if (cutOff === 0) {
+      return 0;
+    }
+    return i16(<i32>cutOff * <i32>500 / <i32>unchecked(this.playedMoveCounters[index]) );
   }
   resetHistory(): void {
     for (let index = 0; index < this.primaryKillers.length; index++) {

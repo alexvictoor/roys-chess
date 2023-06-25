@@ -94,7 +94,7 @@ describe("Castling", () => {
   it("should be possible for black on queen side", () => {
     // given
     const board = parseFEN(
-      "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq -"
+      "r3k2r/pb3p2/5npp/n2p4/1p1PPB2/6P1/P2N1PBP/R3K2R b KQkq - 0 0"
     );
     const board2 = board.execute(
       encodeMove(ROOK + BLACK, 63, ROOK + BLACK, 55)

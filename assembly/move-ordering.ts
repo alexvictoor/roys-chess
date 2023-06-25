@@ -24,8 +24,8 @@ export function captureScore(capture: u32): i16 {
   return unchecked(captureScores[(capturedPiece << 3) + srcPiece]);
 }
 
-export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
-  if (action == bestMove) {
+export function score(board: BitBoard, player: i8, ply: i8, action: u32, hashMove: u32): i16 {
+  if (action == hashMove) {
     return i16.MAX_VALUE;
   }
 
@@ -41,6 +41,7 @@ export function score(player: i8, ply: i8, action: u32, bestMove: u32): i16 {
 
 const scores: StaticArray<i16> = new StaticArray<i16>(256);
 export function sortMoves(
+  board: BitBoard,
   player: i8,
   ply: i8,
   moves: StaticArray<u32>,
@@ -48,7 +49,7 @@ export function sortMoves(
 ): void {
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
-    unchecked((scores[index] = score(player, ply, move, bestMove)));
+    unchecked((scores[index] = score(board, player, ply, move, bestMove)));
   }
   // in place insertion sort
   for (let i = 1; i < moves.length; i++) {

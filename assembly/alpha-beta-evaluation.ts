@@ -39,7 +39,11 @@ const NULL_MOVE_REDUCTION: i8 = 4;
 const TIMEOUT_IN_MS: i64 = 20000;
 const TIMEOUT_SCORE = (i16.MIN_VALUE >> 2) + 42;
 
-export function evaluatePosition(
+export function reset(): void {
+  transpositionTable.reset() 
+}
+
+export function principalVariationSearch(
   player: i8,
   playerInCheck: boolean,
   board: BitBoard,
@@ -50,7 +54,7 @@ export function evaluatePosition(
   afterNullMove: boolean = false
 ): i16 {
   if (
-    (nodeVisited & 16383) == 0 &&
+    /*(nodeVisited & 16383) == 0 &&*/
     Date.now() - startTimestamp > TIMEOUT_IN_MS
   ) {
     return TIMEOUT_SCORE;
@@ -78,33 +82,25 @@ export function evaluatePosition(
     }
   }
 
-  let bestMove: u32 =
-    scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
-  const moves = pseudoLegalMoves(board, player);
-  sortMoves(player, ply, moves, bestMove);
+
   //trace("moves " + moves.map<string>((m) => toNotation(m)).join(" , "));
-  let alphaUpdated: i16 = alpha;
-  let bestScore: i16 = i16.MIN_VALUE >> 1;
+
 
   //const playerInCheck = isInCheck(player, board);
-  const inPVSearch = beta - alpha > 1;
 
   const nullMovePossible =
-    !playerInCheck && !afterNullMove && inPVSearch && NULL_FLAG;
+    !playerInCheck && !afterNullMove && NULL_FLAG;
   if (nullMovePossible) {
     board.doNullMove();
 
     const reduction =
       depth > 6 ? NULL_MOVE_MAX_REDUCTION : NULL_MOVE_MIN_REDUCTION;
-    const nullMoveScore = -evaluatePosition(
+    const nullMoveScore = -zeroWindowSearch(
       opponent(player),
-      false,
       board,
       depth - reduction,
-      -beta,
-      -beta + 1,
-      ply + 1,
-      true
+      -alpha,
+      ply + 1
     );
     board.undoNullMove();
     if (nullMoveScore == -TIMEOUT_SCORE) {
@@ -117,6 +113,7 @@ export function evaluatePosition(
       }
       // reduce the depth in case of fail-high
       depth -= NULL_MOVE_REDUCTION;
+      afterNullMove = true;
       if (depth <= 0) {
         return evaluateQuiescence(player, board, alpha, beta);
       }
@@ -124,7 +121,7 @@ export function evaluatePosition(
   }
 
   let futilityPruningPossible: boolean =
-    depth < 4 && !playerInCheck && inPVSearch && FUTILITY_FLAG;
+    depth < 4 && !playerInCheck && FUTILITY_FLAG;
   let futilityScore: i16 = i16.MIN_VALUE >> 1;
   if (futilityPruningPossible) {
     const staticEvaluation = evaluate(player, board);
@@ -138,9 +135,15 @@ export function evaluatePosition(
     }
     futilityPruningPossible = futilityScore <= alpha;
   }
-  let lateMoveReductionPossible = depth > 2 && !playerInCheck && inPVSearch;
+  let lateMoveReductionPossible = depth > 2 && !playerInCheck;
 
   let fullyEvaluatedMoves: i8 = 0;
+  let alphaUpdated: i16 = alpha;
+  let bestScore: i16 = i16.MIN_VALUE >> 1;
+  const hashMove = decodeMoveFromEntry(transpositionEntry);
+  let bestMove: u32 = scoreType === EXACT_SCORE ? hashMove : 0;
+  const moves = pseudoLegalMoves(board, player);
+  sortMoves(board, player, ply, moves, hashMove);
   for (let index = 0; index < moves.length; index++) {
     const move = unchecked(moves[index]);
     board.do(move);
@@ -170,15 +173,12 @@ export function evaluatePosition(
       fullyEvaluatedMoves > 4 &&
       LMR_FLAG
     ) {
-      const reducedDepthScore = -evaluatePosition(
+      const reducedDepthScore = -zeroWindowSearch(
         opponent(player),
-        isOpponentInCheck,
         board,
         depthNeeded - 1,
-        -alphaUpdated - 1,
         -alphaUpdated,
         ply + 1,
-        false
       );
 
       if (reducedDepthScore == -TIMEOUT_SCORE) {
@@ -192,16 +192,41 @@ export function evaluatePosition(
       }
     }
 
-    const score = -evaluatePosition(
-      opponent(player),
-      isOpponentInCheck,
-      board,
-      depth - 1,
-      -beta,
-      -alphaUpdated,
-      ply + 1,
-      false
-    );
+    let score: i16;
+    if (alphaUpdated > alpha) {
+      score = -zeroWindowSearch(
+        opponent(player),
+        board,
+        depth - 1,
+        -alphaUpdated,
+        ply + 1
+      );
+      if (score > alphaUpdated) {
+        // search again
+        score = -principalVariationSearch(
+          opponent(player),
+          isOpponentInCheck,
+          board,
+          depth - 1,
+          -beta,
+          -alphaUpdated,
+          ply + 1,
+          afterNullMove
+        );
+      }
+    } else {
+      score = -principalVariationSearch(
+        opponent(player),
+        isOpponentInCheck,
+        board,
+        depth - 1,
+        -beta,
+        -alphaUpdated,
+        ply + 1,
+        afterNullMove
+      );
+    }
+
     /*if (isCapture) {
       trace(
         "capture " +
@@ -230,7 +255,7 @@ export function evaluatePosition(
       return TIMEOUT_SCORE;
     }
     fullyEvaluatedMoves++;
-    if (!isCapture && inPVSearch) {
+    if (!isCapture) {
       history.recordPlayedMove(player, ply, move);
     }
     // if (!capture) history.recordMovePlayed(player,ply, move)
@@ -238,13 +263,12 @@ export function evaluatePosition(
       // pruning
       // TODO record cutoff
       // if (!capture) history.recordCutoff(player,ply, move)
-      if (!isCapture && inPVSearch) {
+      if (!isCapture) {
         history.recordCutOffMove(player, ply, depth, move);
       }
       // TODO record score   beta  / lower bound ?
-      if (inPVSearch) {
-        transpositionTable.record(board, move, beta, BETA_SCORE, depth);
-      }
+      transpositionTable.record(board, move, beta, BETA_SCORE, depth);
+      
       return beta;
     }
     if (score > bestScore) {
@@ -257,16 +281,80 @@ export function evaluatePosition(
     }
   }
   // TODO pv ? record alphaUpdated pv si updated sinon alpha
-  if (bestMove > 0 && inPVSearch) {
+  if (bestMove > 0) {
     const scoreType = alphaUpdated != alpha ? EXACT_SCORE : ALPHA_SCORE;
     transpositionTable.record(board, bestMove, bestScore, scoreType, depth);
   }
   return bestScore;
 }
 
+
+export function zeroWindowSearch(
+  player: i8,
+  board: BitBoard,
+  depth: i8,
+  beta: i16,
+  ply: i8,
+): i16 {
+
+  const alpha = beta - 1;
+
+  if (depth <= 0) {
+    return evaluateQuiescence(player, board, alpha, beta);
+  }
+
+  const transpositionEntry = transpositionTable.getEntry(board);
+  const scoreType = decodeScoreTypeFromEntry(transpositionEntry);
+  const transpositionDepth = decodeDepthFromEntry(transpositionEntry);
+  if (transpositionDepth >= depth) {
+    if (scoreType === EXACT_SCORE) {
+      return decodeScoreFromEntry(transpositionEntry);
+    }
+    const score = decodeScoreFromEntry(transpositionEntry);
+    if (scoreType === ALPHA_SCORE && score <= alpha) {
+      return alpha;
+    }
+    if (scoreType === BETA_SCORE && score >= beta) {
+      return beta;
+    }
+  }
+
+  let bestMove: u32 =
+    scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
+  const moves = pseudoLegalMoves(board, player);
+  sortMoves(board, player, ply, moves, bestMove);
+
+
+  for (let index = 0; index < moves.length; index++) {
+    const move = unchecked(moves[index]);
+    board.do(move);
+    if (isInCheck(player, board)) {
+      board.undo();
+      continue;
+    }
+
+    const score = -zeroWindowSearch(
+      opponent(player),
+      board,
+      depth - 1,
+      -alpha,
+      ply + 1,
+    );
+
+    board.undo();
+
+
+    if (score >= beta) {
+      return beta;
+    }
+  }
+
+  return alpha;
+}
+
 export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
   history.resetHistory();
-  transpositionTable.reset();
+  //transpositionTable.reset();
 
   startTimestamp = Date.now();
   nodeVisited = 0;
@@ -280,7 +368,7 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     nodeVisited = 0;
     const startIterationTimestamp = Date.now();
 
-    sortMoves(player, 1, moves, bestMove);
+    sortMoves(board, player, 1, moves, bestMove);
     //trace(moves.map<string>((m) => toNotation(m)).join(" , "));
     /*for (let index = 0; index < moves.length; index++) {
       const move = unchecked(moves[index]);
@@ -296,7 +384,7 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
         continue;
       }
       const isOpponentInCheck = isInCheck(opponent(player), board);
-      const score = -evaluatePosition(
+      const score = -principalVariationSearch(
         opponentPlayer,
         isOpponentInCheck,
         board,

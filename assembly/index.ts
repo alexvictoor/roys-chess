@@ -1,6 +1,6 @@
 // The entry file of your WebAssembly module.
 
-import { analyseBestMove, chooseBestMove } from "./alpha-beta-evaluation";
+import { analyseBestMove, chooseBestMove, reset } from "./alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
@@ -69,7 +69,9 @@ function randomU64(): u64 {
 
 export function generateZobristKeys(): string {
   const randomKeys: u64[] = [];
-  const numberOfKeysNeeded = 64 * (1 + 1 + 1 + 1 + 1 + 1) * 2; // one key per board square color piece
+  const numberOfKeysNeeded = 64 * (1 + 1 + 1 + 1 + 1 + 1) * 2 // one key per board square color piece
+    + 16  // en passant files
+    + 16; // castling rights
   for (let index = 0; index < numberOfKeysNeeded; index++) {
     randomKeys.push(randomU64());
   }
@@ -83,10 +85,12 @@ export class Game {
     this.board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
+    reset();
   }
 
   startFrom(fen: string): void {
     this.board = parseFEN(fen);
+    reset();
   }
 
   chooseNextMove(player: f64): string {
