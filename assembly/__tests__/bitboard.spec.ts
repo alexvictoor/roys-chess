@@ -278,6 +278,12 @@ describe("fromNotation", () => {
     );
     expect(move).toBe(expectedMove);
   });
+  it("should generate a capture (bis)", () => {
+    const board = parseFEN("rnbqkbnr/ppp2ppp/8/3p4/3pP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1");
+    const move = fromUciNotation("e4d5", board);
+    board.do(move);
+    expect(board.toFEN()).toBe('rnbqkbnr/ppp2ppp/8/3P4/3p4/8/PPP2PPP/RNBQKBNR b KQkq - 0 1');
+  });
   it("should generate a en passant capture", () => {
     const board = parseFEN("rnbqkbnr/ppp2ppp/8/2Ppp3/8/8/PP1PPPPP/RNBQKBNR w KQkq d6 0 1");
     const move = fromUciNotation("c5d6", board);
@@ -329,6 +335,13 @@ describe("fromNotation", () => {
       28
     );
     expect(move).toBe(expectedMove);
+  });
+
+  it("should generate a castling move", () => {
+    const board = parseFEN("rnbqk2r/ppppbppp/5n2/4p3/4P3/3B1N2/PPPP1PPP/RNBQK2R w KQkq - 0 1");
+    const move = fromUciNotation("e1g1", board);
+    board.do(move);
+    expect(board.toFEN()).toBe('rnbqk2r/ppppbppp/5n2/4p3/4P3/3B1N2/PPPP1PPP/RNBQ1RK1 b kq - 1 1');
   });
 
 });

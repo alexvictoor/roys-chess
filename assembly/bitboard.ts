@@ -757,18 +757,17 @@ function parsePosition(notation: string): i8 {
 
 export function fromUciNotation(code: string, board: BitBoard): u32 {
   const fromPosition = parsePosition(code.substring(0, 2));
-  const toPosition = parsePosition(code.substring(2));
+  const toPosition = parsePosition(code.substring(2, 4));
   const fromPiece = board.getPieceAt(fromPosition);
   const player = fromPiece & 1;
 
+  // TODO promotions 
+
   if (board.getAllPiecesMask() & (1 << toPosition)) {
-    const toPiece = board.getPieceAt(toPosition);
-    return encodeCapture(fromPiece, fromPosition, fromPiece, toPosition, toPiece);
+    const capturedPiece = board.getPieceAt(toPosition);
+    return encodeCapture(fromPiece, fromPosition, fromPiece, toPosition, capturedPiece);
   }
   if ((fromPiece - player) == PAWN) {
-    // TODO autre cas en passant
-    // TODO double move
-    // TODO promotion ?
     if ((toPosition - fromPosition) == 9) {
       return encodeCapture(fromPiece, fromPosition, fromPiece, toPosition, board.getPieceAt(fromPosition + 1), fromPosition + 1);
     }
