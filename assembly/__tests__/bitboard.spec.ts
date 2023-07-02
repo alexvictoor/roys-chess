@@ -7,6 +7,7 @@ import {
   encodeCapture,
   encodeMove,
   encodePawnDoubleMove,
+  fromUciNotation,
   KING,
   KNIGHT,
   MaskIterator,
@@ -256,18 +257,18 @@ describe("toNotation", () => {
   });
 });
 
-/*describe("fromNotation", () => {
+describe("fromNotation", () => {
   it("should generate a regular move", () => {
     const board = parseFEN(
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
-    const move = fromNotation("a2-a3", board, WHITE);
+    const move = fromUciNotation("a2a3", board);
     const expectedMove = encodeMove(WHITE + PAWN, 8, WHITE + PAWN, 16);
     expect(move).toBe(expectedMove);
   });
   it("should generate a capture", () => {
     const board = parseFEN("4k1r1/p4p2/6pp/R3n3/4B3/6P1/P3KP1P/8 w KQkq - 0 1");
-    const move = fromNotation("a5-e5", board, WHITE);
+    const move = fromUciNotation("a5e5", board);
     const expectedMove = encodeCapture(
       WHITE + ROOK,
       32,
@@ -277,7 +278,60 @@ describe("toNotation", () => {
     );
     expect(move).toBe(expectedMove);
   });
-});*/
+  it("should generate a en passant capture", () => {
+    const board = parseFEN("rnbqkbnr/ppp2ppp/8/2Ppp3/8/8/PP1PPPPP/RNBQKBNR w KQkq d6 0 1");
+    const move = fromUciNotation("c5d6", board);
+    
+    const expectedMove = encodeCapture(
+      WHITE + PAWN,
+      34,
+      WHITE + PAWN,
+      43,
+      BLACK + PAWN,
+      35
+    );
+    expect(move).toBe(expectedMove);
+  });
+  it("should generate a en passant capture (bis)", () => {
+    const board = parseFEN("rnbqkbnr/ppp2ppp/8/3ppP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 0 1");
+    const move = fromUciNotation("f5e6", board);
+    
+    const expectedMove = encodeCapture(
+      WHITE + PAWN,
+      37,
+      WHITE + PAWN,
+      44,
+      BLACK + PAWN,
+      36
+    );
+    expect(move).toBe(expectedMove);
+  });
+  it("should generate a en passant capture (ter)", () => {
+    const board = parseFEN("rnbqkbnr/pppp1ppp/8/8/3Pp3/4PP2/PPP3PP/RNBQKBNR b KQkq d3 0 1");
+    const move = fromUciNotation("e4d3", board);
+    
+    const expectedMove = encodeCapture(
+      BLACK + PAWN,
+      28,
+      BLACK + PAWN,
+      19,
+      WHITE + PAWN,
+      27
+    );
+    expect(move).toBe(expectedMove);
+  });
+  it("should generate a pawn double move", () => {
+    const board = parseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    const move = fromUciNotation("e2e4", board);
+    const expectedMove = encodePawnDoubleMove(
+      WHITE + PAWN,
+      12,
+      28
+    );
+    expect(move).toBe(expectedMove);
+  });
+
+});
 
 describe("Action encoding", () => {
   it("should decode moved piece and captured piece", () => {
