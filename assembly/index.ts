@@ -11,6 +11,7 @@ import {
 } from "./bitboard";
 import { parseFEN } from "./fen-parser";
 import { findAllBishopMagicNumbers, findAllRookMagicNumbers } from "./magic";
+import { generateOpeningBookData, generateOpeningBookSourceCode } from "./opening-book";
 import { perft, perft2 } from "./perft";
 import { isCheckMate, isDraw } from "./status";
 
@@ -133,4 +134,10 @@ export class Game {
     this.board.undo();
     return this.board.toFEN();
   }
+}
+
+
+export function generateOpeningBook(data: string): string {
+  const openingBookData = generateOpeningBookData(data);
+  return generateOpeningBookSourceCode(openingBookData);
 }
