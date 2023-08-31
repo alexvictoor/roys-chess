@@ -18,8 +18,6 @@ export function parseFEN(fen: string): BitBoard {
   const bits = new StaticArray<u64>(19);
   const board = new BitBoard(bits);
   const fenFragments = fen.split(" ");
-  let y = 0;
-  let x = 0;
   let position: i8 = 56;
   const fenPieces: string = fenFragments[0];
   for (let i: i8 = 0; i < fenPieces.length; i++) {
