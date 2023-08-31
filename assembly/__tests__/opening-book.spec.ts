@@ -35,7 +35,6 @@ describe("Opening Book", () => {
         const data = generateOpeningBookData(input);
         const data2 = generateOpeningBookData(inputWithTwiceTheSameMoves);
 
-        trace(data2.join(", "))
         expect(data.length).toBe(data2.length);
 
     });

@@ -2,7 +2,7 @@ import { BitBoard, fromUciNotation } from "./bitboard";
 import { parseFEN } from "./fen-parser";
 
 export function findMoveInOpeningBook(
-  openingBookData: StaticArray<u64>,
+  openingBookData: StaticArray<u32>,
   board: BitBoard
 ): u32 {
   const currentHash = board.hashCode();
@@ -19,25 +19,27 @@ export function findMoveInOpeningBook(
   //trace('offset ' + offset.toString());
   //trace('maxOffset ' + maxOffset.toString());
   while (offset < maxOffset) {
-    const hash = openingBookData[offset];
-    const numberOfMoves = <i32>openingBookData[offset + 1];
+    const hash = <u64>openingBookData[offset] + ((<u64>openingBookData[offset + 1]) << 32);
+    const numberOfMoves = <i32>openingBookData[offset + 2];
     if (hash === currentHash) {
       
-      return <u32>openingBookData[offset + 1 + <i32>Math.ceil(Math.random() * numberOfMoves)];
+      return <u32>openingBookData[offset + 2 + <i32>Math.ceil(Math.random() * numberOfMoves)];
     }
-    offset = offset + 1 + numberOfMoves + 1;
+    offset = offset + 2 + numberOfMoves + 1;
   }
   return 0;
 }
 
 export function generateOpeningBookSourceCode(
-  openingBookData: StaticArray<u64>
+  openingBookData: StaticArray<u32>
 ): string {
-  return `const openingBookData = StaticArray.fromArray<u64>([${openingBookData.join(
+  return `
+  // ${openingBookData.length * 4 / 1024}Kb
+  const openingBookData = StaticArray.fromArray<u64>([${openingBookData.join(
     ", "
   )}]);`;
 }
-export function generateOpeningBookData(input: string): StaticArray<u64> {
+export function generateOpeningBookData(input: string): StaticArray<u32> {
   /*[
     {
         hash: [move]
@@ -89,16 +91,16 @@ export function generateOpeningBookData(input: string): StaticArray<u64> {
     }
   }
 
-  const result: Array<u64> = [];
+  const result: Array<u32> = [];
   const numberOfPly = data.findIndex((positions) => positions.size === 0);
   // 0 nb de niveaux (8)
   result.push(numberOfPly);
   // 1-8 offset niveaux
-  let offset: u64 = numberOfPly + 1;
+  let offset: u32 = numberOfPly + 1;
   for (let index = 0; index < numberOfPly; index++) {
     result.push(offset);
     const positions = data[index];
-    offset += positions.size * 2 + positions.values().length;
+    offset += positions.size * 3 + positions.values().length;
   }
   for (let ply = 0; ply < numberOfPly; ply++) {
     //offset = numberOfPly + 1;
@@ -106,7 +108,10 @@ export function generateOpeningBookData(input: string): StaticArray<u64> {
     const hashes = positions.keys();
     for (let hashIndex = 0; hashIndex < hashes.length; hashIndex++) {
       const hash = hashes[hashIndex];
-      result.push(hash);
+      const hashFirstPart = <u32>(hash & 0xFFFFFFFF)
+      const hashSecondPart = <u32>(hash >> 32)
+      result.push(hashFirstPart);
+      result.push(hashSecondPart);
       const moves = positions.get(hash);
       result.push(moves.length);
       for (let moveIndex = 0; moveIndex < moves.length; moveIndex++) {
