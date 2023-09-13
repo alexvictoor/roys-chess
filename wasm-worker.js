@@ -8,7 +8,7 @@ let aiGame;
 let wasm;
 const setup = async () => {
   wasm = await loader.instantiate(fetch("build/optimized.wasm"));
-  //const initWasm = async () => await loader.instantiate(fetch("build/optimized.wasm"));
+  //const initWasm = async () => await loader.instantiate(fetch("optimized.wasm"));
   aiGame = new wasm.exports.Game();
   postMessage("READY");
 };
