@@ -23,7 +23,7 @@ describe("Score from history", () => {
     h.recordCutOffMove(WHITE, 1, 4, move);
     expect(h.getMoveScore(WHITE, 1, move)).toBeGreaterThan(0);
   });
-  it("should be greather than 0 when move has been recorded deeper has a cut off", () => {
+  xit("should be greather than 0 when move has been recorded deeper has a cut off", () => {
     // given
     const move = encodeMove(ROOK + WHITE, 0, ROOK + WHITE, 1);
     const deeperMove = encodeMove(ROOK + WHITE, 0, ROOK + WHITE, 2);

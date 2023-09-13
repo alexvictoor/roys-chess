@@ -11,13 +11,13 @@ export class TranspositionTable {
   moveEntries: StaticArray<u64>;
   size: i32;
 
-  constructor(sizeMagnitude: i32 = 24) {
+  constructor(sizeMagnitude: i32 = 25) {
     this.size = 1 << sizeMagnitude;
     this.verificationEntries = new StaticArray<u64>(this.size);
     this.moveEntries = new StaticArray<u64>(this.size);
   }
 
-  reset(sizeMagnitude: i32 = 24): void {
+  reset(sizeMagnitude: i32 = 25): void {
     const size: i32 = 1 << sizeMagnitude;
     if (this.size == size) {
       for (let index: i32 = 0; index < size; index++) {
