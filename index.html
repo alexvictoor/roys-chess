@@ -125,7 +125,7 @@
         const workerReady = new Promise(resolve => {
             resolveWorkerReadyFn = resolve;
         })
-        let wasmWorker = new Worker('wasm-worker.js');
+        let wasmWorker = new Worker('wasm-worker.js?v=2');
         let moveCallBack;
         wasmWorker.onmessage = e => {
             if (e.data === 'READY') {
