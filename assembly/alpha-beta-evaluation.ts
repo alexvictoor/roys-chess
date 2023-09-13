@@ -8,8 +8,10 @@ import {
   toNotation,
 } from "./bitboard";
 import { pseudoLegalMoves } from "./engine";
+import { openingBookData } from "./generated-opening-book";
 import { history } from "./history";
 import { sortMoves } from "./move-ordering";
+import { findMoveInOpeningBook } from "./opening-book";
 import { evaluateQuiescence } from "./quiescence-evaluation";
 import { evaluate, isPastStartGame, PIECE_VALUES } from "./static-evaluation";
 import { staticExchangeEvaluation } from "./static-exchange-evaluation";
@@ -356,6 +358,12 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
   history.resetHistory();
   //transpositionTable.reset();
 
+  const bookMove = findMoveInOpeningBook(openingBookData, board);
+  
+  if (bookMove != 0) {
+    return <u64>bookMove;
+  }
+
   startTimestamp = Date.now();
   nodeVisited = 0;
 
@@ -369,11 +377,6 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
     const startIterationTimestamp = Date.now();
 
     sortMoves(board, player, 1, moves, bestMove);
-    //trace(moves.map<string>((m) => toNotation(m)).join(" , "));
-    /*for (let index = 0; index < moves.length; index++) {
-      const move = unchecked(moves[index]);
-
-    }*/
 
     let iterationBestMove: u32 = bestMove;
     for (let index = 0; index < moves.length; index++) {
@@ -404,13 +407,10 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
         );
         return <u64>bestMove + ((<u64>depth) << 32);
       }
-      //log(toNotation(move) + " " + score.toString());
       if (score > alpha) {
         alpha = score;
         iterationBestMove = move;
-        //log(toNotation(move) + " " + score.toString());
       }
-      //trace(toNotation(move) + " " + score.toString());
     }
     bestMove = iterationBestMove;
     const iterationDuration = Date.now() - startIterationTimestamp;
