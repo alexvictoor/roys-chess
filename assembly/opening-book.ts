@@ -1,6 +1,12 @@
 import { BitBoard, fromUciNotation } from "./bitboard";
 import { parseFEN } from "./fen-parser";
 
+/** Index of the move to play among `numberOfMoves` book moves, for a random number in [0, 1). */
+export function pickBookMoveIndex(random: f64, numberOfMoves: i32): i32 {
+  const pick = <i32>Math.floor(random * numberOfMoves);
+  return pick < numberOfMoves ? pick : numberOfMoves - 1;
+}
+
 export function findMoveInOpeningBook(
   openingBookData: StaticArray<u32>,
   board: BitBoard
@@ -21,7 +27,7 @@ export function findMoveInOpeningBook(
     const numberOfMoves = <i32>openingBookData[offset + 2];
     if (hash === currentHash) {
       
-      return <u32>openingBookData[offset + 2 + <i32>Math.ceil(Math.random() * numberOfMoves)];
+      return <u32>openingBookData[offset + 3 + pickBookMoveIndex(Math.random(), numberOfMoves)];
     }
     offset = offset + 2 + numberOfMoves + 1;
   }

@@ -71,6 +71,8 @@ const BIT_MASK_50: u64 = ((<u64>1) << 50) - 1;
 const ZOBRIST_PLAYER_KEY = 1634556789;
 
 
+export const NO_PIECE: i8 = -1;
+
 export const opponent = (player: i8): i8 => (player == WHITE ? BLACK : WHITE);
 export class BitBoard {
 
@@ -79,25 +81,24 @@ export class BitBoard {
 
   public currentPlayer: i8 = WHITE;
 
-  constructor(public bits: StaticArray<u64> = new StaticArray<u64>(19)) {}
+  // mailbox: piece code (0..11) on each square, NO_PIECE when empty
+  public squares: StaticArray<i8>;
 
-  getPieceAt(position: i8): i8 {
-    const mask: u64 = 1 << position;
-    for (let i: i8 = 0; i < PLAYER_PIECES; i++) {
-      if (unchecked(this.bits[i]) & mask) {
-        return i;
-      }
+  constructor(public bits: StaticArray<u64> = new StaticArray<u64>(19)) {
+    this.squares = new StaticArray<i8>(64);
+    for (let i = 0; i < 64; i++) {
+      unchecked(this.squares[i] = NO_PIECE);
     }
-    throw new Error(
-      "Piece not found at position " +
-        position.toString() 
-        //" on board " +
-        //this.toString()
-    );
+  }
+
+  @inline
+  getPieceAt(position: i8): i8 {
+    return unchecked(this.squares[position]);
   }
 
   putPiece(piece: i8, player: i8, position: i8): void {
     const mask: u64 = 1 << position;
+    unchecked(this.squares[position] = piece + player);
     unchecked((this.bits[piece + player] |= mask));
     unchecked((this.bits[PLAYER_PIECES + player] |= mask));
     unchecked((this.bits[ALL_PIECES] |= mask));
@@ -110,6 +111,7 @@ export class BitBoard {
   private put(piece: i8, position: i8): void {
     const mask: u64 = 1 << position;
     const player: i8 = piece & 1;
+    unchecked(this.squares[position] = piece);
     unchecked((this.bits[piece] |= mask));
     unchecked((this.bits[PLAYER_PIECES + player] |= mask));
     unchecked((this.bits[ALL_PIECES] |= mask));
@@ -129,6 +131,7 @@ export class BitBoard {
   private remove(piece: i8, position: i8): void {
     const mask: u64 = ~(1 << position);
     const player: i8 = piece & 1;
+    unchecked(this.squares[position] = NO_PIECE);
     unchecked((this.bits[piece] &= mask));
     unchecked((this.bits[PLAYER_PIECES + player] &= mask));
     unchecked((this.bits[ALL_PIECES] &= mask));
@@ -225,6 +228,8 @@ export class BitBoard {
     const bits = StaticArray.slice(this.bits);
     unchecked((bits[PREVIOUS_ACTION] = action));
     const updatedBoard = new BitBoard(bits);
+    updatedBoard.squares = StaticArray.slice(this.squares);
+    updatedBoard.currentPlayer = this.currentPlayer;
     updatedBoard.do(action);
     return updatedBoard;
   }
@@ -755,17 +760,46 @@ function parsePosition(notation: string): i8 {
   return <i8>cols.indexOf(notation.substring(0, 1)) + <i8>(parseInt(notation.substring(1), 10) - 1)  * <i8>8
 }
 
+export function toUciNotation(action: u32): string {
+  const fromPosition: i8 = decodeFromPosition(action);
+  const toPosition: i8 = decodeToPosition(action);
+  const srcPiece = decodeSrcPiece(action);
+  const dstPiece = decodeDestPiece(action);
+  let result = getCodeFromPosition(fromPosition) + getCodeFromPosition(toPosition);
+  if ((srcPiece >> 1) == (PAWN >> 1) && (dstPiece >> 1) != (PAWN >> 1)) {
+    result += promotionLetters[dstPiece >> 1];
+  }
+  return result;
+}
+
+const promotionLetters = ["p", "n", "b", "r", "q", "k"];
+
+function parsePromotion(code: string, player: i8): i8 {
+  if (code.length < 5) {
+    return -1;
+  }
+  const letter = code.substring(4, 5).toLowerCase();
+  const index = <i8>promotionLetters.indexOf(letter);
+  if (index < 1 || index > 4) {
+    return -1;
+  }
+  return (index << 1) + player;
+}
+
 export function fromUciNotation(code: string, board: BitBoard): u32 {
   const fromPosition = parsePosition(code.substring(0, 2));
   const toPosition = parsePosition(code.substring(2, 4));
   const fromPiece = board.getPieceAt(fromPosition);
   const player = fromPiece & 1;
-
-  // TODO promotions 
+  const promotion = parsePromotion(code, player);
+  const toPiece = promotion >= 0 ? promotion : fromPiece;
 
   if (board.getAllPiecesMask() & (1 << toPosition)) {
     const capturedPiece = board.getPieceAt(toPosition);
-    return encodeCapture(fromPiece, fromPosition, fromPiece, toPosition, capturedPiece);
+    return encodeCapture(fromPiece, fromPosition, toPiece, toPosition, capturedPiece);
+  }
+  if (promotion >= 0) {
+    return encodeMove(fromPiece, fromPosition, toPiece, toPosition);
   }
   if ((fromPiece - player) == PAWN) {
     if ((toPosition - fromPosition) == 9) {

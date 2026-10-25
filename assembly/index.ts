@@ -1,12 +1,23 @@
 // The entry file of your WebAssembly module.
 
-import { analyseBestMove, chooseBestMove, reset } from "./alpha-beta-evaluation";
+import {
+  analyseBestMove,
+  chooseBestMove,
+  getLastSearchDepth,
+  getLastSearchScore,
+  getTotalNodes,
+  reset,
+  setSearchFeatures,
+  setSearchTimeout,
+} from "./alpha-beta-evaluation";
 import {
   BitBoard,
   BLACK,
   decodePlayer,
+  fromUciNotation,
   opponent,
   toNotation,
+  toUciNotation,
   WHITE,
 } from "./bitboard";
 import { parseFEN } from "./fen-parser";
@@ -14,6 +25,8 @@ import { findAllBishopMagicNumbers, findAllRookMagicNumbers } from "./magic";
 import { generateOpeningBookData, generateOpeningBookSourceCode } from "./opening-book";
 import { perft, perft2 } from "./perft";
 import { isCheckMate, isDraw } from "./status";
+import { evaluate } from "./static-evaluation";
+import { evaluateQuiescence, getQuiescenceNodes } from "./quiescence-evaluation";
 
 export function now(): f64 {
   return <f64>Date.now();
@@ -116,7 +129,6 @@ export class Game {
   }
 
   performMove(move: f64): string {
-    trace('coucou alex')
     this.board.do(<u32>move);
     const nextPlayer = opponent(decodePlayer(<u32>move));
     if (isCheckMate(nextPlayer, this.board)) {
@@ -125,8 +137,6 @@ export class Game {
     if (isDraw(nextPlayer, this.board)) {
       return "DRAW";
     }
-    trace('coucou alex 2')
-    trace(this.board.toFEN())
     return this.board.toFEN();
   }
 
@@ -140,4 +150,100 @@ export class Game {
 export function generateOpeningBook(data: string): string {
   const openingBookData = generateOpeningBookData(data);
   return generateOpeningBookSourceCode(openingBookData);
+}
+// ---------------------------------------------------------------------------
+// Benchmark / evaluation hooks (used by the bench/ harness)
+// ---------------------------------------------------------------------------
+
+function searchResultJson(move: u32, elapsedMs: i64): string {
+  return (
+    '{ "uci": "' + toUciNotation(move) +
+    '", "move": "' + toNotation(move) +
+    '", "depth": ' + getLastSearchDepth().toString() +
+    ', "score": ' + getLastSearchScore().toString() +
+    ', "nodes": ' + getTotalNodes().toString() +
+    ', "qnodes": ' + getQuiescenceNodes().toString() +
+    ', "timeMs": ' + elapsedMs.toString() +
+    " }"
+  );
+}
+
+/** Search a FEN position; returns a JSON string describing the chosen move. */
+export function searchFen(fen: string, maxDepth: i32, timeoutMs: i32): string {
+  const board = parseFEN(fen);
+  reset();
+  setSearchTimeout(<i64>timeoutMs);
+  const start = Date.now();
+  const move = chooseBestMove(board.currentPlayer, board, <i8>maxDepth);
+  const elapsed = Date.now() - start;
+  return searchResultJson(<u32>(move & 0xffffffff), elapsed);
+}
+
+export function perftFen(fen: string, depth: i32): f64 {
+  const board = parseFEN(fen);
+  return <f64>perft2(<i8>depth, board, board.currentPlayer);
+}
+
+/** Static evaluation from the side to move point of view (centipawns-ish). */
+export function evaluateFen(fen: string): i32 {
+  const board = parseFEN(fen);
+  return <i32>evaluate(board.currentPlayer, board);
+}
+
+export class BenchGame {
+  board: BitBoard;
+
+  constructor(fen: string) {
+    this.board = parseFEN(fen);
+    reset();
+  }
+
+  /** Let the engine think for the side to move; returns JSON (see searchResultJson). */
+  think(maxDepth: i32, timeoutMs: i32): string {
+    setSearchTimeout(<i64>timeoutMs);
+    const start = Date.now();
+    const move = chooseBestMove(this.board.currentPlayer, this.board, <i8>maxDepth);
+    const elapsed = Date.now() - start;
+    return searchResultJson(<u32>(move & 0xffffffff), elapsed);
+  }
+
+  /** Apply a UCI move (e.g. e2e4, e7e8q). */
+  play(uci: string): void {
+    this.board.do(fromUciNotation(uci, this.board));
+  }
+
+  /** "" while the game is running, "CHECK_MATE" or "DRAW" once it is over. */
+  status(): string {
+    const player = this.board.currentPlayer;
+    if (isCheckMate(player, this.board)) {
+      return "CHECK_MATE";
+    }
+    if (isDraw(player, this.board)) {
+      return "DRAW";
+    }
+    return "";
+  }
+
+  fen(): string {
+    return this.board.toFEN();
+  }
+}
+
+/** Bench hook: enable/disable search features (see setSearchFeatures). */
+export function configureSearch(featureMask: i32): void {
+  setSearchFeatures(featureMask);
+}
+
+/** Bench hook: principal variation of the last search on a FEN (from the transposition table). */
+export function principalVariation(fen: string, maxDepth: i32): string {
+  const board = parseFEN(fen);
+  return analyseBestMove(board, <i8>maxDepth)
+    .map<string>((m) => toUciNotation(m))
+    .join(" ");
+}
+
+/** Bench hook: quiescence score of a FEN from the side to move point of view. */
+export function quiescenceFen(fen: string): i32 {
+  const board = parseFEN(fen);
+  return <i32>evaluateQuiescence(board.currentPlayer, board);
 }

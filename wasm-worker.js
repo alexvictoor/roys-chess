@@ -1,5 +1,5 @@
 importScripts(
-  "https://cdn.jsdelivr.net/npm/@assemblyscript/loader/umd/index.js"
+  "https://cdn.jsdelivr.net/npm/@assemblyscript/loader@0.18.26/umd/index.js"
 );
 
 const BLACK = 1;

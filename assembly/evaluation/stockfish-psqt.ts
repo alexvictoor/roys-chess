@@ -1,10 +1,10 @@
 import { BitBoard, MaskIterator } from "../bitboard";
 
 const positions = new MaskIterator();
+const pieceValuesMg = StaticArray.fromArray<i16>([124, -124, 781, -781, 825, -825, 1276, -1276, 2538, -2538]);
+const pieceValuesEg = StaticArray.fromArray<i16>([206, -206, 854, -854, 915, -915, 1380, -1380, 2682, -2682]);
 export function pieceValues(board: BitBoard, mg: boolean): i16 {
-  const bonus: i16[] = mg
-    ? [124, -124, 781, -781, 825, -825, 1276, -1276, 2538, -2538]
-    : [206, -206, 854, -854, 915, -915, 1380, -1380, 2682, -2682];
+  const bonus = mg ? pieceValuesMg : pieceValuesEg;
   let result: i16 = 0;
   for (let piece = 0; piece < 10; piece++) {
     const pieceMask = unchecked(board.bits[piece]);

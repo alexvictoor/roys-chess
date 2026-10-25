@@ -80,13 +80,13 @@ export function isInCheck(player: i8, board: BitBoard): boolean {
 
 function isDrawByRepetition(board: BitBoard): boolean {
   const hash = board.hashCode();
-  const clock = board.getHalfMoveClock();
-  let repetitionCount: i8 = 0;
-  let nbLoop: i8 = 0;
-  let hashHistoryIndex: i8 = <i8>board.hashHistory.length - 1;
+  const clock = <i32>board.getHalfMoveClock();
+  let repetitionCount: i32 = 0;
+  let nbLoop: i32 = 0;
+  let hashHistoryIndex: i32 = board.hashHistory.length - 1;
 
-  while (nbLoop < clock && repetitionCount < 2) {
-    if (board.hashHistory[hashHistoryIndex] == hash) {
+  while (nbLoop < clock && hashHistoryIndex >= 0 && repetitionCount < 2) {
+    if (unchecked(board.hashHistory[hashHistoryIndex]) == hash) {
       repetitionCount++;
     }
     hashHistoryIndex--;

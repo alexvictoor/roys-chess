@@ -1,12 +1,15 @@
 import { BitBoard } from "./bitboard";
 import { addCastlingMoves } from "./castling";
-import { addKingPseudoLegalMoves } from "./king-move-generation";
-import { addKnightPseudoLegalMoves } from "./knight-move-generation";
+import { addKingPseudoLegalCaptures, addKingPseudoLegalMoves } from "./king-move-generation";
+import { addKnightPseudoLegalCaptures, addKnightPseudoLegalMoves } from "./knight-move-generation";
 import { MoveStack } from "./move-stack";
-import { addPawnPseudoLegalMoves } from "./pawn";
+import { addPawnPseudoLegalCaptures, addPawnPseudoLegalMoves } from "./pawn";
 import {
+  addBishopPseudoLegalCaptures,
   addBishopPseudoLegalMoves,
+  addQueenPseudoLegalCaptures,
   addQueenPseudoLegalMoves,
+  addRookPseudoLegalCaptures,
   addRookPseudoLegalMoves,
 } from "./sliding-pieces-move-generation";
 import { isInCheck } from "./status";
@@ -27,59 +30,84 @@ export function removeCheckedBoardFrom(
   return result;
 }
 
-const moveStack = new MoveStack();
-export function pseudoLegalMoves(board: BitBoard, player: i8): StaticArray<u32> {
-  addPawnPseudoLegalMoves(moveStack, board, player);
-  addKnightPseudoLegalMoves(moveStack, board, player);
-  addBishopPseudoLegalMoves(moveStack, board, player);
-  addRookPseudoLegalMoves(moveStack, board, player);
-  addQueenPseudoLegalMoves(moveStack, board, player);
-  addKingPseudoLegalMoves(moveStack, board, player);
-  addCastlingMoves(moveStack, board, player);
+/** Fill `stack` with every pseudo legal move of `player` (allocation free). */
+export function generatePseudoLegalMoves(
+  stack: MoveStack,
+  board: BitBoard,
+  player: i8
+): void {
+  stack.clear();
+  addPawnPseudoLegalMoves(stack, board, player);
+  addKnightPseudoLegalMoves(stack, board, player);
+  addBishopPseudoLegalMoves(stack, board, player);
+  addRookPseudoLegalMoves(stack, board, player);
+  addQueenPseudoLegalMoves(stack, board, player);
+  addKingPseudoLegalMoves(stack, board, player);
+  addCastlingMoves(stack, board, player);
+}
 
-  return moveStack.flush();
+/** Fill `stack` with every pseudo legal capture of `player` (allocation free). */
+export function generatePseudoLegalCaptures(
+  stack: MoveStack,
+  board: BitBoard,
+  player: i8
+): void {
+  stack.clear();
+  addPawnPseudoLegalCaptures(stack, board, player);
+  addKnightPseudoLegalCaptures(stack, board, player);
+  addBishopPseudoLegalCaptures(stack, board, player);
+  addRookPseudoLegalCaptures(stack, board, player);
+  addQueenPseudoLegalCaptures(stack, board, player);
+  addKingPseudoLegalCaptures(stack, board, player);
+}
+
+const scratchStack = new MoveStack();
+/** Allocating variant kept for perft, the opening book and tests. */
+export function pseudoLegalMoves(board: BitBoard, player: i8): StaticArray<u32> {
+  generatePseudoLegalMoves(scratchStack, board, player);
+  return scratchStack.flush();
 }
 
 function hasLegalMove(moves: MoveStack, board: BitBoard, player: i8): boolean {
-  for (let index: i8 = 0; index < moves.count; index++) {
-    const move: u32 = moves.moves[index];
+  for (let index = 0; index < moves.count; index++) {
+    const move: u32 = moves.at(index);
     board.do(move);
     if (!isInCheck(player, board)) {
       board.undo();
-      moves.count = 0;
+      moves.clear();
       return true;
     }
     board.undo();
   }
-  moves.count = 0;
+  moves.clear();
   return false;
 }
 
 const canMoveStack = new MoveStack();
 export function canMove(board: BitBoard, player: i8): boolean {
-
+  canMoveStack.clear();
   addPawnPseudoLegalMoves(canMoveStack, board, player);
   if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addKnightPseudoLegalMoves(moveStack, board, player);
-  if (hasLegalMove(moveStack, board, player)) {
+  addKnightPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addBishopPseudoLegalMoves(moveStack, board, player);
-  if (hasLegalMove(moveStack, board, player)) {
+  addBishopPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addRookPseudoLegalMoves(moveStack, board, player);
-  if (hasLegalMove(moveStack, board, player)) {
+  addRookPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addQueenPseudoLegalMoves(moveStack, board, player);
-  if (hasLegalMove(moveStack, board, player)) {
+  addQueenPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
-  addKingPseudoLegalMoves(moveStack, board, player);
-  if (hasLegalMove(moveStack, board, player)) {
+  addKingPseudoLegalMoves(canMoveStack, board, player);
+  if (hasLegalMove(canMoveStack, board, player)) {
     return true;
   }
 

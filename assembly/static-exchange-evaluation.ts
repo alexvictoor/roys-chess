@@ -2,10 +2,10 @@ import {
   BitBoard,
   decodeCapturedPiece,
   decodeCaptureFlag,
-  decodeSrcPiece,
+  decodeDestPiece,
+  decodeFromPosition,
   decodeToPosition,
   opponent,
-  WHITE,
 } from "./bitboard";
 import { kingMoves } from "./king-move-generation";
 import { knightMovesFromCache } from "./knight-move-generation";
@@ -15,7 +15,11 @@ import {
   queenMoves,
   rookMoves,
 } from "./sliding-pieces-move-generation";
-import { PIECE_VALUES } from "./static-evaluation";
+
+// absolute piece values by piece code (white/black share the same value)
+const SEE_VALUES = StaticArray.fromArray<i16>([
+  100, 100, 320, 320, 330, 330, 500, 500, 900, 900, 20000, 20000,
+]);
 
 function attackingPawns(
   positionMask: u64,
@@ -63,11 +67,15 @@ function attackingQueens(
   const queenMask = board.getQueenMask(player);
   return queenMask & queenMoves(blockerMask, position) & blockerMask;
 }
-function attackingKings(position: i8, player: i8, board: BitBoard): u64 {
+function attackingKings(position: i8, player: i8, board: BitBoard, blockerMask: u64): u64 {
   const kingMask = board.getKingMask(player);
-  return kingMask & kingMoves(position);
+  return kingMask & kingMoves(position) & blockerMask;
 }
 
+/**
+ * Least valuable piece of `player` attacking `position`, considering only the
+ * pieces still present in `blockerMask` (removed pieces reveal x-ray attacks).
+ */
 export function findSmallerAttackerPosition(
   board: BitBoard,
   player: i8,
@@ -95,66 +103,61 @@ export function findSmallerAttackerPosition(
   if (!!queens) {
     return <i8>ctz(queens);
   }
-  const kings = attackingKings(position, player, board);
+  const kings = attackingKings(position, player, board, blockerMask);
   if (!!kings) {
     return <i8>ctz(kings);
   }
   return -1;
 }
 
+const gains = new StaticArray<i16>(40);
+
+/**
+ * Static exchange evaluation of `move` (which has NOT been played yet), from
+ * the point of view of `player`: material won (>0) or lost (<0) on the target
+ * square after the best sequence of recaptures. Classic swap algorithm.
+ */
 export function staticExchangeEvaluation(
   board: BitBoard,
   player: i8,
   move: u32
 ): i16 {
-  const scoreFactor: i16 = player === WHITE ? -1 : 1;
-  const isCapture = decodeCaptureFlag(move);
-  let score: i16 = isCapture
-    ? unchecked(PIECE_VALUES[decodeCapturedPiece(move)]) * scoreFactor
-    : 0;
-  let blockerMask =
-    board.getAllPiecesMask() & ~((<u64>1) << decodeToPosition(move));
-  const opponentPlayer = opponent(player);
+  const fromPosition = decodeFromPosition(move);
   const targetPosition = decodeToPosition(move);
-  let previousAttackerCaptureScore =
-    unchecked(PIECE_VALUES[decodeSrcPiece(move)]) * -scoreFactor;
-  do {
-    const opponentPosition = findSmallerAttackerPosition(
+  let blockerMask = board.getAllPiecesMask() & ~((<u64>1) << fromPosition);
+
+  let depth: i32 = 0;
+  unchecked(gains[0] = decodeCaptureFlag(move) ? SEE_VALUES[decodeCapturedPiece(move)] : 0);
+  let attackerValue: i16 = unchecked(SEE_VALUES[decodeDestPiece(move)]);
+  let side = opponent(player);
+
+  while (true) {
+    const attackerPosition = findSmallerAttackerPosition(
       board,
-      opponentPlayer,
+      side,
       targetPosition,
       blockerMask
     );
-    if (opponentPosition < 0) {
-      return score;
+    if (attackerPosition < 0 || depth >= 38) {
+      break;
     }
-    score -= previousAttackerCaptureScore;
-    previousAttackerCaptureScore =
-      board.getPieceAt(opponentPosition) * scoreFactor;
-
-    if (score + previousAttackerCaptureScore < 0) {
-      return score;
+    depth++;
+    // speculative store: what this capture gains if the sequence stops here
+    unchecked(gains[depth] = attackerValue - gains[depth - 1]);
+    if (attackerValue >= 20000) {
+      // a king cannot be captured: the previous capturer stays
+      depth--;
+      break;
     }
-
-    blockerMask &= ~((<u64>1) << opponentPosition);
-
-    const position = findSmallerAttackerPosition(
-      board,
-      player,
-      targetPosition,
-      blockerMask
-    );
-    if (position < 0) {
-      return score;
-    }
-    score += previousAttackerCaptureScore * -scoreFactor;
-    previousAttackerCaptureScore = board.getPieceAt(position);
-    if (score - previousAttackerCaptureScore > 0) {
-      return score;
-    }
-
-    blockerMask &= ~((<u64>1) << position);
-  } while (true);
-
-  return 0;
+    attackerValue = unchecked(SEE_VALUES[board.getPieceAt(attackerPosition)]);
+    blockerMask &= ~((<u64>1) << attackerPosition);
+    side = opponent(side);
+  }
+  while (depth > 0) {
+    const a = -unchecked(gains[depth - 1]);
+    const b = unchecked(gains[depth]);
+    unchecked(gains[depth - 1] = -(a > b ? a : b));
+    depth--;
+  }
+  return unchecked(gains[0]);
 }

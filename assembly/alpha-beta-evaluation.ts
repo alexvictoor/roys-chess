@@ -1,20 +1,19 @@
 import {
   BitBoard,
   decodeCaptureFlag,
+  decodeDestPiece,
+  decodeSrcPiece,
   opponent,
-  PAWN,
-  QUEEN,
-  ROOK,
   toNotation,
 } from "./bitboard";
-import { pseudoLegalMoves } from "./engine";
+import { generatePseudoLegalMoves } from "./engine";
 import { openingBookData } from "./generated-opening-book";
 import { history } from "./history";
+import { MAX_PLY, moveStackForPly } from "./move-stack";
 import { sortMoves } from "./move-ordering";
 import { findMoveInOpeningBook } from "./opening-book";
-import { evaluateQuiescence } from "./quiescence-evaluation";
-import { evaluate, isPastStartGame, PIECE_VALUES } from "./static-evaluation";
-import { staticExchangeEvaluation } from "./static-exchange-evaluation";
+import { evaluateQuiescence, MATE_SCORE, resetQuiescenceNodes, setQuiescenceFeatures } from "./quiescence-evaluation";
+import { evaluate } from "./static-evaluation";
 import { isInCheck } from "./status";
 import {
   ALPHA_SCORE,
@@ -27,392 +26,481 @@ import {
   TranspositionTable,
 } from "./transposition-table";
 
+// ---------------------------------------------------------------------------
+// Search parameters
+// ---------------------------------------------------------------------------
+const INFINITY_SCORE: i16 = 32000;
+export const MATE_BOUND: i16 = MATE_SCORE - 2 * <i16>MAX_PLY; // |score| above this is a mate
+
+let NULL_MOVE_FLAG = true;
+let LMR_FLAG = true;
+let FUTILITY_FLAG = true;
+let CHECK_EXTENSION_FLAG = true;
+
+/** Toggle search features (bit 0 null move, 1 LMR, 2 futility, 3 check extension). */
+export function setSearchFeatures(mask: i32): void {
+  NULL_MOVE_FLAG = (mask & 1) != 0;
+  LMR_FLAG = (mask & 2) != 0;
+  FUTILITY_FLAG = (mask & 4) != 0;
+  CHECK_EXTENSION_FLAG = (mask & 8) != 0;
+  setQuiescenceFeatures((mask & 16) != 0, (mask & 32) != 0);
+}
+
+// futility margins by remaining depth (index 0 unused)
+const FUTILITY_MARGINS = StaticArray.fromArray<i16>([0, 120, 300, 500]);
+const LMR_FULL_DEPTH_MOVES: i32 = 3; // moves searched at full depth before reducing
+const NODES_BETWEEN_CLOCK_CHECKS: u64 = 2047; // mask, power of two - 1
+
+// ---------------------------------------------------------------------------
+// Search state
+// ---------------------------------------------------------------------------
 let transpositionTable: TranspositionTable = new TranspositionTable(1);
 let nodeVisited: u32 = 0;
 let startTimestamp: i64 = 0;
+let TIMEOUT_IN_MS: i64 = 20000;
+let abortSearch: boolean = false;
+let completedDepth: i8 = 0;
+let totalNodes: u64 = 0;
+let lastSearchDepth: i8 = 0;
+let lastSearchScore: i16 = 0;
 
-const FUTILITY_FLAG = true;
-const LMR_FLAG = true;
-const NULL_FLAG = true;
-const NULL_MOVE_MAX_REDUCTION: i8 = 4;
-const NULL_MOVE_MIN_REDUCTION: i8 = 3;
-const NULL_MOVE_REDUCTION: i8 = 4;
-
-const TIMEOUT_IN_MS: i64 = 20000;
-const TIMEOUT_SCORE = (i16.MIN_VALUE >> 2) + 42;
-
-export function reset(): void {
-  transpositionTable.reset() 
+export function setSearchTimeout(ms: i64): void {
+  TIMEOUT_IN_MS = ms;
+}
+export function getTotalNodes(): u64 {
+  return totalNodes;
+}
+export function getLastSearchDepth(): i8 {
+  return lastSearchDepth;
+}
+export function getLastSearchScore(): i16 {
+  return lastSearchScore;
 }
 
-export function principalVariationSearch(
+export function reset(): void {
+  transpositionTable.reset();
+  history.resetHistory();
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+@inline
+function checkClock(): void {
+  if ((totalNodes & NODES_BETWEEN_CLOCK_CHECKS) == 0 && completedDepth >= 1) {
+    if (Date.now() - startTimestamp > TIMEOUT_IN_MS) {
+      abortSearch = true;
+    }
+  }
+}
+
+/** Mate scores are stored relative to the node, searched relative to the root. */
+@inline
+function scoreToTranspositionTable(score: i16, ply: i8): i16 {
+  if (score >= MATE_BOUND) {
+    return score + ply;
+  }
+  if (score <= -MATE_BOUND) {
+    return score - ply;
+  }
+  return score;
+}
+@inline
+function scoreFromTranspositionTable(score: i16, ply: i8): i16 {
+  if (score >= MATE_BOUND) {
+    return score - ply;
+  }
+  if (score <= -MATE_BOUND) {
+    return score + ply;
+  }
+  return score;
+}
+
+@inline
+function hasNonPawnMaterial(board: BitBoard, player: i8): boolean {
+  return !!(
+    board.getKnightMask(player) |
+    board.getBishopMask(player) |
+    board.getRookMask(player) |
+    board.getQueenMask(player)
+  );
+}
+
+/** Draw by repetition (2-fold within the search, including game history) or 50 moves rule. */
+function isDrawByRule(board: BitBoard): boolean {
+  const clock = <i32>board.getHalfMoveClock();
+  if (clock >= 100) {
+    return true;
+  }
+  if (clock < 4) {
+    return false;
+  }
+  const hash = board.hashCode();
+  const hashHistory = board.hashHistory;
+  let index = hashHistory.length - 2;
+  let limit = hashHistory.length - clock;
+  if (limit < 0) {
+    limit = 0;
+  }
+  while (index >= limit) {
+    if (unchecked(hashHistory[index]) == hash) {
+      return true;
+    }
+    index -= 2;
+  }
+  return false;
+}
+
+@inline
+function isPromotion(move: u32): boolean {
+  return decodeSrcPiece(move) != decodeDestPiece(move);
+}
+
+// ---------------------------------------------------------------------------
+// Main search: principal variation search with a shared implementation for
+// PV nodes (open window) and zero window nodes (beta == alpha + 1).
+// ---------------------------------------------------------------------------
+export function search(
   player: i8,
   playerInCheck: boolean,
   board: BitBoard,
   depth: i8,
-  alpha: i16 = i16.MIN_VALUE >> 1,
-  beta: i16 = i16.MAX_VALUE >> 1,
-  ply: i8 = 2,
-  afterNullMove: boolean = false
+  alpha: i16,
+  beta: i16,
+  ply: i8,
+  nullMoveAllowed: boolean
 ): i16 {
-  if (
-    /*(nodeVisited & 16383) == 0 &&*/
-    Date.now() - startTimestamp > TIMEOUT_IN_MS
-  ) {
-    return TIMEOUT_SCORE;
+  if (abortSearch) {
+    return 0;
   }
-
   nodeVisited++;
+  totalNodes++;
+  checkClock();
+
+  // computed in i32: (beta - alpha) can exceed the i16 range near the root
+  const pvNode = <i32>beta - <i32>alpha > 1;
+
+  if (CHECK_EXTENSION_FLAG && playerInCheck) {
+    depth++;
+  }
 
   if (depth <= 0) {
-    return evaluateQuiescence(player, board, alpha, beta);
+    return evaluateQuiescence(player, board, alpha, beta, 0, ply);
   }
 
+  if (ply >= <i8>(MAX_PLY - 2)) {
+    return evaluate(player, board);
+  }
+
+  if (ply > 0 && isDrawByRule(board)) {
+    return 0;
+  }
+
+  // mate distance pruning
+  const mateAlpha: i16 = -MATE_SCORE + ply;
+  const mateBeta: i16 = MATE_SCORE - ply - 1;
+  if (alpha < mateAlpha) {
+    alpha = mateAlpha;
+  }
+  if (beta > mateBeta) {
+    beta = mateBeta;
+  }
+  if (alpha >= beta) {
+    return alpha;
+  }
+
+  // transposition table probe
   const transpositionEntry = transpositionTable.getEntry(board);
-  const scoreType = decodeScoreTypeFromEntry(transpositionEntry);
-  const transpositionDepth = decodeDepthFromEntry(transpositionEntry);
-  if (transpositionDepth >= depth) {
-    if (scoreType === EXACT_SCORE) {
-      return decodeScoreFromEntry(transpositionEntry);
-    }
-    const score = decodeScoreFromEntry(transpositionEntry);
-    if (scoreType === ALPHA_SCORE && score <= alpha) {
-      return alpha;
-    }
-    if (scoreType === BETA_SCORE && score >= beta) {
-      return beta;
+  let hashMove: u32 = 0;
+  if (transpositionEntry != 0) {
+    hashMove = decodeMoveFromEntry(transpositionEntry);
+    if (decodeDepthFromEntry(transpositionEntry) >= depth) {
+      const scoreType = decodeScoreTypeFromEntry(transpositionEntry);
+      const transpositionScore = scoreFromTranspositionTable(
+        decodeScoreFromEntry(transpositionEntry),
+        ply
+      );
+      if (scoreType === EXACT_SCORE) {
+        return transpositionScore;
+      }
+      if (!pvNode) {
+        if (scoreType === ALPHA_SCORE && transpositionScore <= alpha) {
+          return transpositionScore;
+        }
+        if (scoreType === BETA_SCORE && transpositionScore >= beta) {
+          return transpositionScore;
+        }
+      }
     }
   }
 
+  const opponentPlayer = opponent(player);
+  let staticEvaluation: i16 = 0;
+  const needStaticEvaluation = !playerInCheck && (!pvNode || depth <= 3);
+  if (needStaticEvaluation) {
+    staticEvaluation = evaluate(player, board);
+  }
 
-  //trace("moves " + moves.map<string>((m) => toNotation(m)).join(" , "));
-
-
-  //const playerInCheck = isInCheck(player, board);
-
-  const nullMovePossible =
-    !playerInCheck && !afterNullMove && NULL_FLAG;
-  if (nullMovePossible) {
+  // null move pruning: if passing still fails high, the position is too good
+  if (
+    NULL_MOVE_FLAG &&
+    !pvNode &&
+    !playerInCheck &&
+    nullMoveAllowed &&
+    depth >= 2 &&
+    staticEvaluation >= beta &&
+    hasNonPawnMaterial(board, player)
+  ) {
+    const reduction: i8 = depth > 6 ? 3 : 2;
     board.doNullMove();
-
-    const reduction =
-      depth > 6 ? NULL_MOVE_MAX_REDUCTION : NULL_MOVE_MIN_REDUCTION;
-    const nullMoveScore = -zeroWindowSearch(
-      opponent(player),
+    const nullMoveScore = -search(
+      opponentPlayer,
+      false,
       board,
-      depth - reduction,
-      -alpha,
-      ply + 1
+      depth - 1 - reduction,
+      -beta,
+      -beta + 1,
+      ply + 1,
+      false
     );
     board.undoNullMove();
-    if (nullMoveScore == -TIMEOUT_SCORE) {
-      return TIMEOUT_SCORE;
+    if (abortSearch) {
+      return 0;
     }
     if (nullMoveScore >= beta) {
-      if (!isPastStartGame(board)) {
-        // cutoff in case of fail-high
-        return nullMoveScore;
-      }
-      // reduce the depth in case of fail-high
-      depth -= NULL_MOVE_REDUCTION;
-      afterNullMove = true;
-      if (depth <= 0) {
-        return evaluateQuiescence(player, board, alpha, beta);
-      }
+      // do not trust mate scores coming out of a null move
+      return nullMoveScore >= MATE_BOUND ? beta : nullMoveScore;
     }
   }
 
-  let futilityPruningPossible: boolean =
-    depth < 4 && !playerInCheck && FUTILITY_FLAG;
-  let futilityScore: i16 = i16.MIN_VALUE >> 1;
-  if (futilityPruningPossible) {
-    const staticEvaluation = evaluate(player, board);
-    futilityScore = staticEvaluation;
-    if (depth === 1) {
-      futilityScore += unchecked(PIECE_VALUES[PAWN]);
-    } else if (depth === 2) {
-      futilityScore += unchecked(PIECE_VALUES[ROOK]);
-    } else {
-      futilityScore += unchecked(PIECE_VALUES[QUEEN]);
-    }
-    futilityPruningPossible = futilityScore <= alpha;
+  // futility pruning: near the horizon, quiet moves cannot recover a big deficit
+  let futilityPruning = false;
+  let futilityScore: i16 = 0;
+  if (FUTILITY_FLAG && !pvNode && !playerInCheck && depth <= 3) {
+    futilityScore = staticEvaluation + unchecked(FUTILITY_MARGINS[depth]);
+    futilityPruning = futilityScore <= alpha;
   }
-  let lateMoveReductionPossible = depth > 2 && !playerInCheck;
 
-  let fullyEvaluatedMoves: i8 = 0;
+  const stack = moveStackForPly(ply);
+  generatePseudoLegalMoves(stack, board, player);
+  sortMoves(board, player, ply, stack, hashMove);
+
+  let bestScore: i16 = -INFINITY_SCORE;
+  let bestMove: u32 = 0;
   let alphaUpdated: i16 = alpha;
-  let bestScore: i16 = i16.MIN_VALUE >> 1;
-  const hashMove = decodeMoveFromEntry(transpositionEntry);
-  let bestMove: u32 = scoreType === EXACT_SCORE ? hashMove : 0;
-  const moves = pseudoLegalMoves(board, player);
-  sortMoves(board, player, ply, moves, hashMove);
-  for (let index = 0; index < moves.length; index++) {
-    const move = unchecked(moves[index]);
+  let legalMoves: i32 = 0;
+  const newDepth: i8 = depth - 1;
+
+  for (let index = 0; index < stack.count; index++) {
+    const move = stack.at(index);
     board.do(move);
     if (isInCheck(player, board)) {
       board.undo();
       continue;
     }
-    const isCapture = decodeCaptureFlag(move);
-    const isOpponentInCheck = isInCheck(opponent(player), board);
-    const swapOffValue = staticExchangeEvaluation(board, player, move);
+    legalMoves++;
+    const isQuiet = !decodeCaptureFlag(move) && !isPromotion(move);
+    const givesCheck = isInCheck(opponentPlayer, board);
 
-    const depthNeeded =
-      lateMoveReductionPossible && swapOffValue < 0 ? depth - 2 : depth - 1;
-
-    if (futilityPruningPossible && !isCapture && !isOpponentInCheck) {
-      if (bestScore < futilityScore) {
+    if (futilityPruning && isQuiet && !givesCheck && legalMoves > 1) {
+      board.undo();
+      if (futilityScore > bestScore) {
         bestScore = futilityScore;
       }
-      board.undo();
       continue;
     }
 
-    if (
-      lateMoveReductionPossible &&
-      !isCapture &&
-      !isOpponentInCheck &&
-      fullyEvaluatedMoves > 4 &&
-      LMR_FLAG
-    ) {
-      const reducedDepthScore = -zeroWindowSearch(
-        opponent(player),
-        board,
-        depthNeeded - 1,
-        -alphaUpdated,
-        ply + 1,
-      );
-
-      if (reducedDepthScore == -TIMEOUT_SCORE) {
-        board.undo();
-        return TIMEOUT_SCORE;
-      }
-
-      if (reducedDepthScore <= alpha) {
-        board.undo();
-        continue;
-      }
-    }
-
     let score: i16;
-    if (alphaUpdated > alpha) {
-      score = -zeroWindowSearch(
-        opponent(player),
+    if (legalMoves == 1) {
+      score = -search(
+        opponentPlayer,
+        givesCheck,
         board,
-        depth - 1,
-        -alphaUpdated,
-        ply + 1
-      );
-      if (score > alphaUpdated) {
-        // search again
-        score = -principalVariationSearch(
-          opponent(player),
-          isOpponentInCheck,
-          board,
-          depth - 1,
-          -beta,
-          -alphaUpdated,
-          ply + 1,
-          afterNullMove
-        );
-      }
-    } else {
-      score = -principalVariationSearch(
-        opponent(player),
-        isOpponentInCheck,
-        board,
-        depth - 1,
+        newDepth,
         -beta,
         -alphaUpdated,
         ply + 1,
-        afterNullMove
-      );
-    }
-
-    /*if (isCapture) {
-      trace(
-        "capture " +
-          toNotation(move) +
-          " " +
-          score.toString() +
-          " " +
-          alphaUpdated.toString() +
-          " " +
-          h.toString()
+        true
       );
     } else {
-      trace(
-        "move " +
-          toNotation(move) +
-          " " +
-          score.toString() +
-          " " +
-          alphaUpdated.toString() +
-          " " +
-          h.toString()
-      );
-    }*/
-    board.undo();
-    if (score == -TIMEOUT_SCORE) {
-      return TIMEOUT_SCORE;
-    }
-    fullyEvaluatedMoves++;
-    if (!isCapture) {
-      history.recordPlayedMove(player, ply, move);
-    }
-    // if (!capture) history.recordMovePlayed(player,ply, move)
-    if (score >= beta) {
-      // pruning
-      // TODO record cutoff
-      // if (!capture) history.recordCutoff(player,ply, move)
-      if (!isCapture) {
-        history.recordCutOffMove(player, ply, depth, move);
+      // late move reductions for quiet, non-checking moves ordered late
+      let reduction: i8 = 0;
+      if (
+        LMR_FLAG &&
+        depth >= 3 &&
+        isQuiet &&
+        !givesCheck &&
+        !playerInCheck &&
+        legalMoves > LMR_FULL_DEPTH_MOVES &&
+        !history.isKiller(ply, move)
+      ) {
+        reduction = legalMoves > 8 && depth >= 5 ? 2 : 1;
       }
-      // TODO record score   beta  / lower bound ?
-      transpositionTable.record(board, move, beta, BETA_SCORE, depth);
-      
-      return beta;
+      score = -search(
+        opponentPlayer,
+        givesCheck,
+        board,
+        newDepth - reduction,
+        -alphaUpdated - 1,
+        -alphaUpdated,
+        ply + 1,
+        true
+      );
+      if (!abortSearch && reduction > 0 && score > alphaUpdated) {
+        // the reduced search failed high: verify at full depth
+        score = -search(
+          opponentPlayer,
+          givesCheck,
+          board,
+          newDepth,
+          -alphaUpdated - 1,
+          -alphaUpdated,
+          ply + 1,
+          true
+        );
+      }
+      if (!abortSearch && pvNode && score > alphaUpdated && score < beta) {
+        // new best move in a PV node: search it with the full window
+        score = -search(
+          opponentPlayer,
+          givesCheck,
+          board,
+          newDepth,
+          -beta,
+          -alphaUpdated,
+          ply + 1,
+          true
+        );
+      }
     }
+    board.undo();
+    if (abortSearch) {
+      return 0;
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestMove = move;
       if (score > alphaUpdated) {
-        // upper bound ?
         alphaUpdated = score;
+        if (score >= beta) {
+          if (isQuiet) {
+            history.recordCutOffMove(player, ply, depth, move);
+          }
+          transpositionTable.record(
+            board,
+            move,
+            scoreToTranspositionTable(score, ply),
+            BETA_SCORE,
+            depth
+          );
+          return score;
+        }
       }
     }
   }
-  // TODO pv ? record alphaUpdated pv si updated sinon alpha
-  if (bestMove > 0) {
-    const scoreType = alphaUpdated != alpha ? EXACT_SCORE : ALPHA_SCORE;
-    transpositionTable.record(board, bestMove, bestScore, scoreType, depth);
+
+  if (legalMoves == 0) {
+    // checkmate or stalemate
+    return playerInCheck ? -MATE_SCORE + ply : 0;
   }
+
+  transpositionTable.record(
+    board,
+    bestMove,
+    scoreToTranspositionTable(bestScore, ply),
+    alphaUpdated > alpha ? EXACT_SCORE : ALPHA_SCORE,
+    depth
+  );
   return bestScore;
 }
 
-
-export function zeroWindowSearch(
-  player: i8,
-  board: BitBoard,
-  depth: i8,
-  beta: i16,
-  ply: i8,
-): i16 {
-
-  const alpha = beta - 1;
-
-  if (depth <= 0) {
-    return evaluateQuiescence(player, board, alpha, beta);
-  }
-
-  const transpositionEntry = transpositionTable.getEntry(board);
-  const scoreType = decodeScoreTypeFromEntry(transpositionEntry);
-  const transpositionDepth = decodeDepthFromEntry(transpositionEntry);
-  if (transpositionDepth >= depth) {
-    if (scoreType === EXACT_SCORE) {
-      return decodeScoreFromEntry(transpositionEntry);
-    }
-    const score = decodeScoreFromEntry(transpositionEntry);
-    if (scoreType === ALPHA_SCORE && score <= alpha) {
-      return alpha;
-    }
-    if (scoreType === BETA_SCORE && score >= beta) {
-      return beta;
-    }
-  }
-
-  let bestMove: u32 =
-    scoreType === EXACT_SCORE ? decodeMoveFromEntry(transpositionEntry) : 0;
-  const moves = pseudoLegalMoves(board, player);
-  sortMoves(board, player, ply, moves, bestMove);
-
-
-  for (let index = 0; index < moves.length; index++) {
-    const move = unchecked(moves[index]);
-    board.do(move);
-    if (isInCheck(player, board)) {
-      board.undo();
-      continue;
-    }
-
-    const score = -zeroWindowSearch(
-      opponent(player),
-      board,
-      depth - 1,
-      -alpha,
-      ply + 1,
-    );
-
-    board.undo();
-
-
-    if (score >= beta) {
-      return beta;
-    }
-  }
-
-  return alpha;
-}
-
+// ---------------------------------------------------------------------------
+// Root: iterative deepening
+// ---------------------------------------------------------------------------
 export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
-  history.resetHistory();
-  //transpositionTable.reset();
+  history.ageHistory();
+  transpositionTable.newSearch();
 
   const bookMove = findMoveInOpeningBook(openingBookData, board);
-  
   if (bookMove != 0) {
     return <u64>bookMove;
   }
 
   startTimestamp = Date.now();
-  nodeVisited = 0;
+  abortSearch = false;
+  completedDepth = 0;
+  totalNodes = 0;
+  lastSearchDepth = 0;
+  lastSearchScore = 0;
+  resetQuiescenceNodes();
+
+  const opponentPlayer = opponent(player);
+  const stack = moveStackForPly(0);
+  generatePseudoLegalMoves(stack, board, player);
 
   let bestMove: u32 = 0;
-  const opponentPlayer = opponent(player);
-  const moves = pseudoLegalMoves(board, player);
+  let bestScore: i16 = 0;
 
   for (let depth: i8 = 1; depth <= maxDepth; depth++) {
-    let alpha: i16 = i16.MIN_VALUE >> 1;
     nodeVisited = 0;
     const startIterationTimestamp = Date.now();
+    sortMoves(board, player, 0, stack, bestMove);
 
-    sortMoves(board, player, 1, moves, bestMove);
+    let alpha: i16 = -INFINITY_SCORE;
+    const beta: i16 = INFINITY_SCORE;
+    let iterationBestMove: u32 = 0;
+    let iterationBestScore: i16 = -INFINITY_SCORE;
+    let firstMove: u32 = 0;
+    let legalMoves: i32 = 0;
 
-    let iterationBestMove: u32 = bestMove;
-    for (let index = 0; index < moves.length; index++) {
-      const move = unchecked(moves[index]);
+    for (let index = 0; index < stack.count; index++) {
+      const move = stack.at(index);
       board.do(move);
       if (isInCheck(player, board)) {
         board.undo();
         continue;
       }
-      const isOpponentInCheck = isInCheck(opponent(player), board);
-      const score = -principalVariationSearch(
-        opponentPlayer,
-        isOpponentInCheck,
-        board,
-        depth,
-        i16.MIN_VALUE >> 1,
-        -alpha,
-        2
-      );
-      board.undo();
-      if (score == -TIMEOUT_SCORE && depth > 1) {
-        trace(
-          toNotation(move) +
-            " " +
-            score.toString() +
-            " " +
-            TIMEOUT_SCORE.toString()
-        );
-        return <u64>bestMove + ((<u64>depth) << 32);
+      legalMoves++;
+      const givesCheck = isInCheck(opponentPlayer, board);
+      let score: i16;
+      if (legalMoves == 1) {
+        firstMove = move;
+        score = -search(opponentPlayer, givesCheck, board, depth - 1, -beta, -alpha, 1, true);
+      } else {
+        score = -search(opponentPlayer, givesCheck, board, depth - 1, -alpha - 1, -alpha, 1, true);
+        if (!abortSearch && score > alpha) {
+          score = -search(opponentPlayer, givesCheck, board, depth - 1, -beta, -alpha, 1, true);
+        }
       }
-      if (score > alpha) {
-        alpha = score;
+      board.undo();
+      if (abortSearch) {
+        break;
+      }
+      if (score > iterationBestScore) {
+        iterationBestScore = score;
         iterationBestMove = move;
+        if (score > alpha) {
+          alpha = score;
+        }
       }
     }
+
+    if (abortSearch) {
+      // partial iteration: a later move that beat the previous best move at
+      // this depth is still a sound improvement
+      if (iterationBestMove != 0 && iterationBestMove != firstMove) {
+        bestMove = iterationBestMove;
+        bestScore = iterationBestScore;
+      }
+      break;
+    }
+
     bestMove = iterationBestMove;
+    bestScore = iterationBestScore;
+    completedDepth = depth;
+    transpositionTable.record(board, bestMove, scoreToTranspositionTable(bestScore, 0), EXACT_SCORE, depth);
+
     const iterationDuration = Date.now() - startIterationTimestamp;
     trace(
       "depth " +
@@ -422,11 +510,20 @@ export function chooseBestMove(player: i8, board: BitBoard, maxDepth: i8): u64 {
         " " +
         iterationDuration.toString() +
         "ms " +
-        toNotation(bestMove)
+        toNotation(bestMove) +
+        " " +
+        bestScore.toString()
     );
+
+    if (bestScore >= MATE_BOUND && depth >= <i8>(MATE_SCORE - bestScore)) {
+      // the mate is fully resolved, deeper search cannot improve it
+      break;
+    }
   }
 
-  return <u64>bestMove + ((<u64>maxDepth) << 32);
+  lastSearchDepth = completedDepth;
+  lastSearchScore = bestScore;
+  return <u64>bestMove + ((<u64>completedDepth) << 32);
 }
 
 export function analyseBestMove(board: BitBoard, maxDepth: i8): u32[] {
@@ -437,13 +534,16 @@ export function analyseBestMove(board: BitBoard, maxDepth: i8): u32[] {
     entry = transpositionTable.getEntry(board);
     if (entry != 0) {
       const move = decodeMoveFromEntry(entry);
+      if (move == 0) {
+        break;
+      }
       moves.push(move);
       board.do(move);
     }
     depth++;
   } while (entry != 0 && depth < maxDepth);
 
-  for (let index: i8 = 0; index < moves.length; index++) {
+  for (let index = 0; index < moves.length; index++) {
     board.undo();
   }
 

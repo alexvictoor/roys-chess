@@ -15,6 +15,7 @@ import {
   WHITE,
 } from "../bitboard";
 import { pawnAttacksOnLeft, pawnAttacksOnRight } from "../pawn";
+import { knightMovesFromCache } from "../knight-move-generation";
 import {
   bishopMoves,
   queenMoves,
@@ -339,97 +340,44 @@ export function weakBonus(board: BitBoard, player: i8): i16 {
   );
 }
 
+// Squares from which `player` could give a check of the given type.
+// Sliding attacks are symmetric, so instead of testing every attacked square
+// against the king we cast the rays from the opponent king once (ignoring the
+// opponent queen as a blocker, like the original) and intersect.
 export function possibleChecksMask(
   board: BitBoard,
   player: i8,
   checkType: i8
 ): u64 {
   const opponentPlayer = opponent(player);
-
-  const queenMask = board.getQueenMask(player);
-  const opponentKingMask = board.getKingMask(opponentPlayer);
+  const opponentKingPos = <i8>ctz(board.getKingMask(opponentPlayer));
   const allPiecesMask = board.getAllPiecesMask();
   const allPiecesMaskButOpponentQueen =
-    board.getAllPiecesMask() ^ board.getQueenMask(opponentPlayer);
-  let kingAttacksMask: u64 = 0;
-  let ignoredAttacksMask: u64 = 0;
+    allPiecesMask ^ board.getQueenMask(opponentPlayer);
 
-  positions.reset(attackByRooksMask(board, player));
-  while (positions.hasNext()) {
-    const pos = positions.next();
-    if (rookMoves(allPiecesMaskButOpponentQueen, pos) & opponentKingMask) {
-      if (checkType === ROOK) {
-        kingAttacksMask |= 1 << pos;
-      } else {
-        ignoredAttacksMask |= 1 << pos;
-      }
-    }
-  }
+  const rookRaysFromKing = rookMoves(allPiecesMaskButOpponentQueen, opponentKingPos);
+  const rookChecks = attackByRooksMask(board, player) & rookRaysFromKing;
   if (checkType === ROOK) {
-    return kingAttacksMask;
+    return rookChecks;
   }
 
-  positions.reset(queenMask);
+  const bishopRaysFromKing = bishopMoves(allPiecesMaskButOpponentQueen, opponentKingPos);
+  const queenRaysFromKing = rookRaysFromKing | bishopRaysFromKing;
+  let queenChecks: u64 = 0;
+  positions.reset(board.getQueenMask(player));
   while (positions.hasNext()) {
     const pos = positions.next();
-    const queenPossibleMoves = queenMoves(allPiecesMask, pos);
-    positions2.reset(queenPossibleMoves);
-    while (positions2.hasNext()) {
-      const pos2 = positions2.next();
-      if (
-        queenMoves(allPiecesMaskButOpponentQueen, pos2) &
-        opponentKingMask &
-        ~ignoredAttacksMask
-      ) {
-        if (checkType === QUEEN) {
-          kingAttacksMask |= 1 << pos2;
-        } else {
-          ignoredAttacksMask |= 1 << pos2;
-        }
-      }
-    }
+    queenChecks |= queenMoves(allPiecesMask, pos) & queenRaysFromKing;
   }
-
   if (checkType === QUEEN) {
-    return kingAttacksMask;
-  }
-
-  positions.reset(attackByBishopsMask(board, player));
-  while (positions.hasNext()) {
-    const pos = positions.next();
-    if (
-      bishopMoves(allPiecesMaskButOpponentQueen, pos) &
-      opponentKingMask &
-      ~ignoredAttacksMask
-    ) {
-      if (checkType === BISHOP) {
-        kingAttacksMask |= 1 << pos;
-      } else {
-        ignoredAttacksMask |= 1 << pos;
-      }
-    }
+    return queenChecks;
   }
 
   if (checkType === BISHOP) {
-    return kingAttacksMask;
+    return attackByBishopsMask(board, player) & bishopRaysFromKing;
   }
 
-  positions.reset(attackByKnightsMask(board, player));
-  while (positions.hasNext()) {
-    const pos = positions.next();
-    if (
-      knightAttackMask(board, player, pos, opponentKingMask) &
-      ~ignoredAttacksMask
-    ) {
-      if (checkType === KNIGHT) {
-        kingAttacksMask |= 1 << pos;
-      } else {
-        ignoredAttacksMask |= 1 << pos;
-      }
-    }
-  }
-
-  return kingAttacksMask;
+  return attackByKnightsMask(board, player) & knightMovesFromCache(opponentKingPos);
 }
 
 export function safeChecksMask(

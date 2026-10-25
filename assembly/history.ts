@@ -1,11 +1,18 @@
 import { decodeFromPosition, decodeToPosition } from "./bitboard";
-const SIZE = 2 * 64 * 64;
-export class History {
-  private playedMoveCounters: StaticArray<i16> = new StaticArray<i16>(SIZE);
-  private cutOffMoveCounters: StaticArray<i16> = new StaticArray<i16>(SIZE);
+import { MAX_PLY } from "./move-stack";
 
-  private primaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
-  private secondaryKillers: StaticArray<u32> = new StaticArray<u32>(12);
+const SIZE = 2 * 64 * 64;
+const MAX_HISTORY_SCORE: i32 = 8000;
+
+/**
+ * Quiet move ordering heuristics: two killer moves per ply and a
+ * (player, from, to) history table fed by beta cut-offs.
+ */
+export class History {
+  private cutOffScores: StaticArray<i32> = new StaticArray<i32>(SIZE);
+
+  private primaryKillers: StaticArray<u32> = new StaticArray<u32>(MAX_PLY);
+  private secondaryKillers: StaticArray<u32> = new StaticArray<u32>(MAX_PLY);
 
   @inline
   private computeMoveIndex(player: i8, move: u32): i32 {
@@ -15,19 +22,17 @@ export class History {
       player
     );
   }
+
+  /** Kept for API compatibility: played moves no longer need tracking. */
   @inline
-  recordPlayedMove(player: i8, ply: i8, move: u32): void {
-    unchecked(
-      (this.playedMoveCounters[this.computeMoveIndex(player, move)] += 1)
-    );
-  }
+  recordPlayedMove(player: i8, ply: i8, move: u32): void {}
+
   @inline
   recordCutOffMove(player: i8, ply: i8, depth: i8, move: u32): void {
-    //log(this.computeMoveIndex(player, move));
-    //trace(ply.toString() +  ' ' +(1 << ply).toString());
-    unchecked(
-      (this.cutOffMoveCounters[this.computeMoveIndex(player, move)] += 1 << ply)
-    );
+    const index = this.computeMoveIndex(player, move);
+    const bonus = <i32>depth * <i32>depth;
+    const updated = unchecked(this.cutOffScores[index]) + bonus;
+    unchecked((this.cutOffScores[index] = updated > MAX_HISTORY_SCORE ? MAX_HISTORY_SCORE : updated));
     const currentPrimary = unchecked(this.primaryKillers[ply]);
     if (currentPrimary != move) {
       unchecked((this.primaryKillers[ply] = move));
@@ -36,36 +41,40 @@ export class History {
   }
 
   @inline
-  getMoveScore(player: i8, ply: i8, move: u32): i16 {
-    //log(this.cutOffMoveCounters[this.computeMoveIndex(player, move)]);
+  isKiller(ply: i8, move: u32): boolean {
+    return unchecked(this.primaryKillers[ply]) == move || unchecked(this.secondaryKillers[ply]) == move;
+  }
 
-    
-    /*if (cutOff === 0) {
-      return 0;
-    }*/
-   
+  /** Ordering score of a quiet move, always below capture scores. */
+  @inline
+  getMoveScore(player: i8, ply: i8, move: u32): i16 {
     if (unchecked(this.primaryKillers[ply]) === move) {
-      return i16.MAX_VALUE >> 1;
+      return 15000;
     }
     if (unchecked(this.secondaryKillers[ply]) === move) {
-      return i16.MAX_VALUE >> 2;
+      return 14000;
     }
-    //return cutOff;
-    const index = this.computeMoveIndex(player, move);
-    const cutOff = unchecked(this.cutOffMoveCounters[index]);
-    if (cutOff === 0) {
-      return 0;
-    }
-    return i16(<i32>cutOff * <i32>500 / <i32>unchecked(this.playedMoveCounters[index]) );
+    return <i16>unchecked(this.cutOffScores[this.computeMoveIndex(player, move)]);
   }
+
   resetHistory(): void {
-    for (let index = 0; index < this.primaryKillers.length; index++) {
-      this.primaryKillers[index] = 0;
-      this.secondaryKillers[index] = 0;
+    for (let index = 0; index < MAX_PLY; index++) {
+      unchecked((this.primaryKillers[index] = 0));
+      unchecked((this.secondaryKillers[index] = 0));
     }
     for (let index = 0; index < SIZE; index++) {
-      unchecked((this.cutOffMoveCounters[index] = 0));
-      unchecked((this.playedMoveCounters[index] = 0));
+      unchecked((this.cutOffScores[index] = 0));
+    }
+  }
+
+  /** Between two searches of the same game: keep some knowledge but decay it. */
+  ageHistory(): void {
+    for (let index = 0; index < MAX_PLY; index++) {
+      unchecked((this.primaryKillers[index] = 0));
+      unchecked((this.secondaryKillers[index] = 0));
+    }
+    for (let index = 0; index < SIZE; index++) {
+      unchecked((this.cutOffScores[index] = this.cutOffScores[index] >> 3));
     }
   }
 }

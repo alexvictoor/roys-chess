@@ -9,13 +9,13 @@ export class EvaluationTable {
   evaluationEntries: StaticArray<i16>;
   size: i32;
 
-  constructor(sizeMagnitude: i32 = 24) {
+  constructor(sizeMagnitude: i32 = 22) {
     this.size = 1 << sizeMagnitude;
     this.verificationEntries = new StaticArray<u64>(this.size);
     this.evaluationEntries = new StaticArray<i16>(this.size);
   }
 
-  reset(sizeMagnitude: i32 = 24): void {
+  reset(sizeMagnitude: i32 = 22): void {
     const size: i32 = 1 << sizeMagnitude;
     if (this.size == size) {
       for (let index: i32 = 0; index < size; index++) {
@@ -25,7 +25,7 @@ export class EvaluationTable {
     } else {
       this.size = size;
       this.verificationEntries = new StaticArray<u64>(this.size);
-      this.evaluationEntries = new StaticArray<u64>(this.size);
+      this.evaluationEntries = new StaticArray<i16>(this.size);
     }
   }
 

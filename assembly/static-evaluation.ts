@@ -168,34 +168,13 @@ export function OLD_evaluate(player: i8, board: BitBoard): i16 {
 
 const table = new EvaluationTable();
 
-let verbose: boolean = true;
-let count: i32 = 0;
-
+/** Static evaluation from `player` point of view, cached by zobrist hash. */
 export function evaluate(player: i8, board: BitBoard): i16 {
   const cachedEvaluation = table.getCachedEvaluation(board);
   if (cachedEvaluation) {
     return cachedEvaluation;
   }
-  count++;
-
-  /*if (verbose && count > 188360) {
-    trace(board.toFEN());
-  }*/
-
-  const evaluation = mainEvaluation(player, board) * ((player === WHITE ? 1 : -1));
-  /*if (board.hashCode() == 216317760343299884) {
-    trace(board.toFEN() + " /// " + evaluation.toString() + " /// " + player.toString() + ' / ' + count.toString());
-    verbose = false;
-  }*/
-  /*const cachedEvaluation = table.getCachedEvaluation(board);
-  if (cachedEvaluation) {
-    if (cachedEvaluation == evaluation) {
-      //trace('chouette');
-    } else {
-
-      trace(board.hashCode().toString() + ' ' + cachedEvaluation.toString() + ' ' + evaluation.toString());
-    }
-  }*/
+  const evaluation = mainEvaluation(player, board) * (player === WHITE ? 1 : -1);
   table.record(board, evaluation);
   return evaluation;
 }

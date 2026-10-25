@@ -119,10 +119,10 @@ export function endGameEvaluation(board: BitBoard): i16 {
 
 const positions = new MaskIterator();
 const positions2 = new MaskIterator();
+const pieceValuesMg = StaticArray.fromArray<i16>([124, -124, 781, -781, 825, -825, 1276, -1276, 2538, -2538]);
+const pieceValuesEg = StaticArray.fromArray<i16>([206, -206, 854, -854, 915, -915, 1380, -1380, 2682, -2682]);
 export function pieceValues(board: BitBoard, mg: boolean): i16 {
-  const bonus: i16[] = mg
-    ? [124, -124, 781, -781, 825, -825, 1276, -1276, 2538, -2538]
-    : [206, -206, 854, -854, 915, -915, 1380, -1380, 2682, -2682];
+  const bonus = mg ? pieceValuesMg : pieceValuesEg;
   let result: i16 = 0;
   for (let piece = 0; piece < 10; piece++) {
     const pieceMask = unchecked(board.bits[piece]);
@@ -181,49 +181,49 @@ const qt: i16[][] = [
   [0],
 ];
 
+const pieceCounts = new StaticArray<i32>(12);
+
+// Stockfish "imbalance": only piece counts matter, so this is O(types^2)
+// instead of the previous O(pieces^2) loop over every square.
 function imbalance(board: BitBoard): i16 {
-  //if (square == null) return sum(pos, imbalance);
+  for (let piece: i8 = 0; piece < 12; piece++) {
+    unchecked(pieceCounts[piece] = <i32>popcnt(board.bits[piece]));
+  }
+  const whiteBishopPair = unchecked(pieceCounts[BISHOP + WHITE]) == 2;
+  const blackBishopPair = unchecked(pieceCounts[BISHOP + BLACK]) == 2;
 
-  const allPiecesMask = board.getAllPiecesMask();
-
-  let result: i16 = 0;
+  let result: i32 = 0;
   for (let piece: i8 = 0; piece < 10; piece++) {
-    const pieceMask = unchecked(board.bits[piece]);
-
+    const count = unchecked(pieceCounts[piece]);
+    if (count == 0) {
+      continue;
+    }
     const player: i8 = piece & 1;
-
-    positions.reset(pieceMask);
-    while (positions.hasNext()) {
-      positions.next();
-      const bishops: i16[] = [0, 0];
-      positions2.reset(allPiecesMask);
-      while (positions2.hasNext()) {
-        const pos = positions2.next();
-        const otherPiece = board.getPieceAt(pos);
-        const otherPlayer: i8 = otherPiece & 1;
-        if (otherPiece === BISHOP + WHITE) {
-          unchecked(bishops[WHITE]++);
-        } else if (otherPiece === BISHOP + BLACK) {
-          unchecked(bishops[BLACK]++);
-        }
-        if (otherPiece >> 1 > piece >> 1) {
-          continue;
-        }
-        if (player != otherPlayer) {
-          result += unchecked(qt[piece][(otherPiece >> 1) + 1]);
-        } else {
-          result += unchecked(qo[piece][(otherPiece >> 1) + 1]);
-        }
+    const pieceType: i8 = piece >> 1;
+    const qoRow = unchecked(qo[piece]);
+    const qtRow = unchecked(qt[piece]);
+    let v: i32 = 0;
+    for (let other: i8 = 0; other < 10; other++) {
+      const otherType: i8 = other >> 1;
+      if (otherType > pieceType) {
+        continue;
       }
-      if (unchecked(bishops[player]) == 2) {
-        result += unchecked(qo[piece][0]);
-      }
-      if (unchecked(bishops[opponent(player)]) == 2) {
-        result += unchecked(qt[piece][0]);
+      const otherCount = unchecked(pieceCounts[other]);
+      if ((other & 1) != player) {
+        v += <i32>unchecked(qtRow[otherType + 1]) * otherCount;
+      } else {
+        v += <i32>unchecked(qoRow[otherType + 1]) * otherCount;
       }
     }
+    if (player == WHITE ? whiteBishopPair : blackBishopPair) {
+      v += <i32>unchecked(qoRow[0]);
+    }
+    if (player == WHITE ? blackBishopPair : whiteBishopPair) {
+      v += <i32>unchecked(qtRow[0]);
+    }
+    result += v * count;
   }
-  return result;
+  return <i16>result;
 }
 
 const leftFlank =
